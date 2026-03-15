@@ -97,6 +97,12 @@ export class NewsRepository {
       .all(...params, limit, offset) as ArticleRow[];
   }
 
+  getArticleById(id: number): ArticleRow | undefined {
+    return this.db
+      .prepare("SELECT * FROM articles WHERE id = ?")
+      .get(id) as ArticleRow | undefined;
+  }
+
   getArticleByGuid(guid: string): ArticleRow | undefined {
     return this.db
       .prepare("SELECT * FROM articles WHERE guid = ?")

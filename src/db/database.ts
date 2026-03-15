@@ -61,6 +61,43 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
     CREATE INDEX IF NOT EXISTS idx_articles_relevance ON articles(relevance_score);
     CREATE INDEX IF NOT EXISTS idx_articles_guid ON articles(guid);
+
+    CREATE TABLE IF NOT EXISTS news_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id INTEGER NOT NULL REFERENCES articles(id),
+      category TEXT NOT NULL,
+      confidence REAL NOT NULL DEFAULT 0,
+      classified_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(article_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_news_categories_article ON news_categories(article_id);
+    CREATE INDEX IF NOT EXISTS idx_news_categories_category ON news_categories(category);
+
+    CREATE TABLE IF NOT EXISTS impact_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id INTEGER NOT NULL REFERENCES articles(id),
+      token_symbol TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price_at_event REAL,
+      price_1h REAL,
+      price_4h REAL,
+      price_24h REAL,
+      change_1h REAL,
+      change_4h REAL,
+      change_24h REAL,
+      sample_size INTEGER NOT NULL DEFAULT 0,
+      avg_change_1h REAL,
+      avg_change_4h REAL,
+      avg_change_24h REAL,
+      confidence_score REAL NOT NULL DEFAULT 0,
+      computed_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(article_id, token_symbol)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_impact_events_article ON impact_events(article_id);
+    CREATE INDEX IF NOT EXISTS idx_impact_events_token ON impact_events(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_impact_events_category ON impact_events(category);
   `);
 }
 

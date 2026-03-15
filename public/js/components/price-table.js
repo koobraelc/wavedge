@@ -33,7 +33,7 @@ class PriceTable extends HTMLElement {
       return `
         <tr data-symbol="${this._esc(p.symbol)}">
           <td>${i + 1}</td>
-          <td><span class="token-symbol">${this._esc(p.symbol.toUpperCase())}</span><span class="token-name">${this._esc(p.name)}</span></td>
+          <td><a href="/tokens/${encodeURIComponent(p.symbol.toUpperCase())}" class="token-link"><span class="token-symbol">${this._esc(p.symbol.toUpperCase())}</span><span class="token-name">${this._esc(p.name)}</span></a></td>
           <td>$${this._fmtPrice(p.price_usd)}</td>
           <td class="${cls}">${sign}${pct.toFixed(2)}%</td>
           <td>$${this._fmtBig(p.market_cap)}</td>

@@ -201,6 +201,16 @@ a:hover { text-decoration: underline; }
   margin-left: 6px;
 }
 
+.token-link {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.token-link:hover {
+  text-decoration: none;
+  color: var(--link);
+}
+
 .change-positive { color: var(--green); }
 .change-negative { color: var(--red); }
 
@@ -367,6 +377,179 @@ a:hover { text-decoration: underline; }
   color: var(--text-secondary);
 }
 
+/* === Token Page === */
+.token-page .back-link {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.token-page .back-link:hover {
+  color: var(--link);
+}
+
+.token-hero {
+  margin-bottom: 28px;
+}
+
+.token-hero-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.token-hero-symbol {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+
+.token-hero-price {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-price-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.hero-meta {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Time range selector */
+.time-range-selector {
+  display: flex;
+  gap: 4px;
+}
+
+.range-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.range-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.range-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Token chart section */
+.token-chart-section {
+  margin-bottom: 28px;
+}
+
+.token-chart-section .chart-container {
+  min-height: 400px;
+}
+
+/* AI Summary */
+.token-summary-section {
+  margin-bottom: 28px;
+}
+
+.summary-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+
+.summary-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.summary-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.summary-empty {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Impact Stats Grid */
+.token-impact-section {
+  margin-bottom: 28px;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.impact-stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.impact-stat-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+
+.impact-stat-change {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.impact-stat-change.positive { color: var(--green); }
+.impact-stat-change.negative { color: var(--red); }
+.impact-stat-change.neutral { color: var(--text-secondary); }
+
+.impact-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.impact-stat-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.section-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Token news section */
+.token-news-section {
+  margin-bottom: 28px;
+}
+
 /* === Loading / Empty States === */
 .loading-state {
   text-align: center;
@@ -454,5 +637,21 @@ a:hover { text-decoration: underline; }
   .price-table th:nth-child(1),
   .price-table td:nth-child(1) {
     display: none;
+  }
+
+  .token-hero-title {
+    font-size: 1.2rem;
+  }
+
+  .hero-price-value {
+    font-size: 1.3rem;
+  }
+
+  .token-chart-section .chart-container {
+    min-height: 280px;
+  }
+
+  .impact-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

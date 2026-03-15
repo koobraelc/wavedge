@@ -111,6 +111,43 @@ export function initializeSchema(database: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_summary_cache_token ON summary_cache(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_summary_cache_expires ON summary_cache(expires_at);
+
+    -- Alert system tables
+    CREATE TABLE IF NOT EXISTS alert_preferences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL DEFAULT 'default',
+      token_symbols TEXT NOT NULL DEFAULT '[]',
+      channels TEXT NOT NULL DEFAULT '[]',
+      sensitivity TEXT NOT NULL DEFAULT 'medium',
+      news_frequency_threshold INTEGER NOT NULL DEFAULT 3,
+      news_window_minutes INTEGER NOT NULL DEFAULT 60,
+      price_change_threshold REAL NOT NULL DEFAULT 5.0,
+      volume_change_threshold REAL NOT NULL DEFAULT 100.0,
+      min_signals INTEGER NOT NULL DEFAULT 2,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      telegram_chat_id TEXT,
+      email_address TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_alert_prefs_user ON alert_preferences(user_id);
+
+    CREATE TABLE IF NOT EXISTS triggered_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL DEFAULT 'default',
+      token_symbol TEXT NOT NULL,
+      signals TEXT NOT NULL,
+      signal_count INTEGER NOT NULL,
+      summary TEXT NOT NULL,
+      delivered_channels TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_triggered_alerts_user ON triggered_alerts(user_id);
+    CREATE INDEX IF NOT EXISTS idx_triggered_alerts_token ON triggered_alerts(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_triggered_alerts_created ON triggered_alerts(created_at);
   `);
 }
 

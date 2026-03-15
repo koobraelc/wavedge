@@ -5,9 +5,13 @@ import { ImpactRepository } from "../db/impact-repository.js";
 import { NewsRepository } from "../db/news-repository.js";
 import { NewsClassifier } from "../services/news-classifier.js";
 import { ImpactCalculator } from "../services/impact-calculator.js";
+import { AlertEngine } from "../services/alert-engine.js";
+import { AlertRepository } from "../db/alert-repository.js";
+import { PriceRepository } from "../db/price-repository.js";
 
 let priceTask: ScheduledTask | null = null;
 let newsTask: ScheduledTask | null = null;
+let alertTask: ScheduledTask | null = null;
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
   if (priceTask) {
@@ -73,5 +77,41 @@ export function stopNewsScheduler(): void {
     newsTask.stop();
     newsTask = null;
     console.log("News scheduler stopped");
+  }
+}
+
+export function startAlertScheduler(intervalCron: string = "*/2 * * * *"): void {
+  if (alertTask) {
+    console.warn("Alert scheduler already running");
+    return;
+  }
+
+  const engine = new AlertEngine(new AlertRepository(), new PriceRepository());
+
+  const runCycle = async () => {
+    try {
+      const result = await engine.runCycle();
+      if (result.alertsTriggered > 0) {
+        console.log(`Alert cycle: ${result.alertsTriggered} alerts triggered`);
+      }
+      if (result.errors.length > 0) {
+        console.error("Alert cycle errors:", result.errors);
+      }
+    } catch (err) {
+      console.error("Alert cycle failed:", err);
+    }
+  };
+
+  console.log(`Starting alert scheduler with cron: ${intervalCron}`);
+
+  // Don't run immediately — wait for first price/news data
+  alertTask = cron.schedule(intervalCron, runCycle);
+}
+
+export function stopAlertScheduler(): void {
+  if (alertTask) {
+    alertTask.stop();
+    alertTask = null;
+    console.log("Alert scheduler stopped");
   }
 }

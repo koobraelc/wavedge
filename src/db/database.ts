@@ -42,6 +42,25 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_prices_token_id ON prices(token_id);
     CREATE INDEX IF NOT EXISTS idx_prices_fetched_at ON prices(fetched_at);
     CREATE INDEX IF NOT EXISTS idx_prices_token_fetched ON prices(token_id, fetched_at);
+
+    CREATE TABLE IF NOT EXISTS articles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guid TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      summary TEXT,
+      url TEXT NOT NULL,
+      source TEXT NOT NULL,
+      author TEXT,
+      published_at TEXT NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT (datetime('now')),
+      relevance_score REAL NOT NULL DEFAULT 0,
+      token_tags TEXT NOT NULL DEFAULT '[]'
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_articles_source ON articles(source);
+    CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
+    CREATE INDEX IF NOT EXISTS idx_articles_relevance ON articles(relevance_score);
+    CREATE INDEX IF NOT EXISTS idx_articles_guid ON articles(guid);
   `);
 }
 

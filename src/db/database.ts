@@ -98,6 +98,19 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_impact_events_article ON impact_events(article_id);
     CREATE INDEX IF NOT EXISTS idx_impact_events_token ON impact_events(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_impact_events_category ON impact_events(category);
+
+    CREATE TABLE IF NOT EXISTS summary_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_symbol TEXT NOT NULL,
+      lang TEXT NOT NULL DEFAULT 'en',
+      summary_json TEXT NOT NULL,
+      generated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL,
+      UNIQUE(token_symbol, lang)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_summary_cache_token ON summary_cache(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_summary_cache_expires ON summary_cache(expires_at);
   `);
 }
 

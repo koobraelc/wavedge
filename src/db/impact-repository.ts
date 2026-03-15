@@ -1,6 +1,17 @@
 import type Database from "better-sqlite3";
 import { getDatabase } from "./database.js";
 
+/** Compute confidence score from sample size (matches impact-calculator logic) */
+function computeConfidenceFromSampleSize(sampleSize: number): number {
+  if (sampleSize === 0) return 0;
+  if (sampleSize < 3) return 0.1;
+  if (sampleSize < 5) return 0.25;
+  if (sampleSize < 10) return 0.4;
+  if (sampleSize < 20) return 0.6;
+  if (sampleSize < 50) return 0.75;
+  return 0.9;
+}
+
 export interface NewsCategoryRow {
   id: number;
   article_id: number;
@@ -184,6 +195,93 @@ export class ImpactRepository {
       avgChange4h: row.avg_change_4h,
       avgChange24h: row.avg_change_24h,
     };
+  }
+
+  /** Get impact statistics grouped by category for a specific token */
+  getImpactStatsByToken(
+    tokenSymbol: string
+  ): {
+    category: string;
+    sampleSize: number;
+    avgChange1h: number | null;
+    avgChange4h: number | null;
+    avgChange24h: number | null;
+    confidenceScore: number;
+  }[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+           category,
+           COUNT(*) as sample_size,
+           AVG(change_1h) as avg_change_1h,
+           AVG(change_4h) as avg_change_4h,
+           AVG(change_24h) as avg_change_24h
+         FROM impact_events
+         WHERE token_symbol = ? AND change_24h IS NOT NULL
+         GROUP BY category
+         ORDER BY COUNT(*) DESC`
+      )
+      .all(tokenSymbol.toLowerCase()) as {
+      category: string;
+      sample_size: number;
+      avg_change_1h: number | null;
+      avg_change_4h: number | null;
+      avg_change_24h: number | null;
+    }[];
+
+    return rows.map((r) => ({
+      category: r.category,
+      sampleSize: r.sample_size,
+      avgChange1h: r.avg_change_1h,
+      avgChange4h: r.avg_change_4h,
+      avgChange24h: r.avg_change_24h,
+      confidenceScore: computeConfidenceFromSampleSize(r.sample_size),
+    }));
+  }
+
+  /** Get recent classified articles for a token (last 7 days) */
+  getRecentClassifiedArticles(
+    tokenSymbol: string,
+    days: number = 7
+  ): {
+    articleId: number;
+    title: string;
+    summary: string | null;
+    category: string;
+    confidence: number;
+    publishedAt: string;
+    change24h: number | null;
+  }[] {
+    return this.db
+      .prepare(
+        `SELECT
+           a.id as article_id,
+           a.title,
+           a.summary,
+           nc.category,
+           nc.confidence,
+           a.published_at,
+           ie.change_24h
+         FROM articles a
+         JOIN news_categories nc ON nc.article_id = a.id
+         LEFT JOIN impact_events ie ON ie.article_id = a.id AND ie.token_symbol = ?
+         WHERE a.token_tags LIKE ?
+           AND a.published_at >= datetime('now', ?)
+         ORDER BY a.published_at DESC`
+      )
+      .all(
+        tokenSymbol.toLowerCase(),
+        `%"${tokenSymbol.toUpperCase()}"%`,
+        `-${days} days`
+      ) as {
+      article_id: number;
+      title: string;
+      summary: string | null;
+      category: string;
+      confidence: number;
+      published_at: string;
+      change_24h: number | null;
+    }[];
   }
 
   getUncategorizedArticleIds(limit: number = 100): number[] {

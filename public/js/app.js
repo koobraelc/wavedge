@@ -22,6 +22,7 @@
       newsSignal: d.newsSignal,
       socialSentiment: d.socialSentiment,
       whaleActivity: d.whaleActivity,
+      anchorRect: d.anchorRect,
     });
   });
 

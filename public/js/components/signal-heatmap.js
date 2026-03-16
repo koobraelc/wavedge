@@ -146,6 +146,7 @@ class SignalHeatmap extends HTMLElement {
           bubbles: true,
           detail: {
             symbol: sym,
+            anchorRect: cell.getBoundingClientRect(),
             price: this._tokens.find(t => t.symbol.toUpperCase() === sym),
             newsSignal: this._newsSignals.get(sym) || this._newsSignals.get(sym.toLowerCase()),
             socialSentiment: this._socialSentiment.get(sym) || this._socialSentiment.get(sym.toLowerCase()),

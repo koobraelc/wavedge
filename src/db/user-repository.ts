@@ -179,7 +179,7 @@ export class UserRepository {
     const today = new Date().toISOString().split("T")[0];
     const result = this.db
       .prepare(
-        "SELECT COUNT(*) as count FROM triggered_alerts WHERE user_id = ? AND created_at >= ? || 'T00:00:00.000Z'"
+        "SELECT COUNT(*) as count FROM triggered_alerts WHERE user_id = ? AND date(created_at) = ?"
       )
       .get(userId, today) as { count: number };
     return result.count;

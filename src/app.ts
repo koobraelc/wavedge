@@ -280,6 +280,7 @@ app.get("/settings/alerts", (_req, res) => {
   <script src="/js/components/alert-settings.js"></script>
   <script src="/js/components/alert-history.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
+  <script src="/js/components/affiliate-cta.js"></script>
 
   <!-- Settings app -->
   <script src="/js/settings-app.js"></script>

@@ -91,6 +91,7 @@ class AlertHistory extends HTMLElement {
             <div class="history-channels">
               ${channels.map(ch => `<span class="channel-badge">${this._esc(ch)}</span>`).join('')}
             </div>
+            <affiliate-cta symbol="${this._esc(alert.tokenSymbol)}" variant="alert"></affiliate-cta>
           </div>
         </div>
       </div>

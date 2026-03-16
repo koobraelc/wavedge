@@ -254,6 +254,7 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   _renderNewsSection() {
+    const t = this._t();
     const news = this._data.newsSignal;
     if (!news || !news.articles || news.articles.length === 0) {
       return `
@@ -309,6 +310,7 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   _renderSocialSection() {
+    const t = this._t();
     const social = this._data.socialSentiment;
     const detail = this._data.sentiment;
 
@@ -355,6 +357,7 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   _renderWhaleSection() {
+    const t = this._t();
     const whale = this._data.whaleActivity;
     if (!whale || whale.transactionCount === 0) {
       return `
@@ -383,6 +386,7 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   _renderImpactSection() {
+    const t = this._t();
     const impact = this._data.impact;
     if (!impact || !impact.categories || impact.categories.length === 0) {
       return `

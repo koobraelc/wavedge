@@ -1,0 +1,472 @@
+/* === Theme: 8-Bit Retro === */
+/* Pixel art vibes. Chunky borders, CRT glow, warm NES/Famicom palette. */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-primary: #2b2b26;
+  --bg-secondary: #3a3a32;
+  --bg-tertiary: #4a4a3e;
+  --border: #8bac0f;
+  --text-primary: #e8d4a2;
+  --text-secondary: #c8b07a;
+  --text-muted: #7a7060;
+  --accent: #e0620d;
+  --accent-hover: #f07820;
+  --green: #8bac0f;
+  --red: #e0393e;
+  --yellow: #e0a81f;
+  --link: #6ec6e6;
+  --radius: 0px;
+  --radius-sm: 0px;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  line-height: 1.8;
+  letter-spacing: 0.5px;
+  background: #2b2b26;
+  image-rendering: pixelated;
+}
+
+/* CRT scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 99;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08) 0px,
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Pixel header */
+.app-header {
+  padding: 10px 16px;
+  border-bottom: 4px solid #8bac0f;
+  background: #3a3a32;
+  box-shadow: 0 4px 0 #1e1e1a;
+}
+
+.app-header .logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.9rem;
+  color: #e0620d;
+  text-shadow: 2px 2px 0 #6b2e05, 0 0 10px rgba(224, 98, 13, 0.4);
+}
+
+.app-header .logo span {
+  color: #8bac0f;
+  text-shadow: 2px 2px 0 #3d4d06, 0 0 10px rgba(139, 172, 15, 0.4);
+}
+
+.header-nav a {
+  font-family: 'Press Start 2P', monospace;
+  color: #c8b07a;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 0 #4a3e28;
+}
+
+.header-nav a:hover {
+  color: #e8d4a2;
+  text-shadow: 0 0 8px rgba(232, 212, 162, 0.5);
+}
+
+.header-nav a.active {
+  color: #e0620d;
+  text-shadow: 0 0 8px rgba(224, 98, 13, 0.5);
+}
+
+.search-box input {
+  font-family: 'Press Start 2P', monospace;
+  background: #2b2b26;
+  border: 3px solid #8bac0f;
+  color: #6ec6e6;
+  font-size: 0.6rem;
+  padding: 8px 10px;
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.search-box input::placeholder {
+  color: #7a7060;
+  font-size: 0.55rem;
+}
+
+.search-box input:focus {
+  border-color: #e0620d;
+  box-shadow: 0 0 12px rgba(224, 98, 13, 0.2), inset 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Content */
+.main-content {
+  padding: 16px;
+  max-width: 1400px;
+}
+
+/* Stat cards - chunky pixel boxes */
+.stat-card {
+  background: #3a3a32;
+  border: 3px solid #8bac0f;
+  padding: 14px 16px;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+.stat-card .label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #7a7060;
+  letter-spacing: 1px;
+}
+
+.stat-card .value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #e8d4a2;
+  text-shadow: 0 0 8px rgba(232, 212, 162, 0.3);
+}
+
+/* Price table */
+.price-table {
+  border: 3px solid #8bac0f;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+.price-table th {
+  font-family: 'Press Start 2P', monospace;
+  background: #4a4a3e;
+  font-size: 0.45rem;
+  color: #c8b07a;
+  padding: 8px 10px;
+  border-bottom: 3px solid #8bac0f;
+  text-shadow: 1px 1px 0 #333;
+}
+
+.price-table td {
+  font-family: 'Press Start 2P', monospace;
+  padding: 8px 10px;
+  font-size: 0.55rem;
+  border-top: 2px solid #4a4a3e;
+}
+
+.price-table tbody tr:hover {
+  background: #4a4a3e;
+}
+
+/* News / feed cards */
+.news-card, .feed-card {
+  background: #3a3a32;
+  border: 3px solid #8bac0f;
+  padding: 12px 14px;
+  box-shadow: 4px 4px 0 #1e1e1a;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.news-card:hover, .feed-card:hover {
+  border-color: #e0620d;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1e1e1a;
+}
+
+.feed-card-hot {
+  border-left: 5px solid #e0620d;
+}
+
+.feed-headline {
+  font-size: 0.6rem;
+  font-weight: 400;
+  line-height: 2;
+}
+
+.feed-headline a {
+  color: #6ec6e6;
+}
+
+.feed-headline a:hover {
+  color: #e8d4a2;
+  text-shadow: 0 0 6px rgba(232, 212, 162, 0.3);
+}
+
+.feed-meta {
+  font-size: 0.5rem;
+}
+
+/* Impact badges - pixel style */
+.impact-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  padding: 4px 8px;
+  border: 2px solid;
+  text-transform: uppercase;
+}
+
+.impact-badge.positive {
+  background: rgba(139, 172, 15, 0.15);
+  color: #8bac0f;
+  border-color: #8bac0f;
+}
+
+.impact-badge.negative {
+  background: rgba(224, 57, 62, 0.15);
+  color: #e0393e;
+  border-color: #e0393e;
+}
+
+.impact-badge.neutral {
+  background: rgba(122, 112, 96, 0.2);
+  color: #7a7060;
+  border-color: #7a7060;
+}
+
+/* Token tags */
+.token-tag {
+  font-family: 'Press Start 2P', monospace;
+  background: rgba(110, 198, 230, 0.12);
+  color: #6ec6e6;
+  border: 2px solid #6ec6e6;
+  font-size: 0.45rem;
+  padding: 2px 6px;
+}
+
+/* Heatmap */
+.hm-cell {
+  border: 3px solid #8bac0f;
+  box-shadow: 3px 3px 0 #1e1e1a;
+  transition: transform 0.1s;
+}
+
+.hm-cell:hover {
+  border-color: #e0620d;
+  transform: translate(-2px, -2px) scale(1.02);
+  box-shadow: 5px 5px 0 #1e1e1a;
+}
+
+.hm-symbol {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.hm-sm .hm-symbol { font-size: 0.5rem; }
+
+.hm-pct {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+}
+
+.hm-sm .hm-pct { font-size: 0.45rem; }
+
+.hm-price {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+}
+
+/* Tabs */
+.tabs {
+  border-bottom: 3px solid #8bac0f;
+}
+
+.tab-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #7a7060;
+  padding: 10px 14px;
+}
+
+.tab-btn:hover {
+  color: #c8b07a;
+}
+
+.tab-btn.active {
+  color: #e8d4a2;
+  border-bottom: 3px solid #e0620d;
+  text-shadow: 0 0 6px rgba(232, 212, 162, 0.3);
+}
+
+/* Right Now banner */
+.right-now-banner {
+  background: #3a3a32;
+  border: 3px solid #e0620d;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+.right-now-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #e0620d;
+  text-shadow: 0 0 6px rgba(224, 98, 13, 0.3);
+}
+
+.pulse-dot {
+  background: #e0393e;
+  box-shadow: 0 0 8px #e0393e;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(224, 57, 62, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 8px rgba(224, 57, 62, 0); }
+}
+
+/* Hot token */
+.hot-token {
+  background: #3a3a32;
+  border: 3px solid #8bac0f;
+  box-shadow: 3px 3px 0 #1e1e1a;
+}
+
+.hot-token:hover {
+  border-color: #e0a81f;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+.hot-token-symbol {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: #e0a81f;
+}
+
+.hot-token-signals {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+}
+
+.hot-token-price {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+}
+
+/* Sentiment */
+.sentiment-pill {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  border: 2px solid;
+}
+
+.sentiment-bullish {
+  background: rgba(139, 172, 15, 0.15);
+  color: #8bac0f;
+  border-color: #8bac0f;
+}
+
+.sentiment-bearish {
+  background: rgba(224, 57, 62, 0.15);
+  color: #e0393e;
+  border-color: #e0393e;
+}
+
+.sentiment-neutral {
+  background: rgba(122, 112, 96, 0.15);
+  color: #7a7060;
+  border-color: #7a7060;
+}
+
+/* Feed token icon */
+.feed-token-icon {
+  font-family: 'Press Start 2P', monospace;
+  background: #4a4a3e;
+  border: 2px solid #8bac0f;
+  font-size: 0.45rem;
+}
+
+/* Category badge */
+.category-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  background: #4a4a3e;
+  border: 2px solid #8bac0f;
+}
+
+/* Signal badge */
+.hm-signal-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  background: #e0a81f;
+  box-shadow: 2px 2px 0 #6b5010;
+}
+
+.hm-hot {
+  box-shadow: 0 0 0 2px #e0a81f, 4px 4px 0 #1e1e1a;
+  border-color: #e0a81f;
+}
+
+/* Chart */
+.chart-container {
+  border: 3px solid #8bac0f;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+/* Buttons */
+.btn-login, .link-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+}
+
+/* Watchlist */
+.wl-widget {
+  border: 3px solid #8bac0f;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+/* Signal heatmap header */
+.signal-heatmap-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 1px;
+}
+
+/* Theme switcher override */
+.theme-toggle {
+  border: 3px solid #8bac0f;
+  box-shadow: 2px 2px 0 #1e1e1a;
+}
+
+.theme-dropdown {
+  border: 3px solid #8bac0f;
+  box-shadow: 4px 4px 0 #1e1e1a;
+}
+
+.theme-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2b2b26;
+  border-left: 2px solid #8bac0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8bac0f;
+  border: 2px solid #4a4a3e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e0620d;
+}
+
+/* Feed summary/misc text */
+.feed-summary {
+  font-size: 0.5rem;
+  line-height: 2;
+}
+
+.feed-inline-price {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+}

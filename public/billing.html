@@ -34,15 +34,18 @@
         });
 
         if (!res.ok) {
-          // Not authenticated — show free plan default
-          renderPlan({ plan: 'free', email: null });
+          if (res.status === 401) {
+            renderPlan({ plan: 'free', email: null, notLoggedIn: true });
+          } else {
+            renderError('Unable to load your plan details. Please try again.');
+          }
           return;
         }
 
         const user = await res.json();
         renderPlan(user);
       } catch {
-        renderPlan({ plan: 'free', email: null });
+        renderError('Network error — could not load plan details.');
       }
     }
 
@@ -98,6 +101,19 @@
       `;
     }
 
+    function renderError(message) {
+      container.innerHTML = `
+        <div class="billing-plan-card">
+          <div class="billing-plan-header">
+            <div class="billing-plan-name" style="color:var(--red,#e53e3e)">Error</div>
+          </div>
+          <div class="billing-plan-details">
+            <p>${escapeHtml(message)}</p>
+            <button class="btn-primary" onclick="loadBilling()">Retry</button>
+          </div>
+        </div>`;
+    }
+
     function escapeHtml(str) {
       const el = document.createElement('span');
       el.textContent = str;
@@ -121,14 +137,14 @@
             window.location.href = '/login?plan=pro';
             return;
           }
-          alert(data.error || 'Failed to start checkout');
+          showToast(data.error || 'Failed to start checkout', 'error');
           return;
         }
 
         const { url } = await res.json();
         window.location.href = url;
       } catch (err) {
-        alert('Something went wrong. Please try again.');
+        showToast('Something went wrong. Please try again.', 'error');
       }
     }
 
@@ -142,15 +158,25 @@
         });
 
         if (!res.ok) {
-          alert('Failed to open billing portal');
+          showToast('Failed to open billing portal', 'error');
           return;
         }
 
         const { url } = await res.json();
         window.location.href = url;
       } catch {
-        alert('Something went wrong. Please try again.');
+        showToast('Something went wrong. Please try again.', 'error');
       }
+    }
+
+    function showToast(message, type) {
+      document.querySelectorAll('.toast-notification').forEach(t => t.remove());
+      const toast = document.createElement('div');
+      toast.className = `toast-notification toast-${type}`;
+      toast.innerHTML = `<span class="toast-icon">${type === 'success' ? '&#10003;' : '&#10007;'}</span><span class="toast-message">${escapeHtml(message)}</span>`;
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('toast-visible'));
+      setTimeout(() => { toast.classList.remove('toast-visible'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
     loadBilling();

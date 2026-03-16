@@ -1,0 +1,461 @@
+/* === Theme: Apple 2026 Liquid Glass === */
+/* Translucent panels, heavy vibrancy blur, ultra-thin borders, SF Pro typography. */
+/* Inspired by Apple's 2025-2026 design language: depth through transparency. */
+
+:root {
+  --bg-primary: #110f16;
+  --bg-secondary: rgba(255, 255, 255, 0.04);
+  --bg-tertiary: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.12);
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.3);
+  --accent: #ff6f61;
+  --accent-hover: #ff8a7a;
+  --green: #32d74b;
+  --red: #ff6b6b;
+  --yellow: #ffcc02;
+  --link: #ff6f61;
+  --radius: 16px;
+  --radius-sm: 12px;
+}
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  background: #110f16;
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgba(255, 111, 97, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(175, 82, 222, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 90%, rgba(50, 215, 75, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 50%, rgba(255, 204, 2, 0.03) 0%, transparent 60%);
+  color: rgba(255, 255, 255, 0.92);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === Liquid Glass Header === */
+.app-header {
+  background: rgba(30, 30, 35, 0.5);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 24px;
+}
+
+.app-header .logo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.app-header .logo span {
+  background: linear-gradient(135deg, #ff6f61, #af52de);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-nav a {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.header-nav a:hover {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.header-nav a.active {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+/* Search — pill-shaped, translucent */
+.search-box input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.85rem;
+  font-weight: 400;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 14px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-box input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.search-box input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 111, 97, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.15);
+}
+
+/* === Liquid Glass Cards === */
+.stat-card {
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: saturate(150%) blur(30px);
+  -webkit-backdrop-filter: saturate(150%) blur(30px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.06) inset,
+    0 2px 12px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-card .label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.stat-card .value {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* === Glass News / Feed Cards === */
+.news-card, .feed-card {
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: saturate(150%) blur(24px);
+  -webkit-backdrop-filter: saturate(150%) blur(24px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.05) inset,
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.news-card:hover, .feed-card:hover {
+  background: rgba(255, 255, 255, 0.055);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.feed-card-hot {
+  border-left: 2px solid #ff6f61;
+}
+
+.feed-headline a {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+
+.feed-headline a:hover {
+  color: #ff6f61;
+}
+
+.feed-summary {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.feed-meta {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.feed-meta .source {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* === Impact Badges — frosted pills === */
+.impact-badge {
+  border-radius: 100px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid transparent;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.impact-badge.positive {
+  background: rgba(50, 215, 75, 0.12);
+  color: #32d74b;
+  border-color: rgba(50, 215, 75, 0.2);
+}
+
+.impact-badge.negative {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+.impact-badge.neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* === Token Tags === */
+.token-tag {
+  background: rgba(255, 111, 97, 0.1);
+  color: #ff8a7a;
+  border-radius: 6px;
+  border: 0.5px solid rgba(255, 111, 97, 0.15);
+}
+
+/* === Price Table — translucent === */
+.price-table {
+  background: rgba(255, 255, 255, 0.025);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.price-table th {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 600;
+  font-size: 0.72rem;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.price-table td {
+  border-top: 0.5px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.price-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* === Tabs === */
+.tabs {
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn {
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.tab-btn.active {
+  color: rgba(255, 255, 255, 0.92);
+  border-bottom-color: #ff6f61;
+}
+
+/* === Heatmap — glass cells === */
+.hm-cell {
+  border-radius: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: saturate(150%) blur(16px);
+  -webkit-backdrop-filter: saturate(150%) blur(16px);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s, border-color 0.25s;
+}
+
+.hm-cell:hover {
+  border-color: rgba(255, 111, 97, 0.4);
+  transform: scale(1.04);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* === Chart === */
+.chart-container {
+  background: rgba(255, 255, 255, 0.025);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* === Right Now Banner === */
+.right-now-banner {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: saturate(150%) blur(24px);
+  -webkit-backdrop-filter: saturate(150%) blur(24px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.right-now-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.pulse-dot {
+  background: #ff6b6b;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+}
+
+/* === Hot Tokens === */
+.hot-token {
+  background: rgba(255, 255, 255, 0.035);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.hot-token:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 111, 97, 0.3);
+}
+
+.hot-token-symbol {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* === Sentiment === */
+.sentiment-pill {
+  border-radius: 100px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+
+.sentiment-bullish {
+  background: rgba(50, 215, 75, 0.12);
+  color: #32d74b;
+}
+
+.sentiment-bearish {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+}
+
+.sentiment-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sentiment-bar {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 100px;
+}
+
+/* === Feed Token Icon === */
+.feed-token-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* === Category Badge === */
+.category-badge {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+}
+
+/* === Signal Badge === */
+.hm-signal-badge {
+  background: rgba(255, 214, 10, 0.9);
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.35);
+}
+
+.hm-hot {
+  box-shadow: 0 0 12px rgba(255, 214, 10, 0.25);
+  border-color: rgba(255, 214, 10, 0.4);
+}
+
+/* === Watchlist === */
+.wl-widget {
+  border-radius: 14px;
+}
+
+/* === Theme Switcher Overrides === */
+.theme-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 111, 97, 0.4);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.theme-dropdown {
+  background: rgba(40, 40, 48, 0.7);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.theme-btn {
+  color: rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.theme-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.theme-btn.active {
+  background: rgba(255, 111, 97, 0.12);
+  color: #ff6f61;
+}
+
+/* === Alert Link === */
+.feed-alert-link {
+  color: #ff6f61;
+}
+
+.feed-alert-link:hover {
+  background: rgba(255, 111, 97, 0.08);
+}
+
+/* === Buttons === */
+.link-btn {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.link-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.btn-login {
+  color: #ff6f61;
+}
+
+/* === Scrollbar — invisible by default === */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}

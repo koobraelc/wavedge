@@ -1,0 +1,309 @@
+/* === Theme: Glassmorphism === */
+/* Frosted glass cards, soft gradients, depth through blur. */
+
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: rgba(255, 255, 255, 0.05);
+  --bg-tertiary: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.1);
+  --text-primary: #f0f0f8;
+  --text-secondary: #a0a0b8;
+  --text-muted: #6a6a80;
+  --accent: #7c5cfc;
+  --accent-hover: #9b80ff;
+  --green: #34d399;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --link: #a78bfa;
+  --radius: 16px;
+  --radius-sm: 12px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0f1a;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(124, 92, 252, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(52, 211, 153, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(248, 113, 113, 0.05) 0%, transparent 50%);
+  min-height: 100vh;
+}
+
+/* Glass mixin via card styles */
+.app-header {
+  background: rgba(15, 15, 26, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 24px;
+}
+
+.app-header .logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #7c5cfc, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app-header .logo span {
+  -webkit-text-fill-color: transparent;
+}
+
+.header-nav a {
+  color: #a0a0b8;
+  font-weight: 500;
+}
+
+.header-nav a:hover {
+  color: #f0f0f8;
+}
+
+.header-nav a.active {
+  color: #7c5cfc;
+  font-weight: 600;
+}
+
+.search-box input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #f0f0f8;
+  backdrop-filter: blur(10px);
+}
+
+.search-box input:focus {
+  border-color: rgba(124, 92, 252, 0.5);
+  box-shadow: 0 0 20px rgba(124, 92, 252, 0.1);
+}
+
+.search-box input::placeholder {
+  color: #6a6a80;
+}
+
+/* Glass cards */
+.stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  padding: 20px 24px;
+}
+
+.stat-card .label {
+  color: #a0a0b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+}
+
+.stat-card .value {
+  color: #f0f0f8;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* News / feed cards - glass */
+.news-card, .feed-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.news-card:hover, .feed-card:hover {
+  border-color: rgba(124, 92, 252, 0.3);
+  box-shadow: 0 8px 32px rgba(124, 92, 252, 0.1);
+  transform: translateY(-1px);
+}
+
+.feed-card-hot {
+  border-left: 3px solid #7c5cfc;
+}
+
+.feed-headline a {
+  color: #f0f0f8;
+}
+
+.feed-headline a:hover {
+  color: #a78bfa;
+}
+
+/* Impact badges - pill glass */
+.impact-badge {
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  font-size: 0.72rem;
+}
+
+.impact-badge.positive {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.impact-badge.negative {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.impact-badge.neutral {
+  background: rgba(160, 160, 184, 0.1);
+  color: #a0a0b8;
+}
+
+/* Token tags */
+.token-tag {
+  background: rgba(124, 92, 252, 0.12);
+  color: #a78bfa;
+  border-radius: 8px;
+}
+
+/* Heatmap - glass cells */
+.hm-cell {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.hm-cell:hover {
+  border-color: rgba(124, 92, 252, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Tabs */
+.tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tab-btn {
+  border-radius: 8px 8px 0 0;
+}
+
+.tab-btn.active {
+  color: #f0f0f8;
+  border-bottom-color: #7c5cfc;
+}
+
+/* Price table */
+.price-table {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.price-table th {
+  background: rgba(255, 255, 255, 0.04);
+  color: #a0a0b8;
+}
+
+.price-table td {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.price-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Right Now banner */
+.right-now-banner {
+  background: rgba(124, 92, 252, 0.06);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(124, 92, 252, 0.1);
+  border-radius: 16px;
+}
+
+.pulse-dot {
+  background: #f87171;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.4);
+}
+
+/* Hot token */
+.hot-token {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.hot-token:hover {
+  border-color: rgba(124, 92, 252, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Chart container */
+.chart-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+/* Sentiment */
+.sentiment-pill {
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.sentiment-bullish {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.sentiment-bearish {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+/* Feed token icon */
+.feed-token-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+/* Category badge */
+.category-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+/* Watchlist */
+.wl-widget {
+  border-radius: 16px;
+}
+
+/* Signal badge glow */
+.hm-signal-badge {
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.hm-hot {
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.3);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

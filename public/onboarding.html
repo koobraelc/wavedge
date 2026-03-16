@@ -373,7 +373,7 @@
           <div class="telegram-icon">&#x2708;</div>
           <p>Enter your Telegram chat ID to receive alerts there.</p>
           <div class="telegram-input-row">
-            <input type="text" id="telegram-id" placeholder="e.g. 123456789" autocomplete="off" />
+            <input type="text" id="telegram-id" placeholder="e.g. 123456789" autocomplete="off" inputmode="numeric" pattern="[0-9]*" />
           </div>
           <p class="telegram-hint">Message <a href="https://t.me/userinfobot" target="_blank" rel="noopener"><strong>@userinfobot</strong></a> on Telegram to get your chat ID.</p>
         </div>
@@ -510,7 +510,17 @@
           selectedTokens.splice(idx, 1);
           chip.classList.remove('selected');
         } else {
-          if (selectedTokens.length >= 5) return; // Max 5
+          if (selectedTokens.length >= 5) {
+            // Flash the count to show max reached
+            var countEl = document.getElementById('selection-count');
+            countEl.style.color = 'var(--red, #e53e3e)';
+            countEl.textContent = 'Maximum 5 tokens selected';
+            setTimeout(function() {
+              countEl.style.color = '';
+              updateCount();
+            }, 1500);
+            return;
+          }
           selectedTokens.push(symbol);
           chip.classList.add('selected');
         }
@@ -532,7 +542,15 @@
       });
 
       document.getElementById('next-telegram').addEventListener('click', function() {
-        telegramChatId = document.getElementById('telegram-id').value.trim();
+        var input = document.getElementById('telegram-id');
+        telegramChatId = input.value.trim();
+        if (telegramChatId && !/^\d+$/.test(telegramChatId)) {
+          input.style.borderColor = 'var(--red, #e53e3e)';
+          var hint = input.closest('.telegram-section').querySelector('.telegram-hint');
+          if (hint) hint.innerHTML = '<span style="color:var(--red,#e53e3e)">Chat ID must be a number.</span> Message <a href="https://t.me/userinfobot" target="_blank" rel="noopener"><strong>@userinfobot</strong></a> on Telegram to get your chat ID.';
+          setTimeout(function() { input.style.borderColor = ''; }, 3000);
+          return;
+        }
         finishOnboarding();
       });
 

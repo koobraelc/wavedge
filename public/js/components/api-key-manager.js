@@ -1,7 +1,7 @@
 class ApiKeyManager extends HTMLElement {
   connectedCallback() {
     this.token = localStorage.getItem('wavedge_token');
-    this.innerHTML = '<div class="loading-state"><span class="spinner"></span>Loading API keys...</div>';
+    this.innerHTML = '<div class="loading-state" role="status" aria-busy="true"><span class="spinner"></span>Loading API keys...</div>';
     if (!this.token) {
       this.innerHTML = '<p class="text-muted">Please <a href="/login">log in</a> to manage API keys.</p>';
       return;
@@ -57,7 +57,7 @@ class ApiKeyManager extends HTMLElement {
       <div class="api-key-create">
         <h3>Create New Key</h3>
         <form class="create-key-form" id="create-key-form">
-          <input type="text" name="name" placeholder="Key name (e.g. My Trading Bot)" maxlength="50" class="input" />
+          <input type="text" name="name" placeholder="Key name (e.g. My Trading Bot)" maxlength="50" class="input" aria-label="API key name" />
           <button type="submit" class="btn btn-primary">Generate Key</button>
         </form>
         <div id="new-key-display" class="new-key-display" style="display:none">
@@ -141,7 +141,7 @@ class ApiKeyManager extends HTMLElement {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || 'Failed to create key');
+        ApiKeyManager._showToast(data.error || 'Failed to create key', 'error');
         return;
       }
 
@@ -164,7 +164,7 @@ class ApiKeyManager extends HTMLElement {
       // Reload the list after a brief moment
       setTimeout(() => this.load(), 500);
     } catch (err) {
-      alert('Failed to create API key');
+      ApiKeyManager._showToast('Failed to create API key', 'error');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Generate Key';
@@ -172,23 +172,49 @@ class ApiKeyManager extends HTMLElement {
   }
 
   async handleRevoke(keyId) {
-    if (!confirm('Revoke this API key? Any applications using it will stop working.')) return;
+    // Show inline confirmation instead of native confirm()
+    const btn = this.querySelector(`.revoke-btn[data-id="${keyId}"]`);
+    if (!btn) return;
 
-    try {
-      const res = await fetch('/api/api-keys/' + keyId, {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + this.token },
-      });
+    if (btn.dataset.confirming) {
+      // Second click = confirmed
+      delete btn.dataset.confirming;
+      btn.textContent = 'Revoking...';
+      btn.disabled = true;
 
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || 'Failed to revoke key');
-        return;
+      try {
+        const res = await fetch('/api/api-keys/' + keyId, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + this.token },
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          ApiKeyManager._showToast(data.error || 'Failed to revoke key', 'error');
+          btn.textContent = 'Revoke';
+          btn.disabled = false;
+          return;
+        }
+
+        ApiKeyManager._showToast('API key revoked', 'success');
+        this.load();
+      } catch {
+        ApiKeyManager._showToast('Failed to revoke key', 'error');
+        btn.textContent = 'Revoke';
+        btn.disabled = false;
       }
-
-      this.load();
-    } catch {
-      alert('Failed to revoke key');
+    } else {
+      // First click = ask for confirmation
+      btn.dataset.confirming = '1';
+      btn.textContent = 'Confirm?';
+      btn.classList.add('btn-danger');
+      setTimeout(() => {
+        if (btn.dataset.confirming) {
+          delete btn.dataset.confirming;
+          btn.textContent = 'Revoke';
+          btn.classList.remove('btn-danger');
+        }
+      }, 3000);
     }
   }
 
@@ -202,6 +228,21 @@ class ApiKeyManager extends HTMLElement {
     if (!iso) return '';
     const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'));
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  static _showToast(message, type) {
+    document.querySelectorAll('.toast-notification').forEach(t => t.remove());
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+      <span class="toast-icon">${type === 'success' ? '&#10003;' : '&#10007;'}</span>
+      <span class="toast-message">${message}</span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+    setTimeout(() => {
+      toast.classList.remove('toast-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 }
 

@@ -3,7 +3,7 @@ class AlertSettings extends HTMLElement {
     this._prefs = null;
     this._tokens = [];
     this._saving = false;
-    this.innerHTML = '<div class="loading-state"><span class="spinner"></span>Loading settings...</div>';
+    this.innerHTML = '<div class="loading-state" role="status" aria-busy="true"><span class="spinner"></span>Loading settings...</div>';
     this._load();
   }
 
@@ -156,7 +156,7 @@ class AlertSettings extends HTMLElement {
             <div class="channel-detail ${channels.includes('telegram') ? '' : 'hidden'}" id="telegram-detail">
               <label for="telegram-chat-id">Telegram Chat ID</label>
               <div class="telegram-input-row">
-                <input type="text" id="telegram-chat-id" placeholder="e.g. 123456789" value="${this._esc(telegramChatId)}" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" id="telegram-chat-id" placeholder="e.g. 123456789" value="${this._esc(telegramChatId)}" inputmode="numeric" pattern="[0-9]*" aria-label="Telegram Chat ID">
                 <a href="https://t.me/WavedgeBot?start=connect" target="_blank" rel="noopener" class="btn-secondary btn-sm telegram-connect-btn">Connect via Telegram</a>
               </div>
               <span class="field-hint">Click "Connect via Telegram" to auto-link your account, or paste your Chat ID manually.</span>
@@ -170,7 +170,7 @@ class AlertSettings extends HTMLElement {
             </label>
             <div class="channel-detail ${channels.includes('email') ? '' : 'hidden'}" id="email-detail">
               <label for="email-address">Email Address</label>
-              <input type="email" id="email-address" placeholder="you@example.com" value="${this._esc(emailAddress)}">
+              <input type="email" id="email-address" placeholder="you@example.com" value="${this._esc(emailAddress)}" aria-label="Email address for alerts">
             </div>
             <label class="channel-option">
               <input type="checkbox" name="channel" value="push" ${channels.includes('push') ? 'checked' : ''}>
@@ -191,7 +191,7 @@ class AlertSettings extends HTMLElement {
         <div class="settings-card">
           <div class="settings-section-header">
             <span class="section-icon">&#9881;</span>
-            <h3>Sensitivity <info-tip text="靈敏度越高，越容易觸發提醒。新手建議選「中」。"></info-tip></h3>
+            <h3>Sensitivity <info-tip text="Higher sensitivity triggers more alerts. We recommend Medium for most users."></info-tip></h3>
           </div>
           <p class="settings-hint">Controls how easily alerts are triggered. Higher sensitivity = more alerts.</p>
           <div class="sensitivity-selector">
@@ -219,14 +219,14 @@ class AlertSettings extends HTMLElement {
         <div class="settings-card">
           <div class="settings-section-header">
             <span class="section-icon">&#128202;</span>
-            <h3>Signal Requirements <info-tip text="需要幾個信號同時出現才觸發提醒。建議新手選2-3個，避免太多雜訊。"></info-tip></h3>
+            <h3>Signal Requirements <info-tip text="How many signals must fire together to trigger an alert. We recommend 2-3 to reduce noise."></info-tip></h3>
           </div>
           <p class="settings-hint">How many signals must fire simultaneously to trigger an alert.</p>
           <div class="signal-selector">
             ${[1, 2, 3, 4, 5].map(n => `
               <label class="signal-option ${minSignals === n ? 'active' : ''}">
                 <input type="radio" name="minSignals" value="${n}" ${minSignals === n ? 'checked' : ''}>
-                ${n === 2 ? '<span class="recommended-badge">推薦 Recommended</span>' : ''}
+                ${n === 2 ? '<span class="recommended-badge">Recommended</span>' : ''}
                 <strong>${n} signal${n > 1 ? 's' : ''}</strong>
                 <span>${n === 1 ? 'Any single signal' : n === 2 ? 'Two+ signals together' : n === 3 ? 'Three+ signals' : n === 4 ? 'Four+ signals' : 'All five signals'}</span>
               </label>

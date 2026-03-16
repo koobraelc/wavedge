@@ -1,0 +1,347 @@
+/* === Theme: Clean Light === */
+/* Professional fintech. Light background, crisp typography, subtle shadows. */
+
+:root {
+  --bg-primary: #f8f9fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f2f5;
+  --border: #e2e5ea;
+  --text-primary: #1a1d23;
+  --text-secondary: #5c6370;
+  --text-muted: #9ca3af;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --green: #16a34a;
+  --red: #dc2626;
+  --yellow: #d97706;
+  --link: #2563eb;
+  --radius: 10px;
+  --radius-sm: 8px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f8f9fb;
+  color: #1a1d23;
+}
+
+a { color: #2563eb; }
+
+/* Header */
+.app-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e5ea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 12px 24px;
+}
+
+.app-header .logo {
+  color: #1a1d23;
+  font-weight: 800;
+}
+
+.app-header .logo span {
+  color: #2563eb;
+}
+
+.header-nav a {
+  color: #5c6370;
+  font-weight: 500;
+}
+
+.header-nav a:hover {
+  color: #1a1d23;
+}
+
+.header-nav a.active {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.search-box input {
+  background: #f0f2f5;
+  border: 1px solid #e2e5ea;
+  color: #1a1d23;
+  border-radius: 10px;
+}
+
+.search-box input:focus {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
+}
+
+/* Stat cards - clean white */
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 18px 22px;
+}
+
+.stat-card .label {
+  color: #5c6370;
+  font-weight: 600;
+}
+
+.stat-card .value {
+  color: #1a1d23;
+}
+
+/* Price table */
+.price-table {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.price-table th {
+  background: #f8f9fb;
+  color: #5c6370;
+  border-bottom: 1px solid #e2e5ea;
+}
+
+.price-table td {
+  border-top: 1px solid #f0f2f5;
+  color: #1a1d23;
+}
+
+.price-table tbody tr:hover {
+  background: #f8f9fb;
+}
+
+.token-symbol { color: #1a1d23; }
+.token-name { color: #5c6370; }
+.token-link { color: #1a1d23; }
+.token-link:hover { color: #2563eb; }
+
+/* News / feed cards */
+.news-card, .feed-card {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.news-card:hover, .feed-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.feed-card-hot {
+  border-left: 3px solid #2563eb;
+}
+
+.news-card .news-title a,
+.feed-headline a {
+  color: #1a1d23;
+}
+
+.news-card .news-title a:hover,
+.feed-headline a:hover {
+  color: #2563eb;
+}
+
+.news-card .news-summary,
+.feed-summary {
+  color: #5c6370;
+}
+
+/* Impact badges */
+.impact-badge {
+  border-radius: 16px;
+}
+
+.impact-badge.positive {
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+
+.impact-badge.negative {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.impact-badge.neutral {
+  background: rgba(107, 114, 128, 0.08);
+  color: #5c6370;
+}
+
+/* Token tags */
+.token-tag {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border-radius: 6px;
+}
+
+/* Tabs */
+.tabs {
+  border-bottom: 1px solid #e2e5ea;
+}
+
+.tab-btn {
+  color: #5c6370;
+}
+
+.tab-btn:hover {
+  color: #1a1d23;
+}
+
+.tab-btn.active {
+  color: #1a1d23;
+  border-bottom-color: #2563eb;
+}
+
+/* Chart */
+.chart-container {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Signal heatmap */
+.hm-cell {
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hm-cell:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Right Now banner */
+.right-now-banner {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.04), rgba(220, 38, 38, 0.03));
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+}
+
+.right-now-label {
+  color: #5c6370;
+}
+
+/* Hot token */
+.hot-token {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+}
+
+.hot-token:hover {
+  border-color: #2563eb;
+  background: #f8f9fb;
+}
+
+.hot-token-symbol {
+  color: #1a1d23;
+}
+
+/* Sentiment */
+.sentiment-pill {
+  border-radius: 16px;
+}
+
+.sentiment-bullish {
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+
+.sentiment-bearish {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.sentiment-neutral {
+  background: rgba(107, 114, 128, 0.08);
+  color: #5c6370;
+}
+
+.sentiment-bar {
+  background: #f0f2f5;
+}
+
+/* Feed token icon */
+.feed-token-icon {
+  background: #f0f2f5;
+  border: 1px solid #e2e5ea;
+  color: #5c6370;
+}
+
+/* Category badge */
+.category-badge {
+  background: #f0f2f5;
+  color: #5c6370;
+}
+
+/* Feed skeleton */
+.feed-card-skeleton {
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+}
+
+/* Alert link */
+.feed-alert-link {
+  color: #2563eb;
+}
+
+.feed-alert-link:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+/* Watchlist */
+.wl-widget {
+  border-radius: 10px;
+}
+
+/* Signal badge */
+.hm-signal-badge {
+  background: #d97706;
+  box-shadow: 0 0 6px rgba(217, 119, 6, 0.3);
+}
+
+.hm-hot {
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.2);
+  border-color: #d97706;
+}
+
+/* Scrollbar - subtle */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8f9fb;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Button overrides */
+.link-btn {
+  color: #5c6370;
+}
+
+.link-btn:hover {
+  color: #1a1d23;
+}
+
+.btn-login {
+  color: #2563eb;
+}

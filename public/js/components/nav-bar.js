@@ -18,6 +18,8 @@ class NavBar extends HTMLElement {
       `<button class="settings-menu-btn lang-btn${loc === currentLocale ? ' active' : ''}" data-locale="${loc}">${labels[loc] || loc}</button>`
     ).join('');
 
+    const path = window.location.pathname;
+
     this.innerHTML = `
       <header class="app-header">
         <a href="/" class="logo">Wave<span>edge</span></a>
@@ -30,8 +32,8 @@ class NavBar extends HTMLElement {
           <div class="search-dropdown" id="search-dropdown" role="listbox" hidden></div>
         </div>
         <nav class="header-nav">
-          <a href="/dashboard">${t('nav.dashboard')}</a>
-          <a href="/market">${t('nav.market')}</a>
+          <a href="/dashboard"${path === '/dashboard' || path === '/' ? ' class="active"' : ''}>${t('nav.dashboard')}</a>
+          <a href="/market"${path === '/market' || path.startsWith('/tokens/') ? ' class="active"' : ''}>${t('nav.market')}</a>
           <div class="settings-dropdown">
             <button class="settings-toggle" aria-label="${t('nav.settings')}" title="${t('nav.settings')}">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">

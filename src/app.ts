@@ -125,6 +125,14 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
+// Ad slot config — returns ad HTML/script snippets from env vars
+app.get("/api/config/ads", (_req, res) => {
+  res.json({
+    bannerCode: process.env.AD_BANNER_CODE || "",
+    sidebarCode: process.env.AD_SIDEBAR_CODE || "",
+  });
+});
+
 app.use("/api", apiLimiter);
 app.use("/api/prices", createPricesRouter());
 app.use("/api/news", createNewsRouter());
@@ -407,6 +415,8 @@ app.get("/digest/latest", (req, res) => {
 
     <div class="digest-body">${digestContent}</div>
 
+    <ad-slot variant="banner"></ad-slot>
+
     <div class="digest-subscribe">
       <h3>Get the daily digest in your inbox</h3>
       <p>Free. AI-analyzed crypto intelligence, every morning.</p>
@@ -423,6 +433,7 @@ app.get("/digest/latest", (req, res) => {
   <div id="copy-toast" class="copy-toast">Link copied!</div>
 
   <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/ad-slot.js"></script>
 </body>
 </html>`);
 });
@@ -546,6 +557,8 @@ app.get("/tokens/:symbol", (req, res) => {
 
     <affiliate-cta symbol="${escapeHtml(displaySymbol)}" variant="token"></affiliate-cta>
 
+    <ad-slot variant="sidebar"></ad-slot>
+
     <div class="token-summary-section" id="token-summary">
       <div class="section-header"><h2>AI Weekly Summary</h2></div>
       <div class="loading-state"><span class="spinner"></span>Generating summary...</div>
@@ -580,6 +593,7 @@ app.get("/tokens/:symbol", (req, res) => {
   <script src="/js/components/news-feed.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/affiliate-cta.js"></script>
+  <script src="/js/components/ad-slot.js"></script>
 
   <!-- Lazy-load TradingView charts library -->
   <script>

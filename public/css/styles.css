@@ -3563,3 +3563,78 @@ a:hover { text-decoration: underline; }
   color: var(--accent);
   text-decoration: none;
 }
+
+/* === Ad Slots === */
+.ad-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.ad-slot-banner {
+  max-width: 728px;
+  min-height: 90px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ad-slot-sidebar {
+  max-width: 300px;
+  min-height: 250px;
+}
+
+.ad-slot-house {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.ad-house-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  color: var(--text-secondary);
+  width: 100%;
+}
+
+.ad-house-link:hover {
+  background: var(--bg-tertiary);
+}
+
+.ad-house-text {
+  font-size: 0.9rem;
+}
+
+.ad-house-btn {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .ad-slot-banner {
+    max-width: 320px;
+    min-height: 50px;
+  }
+
+  .ad-slot-sidebar {
+    max-width: 100%;
+    min-height: 250px;
+  }
+
+  .ad-house-link {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}

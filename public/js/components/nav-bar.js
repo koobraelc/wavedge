@@ -7,7 +7,8 @@ class NavBar extends HTMLElement {
           <input type="search" placeholder="Search tokens or news..." aria-label="Search" />
         </div>
         <nav class="header-nav">
-          <a href="/" aria-current="page">Dashboard</a>
+          <a href="/">Dashboard</a>
+          <a href="/settings/alerts">Alerts</a>
         </nav>
       </header>
     `;

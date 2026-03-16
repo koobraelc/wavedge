@@ -40,6 +40,46 @@ app.use("/api/alerts", createAlertsRouter());
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 
+// Alert settings page
+app.get("/settings/alerts", (_req, res) => {
+  const title = "Alert Settings — Wavedge";
+  const description = "Configure your crypto alert preferences. Choose tokens to watch, notification channels, and sensitivity levels.";
+
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content settings-page">
+    <a href="/" class="back-link">&larr; Dashboard</a>
+    <h1 class="settings-title">Alert Settings</h1>
+
+    <alert-settings></alert-settings>
+
+    <div class="settings-section">
+      <div class="section-header"><h2>Alert History</h2></div>
+      <alert-history></alert-history>
+    </div>
+  </main>
+
+  <!-- Web Components -->
+  <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/alert-settings.js"></script>
+  <script src="/js/components/alert-history.js"></script>
+
+  <!-- Settings app -->
+  <script src="/js/settings-app.js"></script>
+</body>
+</html>`);
+});
+
 // Token intelligence pages — dynamic SEO meta tags, client-side rendering
 const priceRepo = new PriceRepository();
 

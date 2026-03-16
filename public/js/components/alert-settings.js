@@ -128,7 +128,7 @@ class AlertSettings extends HTMLElement {
         <div class="settings-card">
           <div class="settings-step-header">
             <span class="step-number">4</span>
-            <h3>Sensitivity</h3>
+            <h3>Sensitivity <info-tip text="靈敏度越高，越容易觸發提醒。新手建議選「中」。"></info-tip></h3>
           </div>
           <p class="settings-hint">Controls how easily alerts are triggered. Higher sensitivity = more alerts.</p>
           <div class="sensitivity-selector">
@@ -155,7 +155,7 @@ class AlertSettings extends HTMLElement {
         <div class="settings-card">
           <div class="settings-step-header">
             <span class="step-number">5</span>
-            <h3>Signal Requirements</h3>
+            <h3>Signal Requirements <info-tip text="需要幾個信號同時出現才觸發提醒。建議新手選2-3個，避免太多雜訊。"></info-tip></h3>
           </div>
           <p class="settings-hint">How many signals must fire simultaneously to trigger an alert.</p>
           <div class="signal-selector">

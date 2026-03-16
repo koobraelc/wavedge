@@ -60,7 +60,7 @@ class WatchlistWidget extends HTMLElement {
             <th class="wl-th-token">Token</th>
             <th class="wl-th-price">Price</th>
             <th class="wl-th-change">24h</th>
-            <th class="wl-th-signals">Signals</th>
+            <th class="wl-th-signals">Signals <info-tip text="過去24小時內與此幣相關的新聞和事件數量。"></info-tip></th>
             <th class="wl-th-chart"></th>
           </tr>
         </thead>

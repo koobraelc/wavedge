@@ -13,8 +13,8 @@ class PriceTable extends HTMLElement {
             <th>Token</th>
             <th>Price (USD)</th>
             <th>24h Change</th>
-            <th>Market Cap</th>
-            <th>Volume (24h)</th>
+            <th>Market Cap <info-tip text="所有流通幣的總價值。越高代表市場越大。"></info-tip></th>
+            <th>Volume (24h) <info-tip text="24小時交易量：過去一天內買賣這個幣的總金額。越高代表市場越活躍。"></info-tip></th>
           </tr>
         </thead>
         <tbody id="price-tbody">

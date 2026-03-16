@@ -226,6 +226,7 @@ class ImpactFeed extends HTMLElement {
         <span class="impact-badge ${cls}">
           ${symbol ? this._esc(symbol) + ' ' : ''}${sign}${avg24h.toFixed(2)}% avg after ${cat ? this._esc(cat) : 'similar'} news
           <span class="impact-sample">(n=${samples})</span>
+          <info-tip text="根據歷史數據，類似新聞發布後24小時內的平均價格變化。(n=樣本數)"></info-tip>
         </span>
       </div>
     `;

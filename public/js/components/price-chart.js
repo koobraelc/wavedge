@@ -10,7 +10,7 @@ class PriceChart extends HTMLElement {
       <div class="chart-section">
         <div class="chart-header">
           <div class="chart-token-info">
-            <h2 id="chart-title">Select a token to view chart</h2>
+            <h2 id="chart-title">Select a token to view chart <info-tip text="K線圖：每根蠟燭代表一段時間內的開盤、最高、最低、收盤價。綠色=漲，紅色=跌。"></info-tip></h2>
             <span class="price" id="chart-price"></span>
             <span class="change" id="chart-change"></span>
           </div>

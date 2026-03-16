@@ -562,6 +562,7 @@ app.get("/settings/alerts", (_req, res) => {
 
   <!-- Web Components -->
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/alert-settings.js"></script>
   <script src="/js/components/alert-history.js"></script>
@@ -1067,6 +1068,7 @@ app.get("/tokens/:symbol", (req, res) => {
 
   <!-- Web Components -->
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/news-feed.js"></script>
   <script src="/js/components/bottom-nav.js"></script>

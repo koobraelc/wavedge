@@ -12,7 +12,7 @@ class SignalHeatmap extends HTMLElement {
       <div class="signal-heatmap">
         <div class="signal-heatmap-header">
           <span class="pulse-dot"></span>
-          <span class="signal-heatmap-title">Signal Heatmap</span>
+          <span class="signal-heatmap-title">Signal Heatmap <info-tip text="信號=新聞數量+社群討論+大戶動態的綜合指標。信號越多，代表這個幣越值得關注。"></info-tip></span>
         </div>
         <div class="signal-heatmap-grid" id="heatmap-grid"></div>
       </div>

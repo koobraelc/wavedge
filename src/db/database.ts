@@ -243,6 +243,29 @@ export function initializeSchema(database: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_api_usage_user_date ON api_usage(user_id, request_date);
+
+    -- Affiliate click tracking
+    CREATE TABLE IF NOT EXISTS affiliate_clicks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_symbol TEXT NOT NULL,
+      exchange TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_token ON affiliate_clicks(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_exchange ON affiliate_clicks(exchange);
+
+    -- Scheduler error logging
+    CREATE TABLE IF NOT EXISTS scheduler_errors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_name TEXT NOT NULL,
+      error_message TEXT NOT NULL,
+      error_stack TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_scheduler_errors_task ON scheduler_errors(task_name);
+    CREATE INDEX IF NOT EXISTS idx_scheduler_errors_created ON scheduler_errors(created_at);
   `);
 }
 

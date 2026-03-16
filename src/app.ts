@@ -9,6 +9,7 @@ import { createAlertsRouter } from "./api/alerts.js";
 import { createDigestRouter } from "./api/digest.js";
 import { createAuthRouter } from "./api/auth.js";
 import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
+import { createAffiliateRouter } from "./api/affiliate.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
@@ -134,6 +135,7 @@ app.use("/api/digest", createDigestRouter());
 app.use("/api/auth", createAuthRouter());
 app.use("/api/billing", createBillingRouter());
 app.use("/api/webhooks", createWebhookRouter());
+app.use("/api/affiliate", createAffiliateRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
@@ -541,6 +543,8 @@ app.get("/tokens/:symbol", (req, res) => {
       </div>
     </div>
 
+    <affiliate-cta symbol="${escapeHtml(displaySymbol)}" variant="token"></affiliate-cta>
+
     <div class="token-summary-section" id="token-summary">
       <div class="section-header"><h2>AI Weekly Summary</h2></div>
       <div class="loading-state"><span class="spinner"></span>Generating summary...</div>
@@ -574,6 +578,7 @@ app.get("/tokens/:symbol", (req, res) => {
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/news-feed.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
+  <script src="/js/components/affiliate-cta.js"></script>
 
   <!-- Lazy-load TradingView charts library -->
   <script>

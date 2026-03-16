@@ -11,11 +11,22 @@ import { PriceRepository } from "../db/price-repository.js";
 import { DigestGenerator } from "../services/digest-generator.js";
 import { DigestDelivery } from "../services/digest-delivery.js";
 import { DigestRepository } from "../db/digest-repository.js";
+import { SchedulerRepository } from "../db/scheduler-repository.js";
 
 let priceTask: ScheduledTask | null = null;
 let newsTask: ScheduledTask | null = null;
 let alertTask: ScheduledTask | null = null;
 let digestTask: ScheduledTask | null = null;
+
+const schedulerRepo = new SchedulerRepository();
+
+/** Last successful run timestamps for each scheduler */
+export const schedulerStatus: Record<string, { lastRun: string | null; lastError: string | null }> = {
+  price: { lastRun: null, lastError: null },
+  news: { lastRun: null, lastError: null },
+  alert: { lastRun: null, lastError: null },
+  digest: { lastRun: null, lastError: null },
+};
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
   if (priceTask) {
@@ -25,14 +36,23 @@ export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void 
 
   const pipeline = new PricePipeline();
 
+  const run = async () => {
+    try {
+      await pipeline.ingest();
+      schedulerStatus.price.lastRun = new Date().toISOString();
+    } catch (err) {
+      console.error("Price fetch failed:", err);
+      schedulerStatus.price.lastError = new Date().toISOString();
+      schedulerRepo.logError("price", err);
+    }
+  };
+
   console.log(`Starting price scheduler with cron: ${intervalCron}`);
 
   // Run immediately on start
-  pipeline.ingest().catch((err) => console.error("Initial price fetch failed:", err));
+  run();
 
-  priceTask = cron.schedule(intervalCron, async () => {
-    await pipeline.ingest();
-  });
+  priceTask = cron.schedule(intervalCron, run);
 }
 
 export function startNewsScheduler(intervalCron: string = "*/15 * * * *"): void {
@@ -48,24 +68,32 @@ export function startNewsScheduler(intervalCron: string = "*/15 * * * *"): void 
     new NewsClassifier()
   );
 
-  const runPipeline = async () => {
-    const result = await pipeline.ingest();
-    // Classify any new unclassified articles after ingestion
-    if (result.success && result.articlesIngested > 0) {
-      try {
-        await calculator.classifyNewArticles(result.articlesIngested + 10);
-      } catch (err) {
-        console.error("Post-ingestion classification failed:", err);
+  const run = async () => {
+    try {
+      const result = await pipeline.ingest();
+      schedulerStatus.news.lastRun = new Date().toISOString();
+      // Classify any new unclassified articles after ingestion
+      if (result.success && result.articlesIngested > 0) {
+        try {
+          await calculator.classifyNewArticles(result.articlesIngested + 10);
+        } catch (err) {
+          console.error("Post-ingestion classification failed:", err);
+          schedulerRepo.logError("news_classification", err);
+        }
       }
+    } catch (err) {
+      console.error("News fetch failed:", err);
+      schedulerStatus.news.lastError = new Date().toISOString();
+      schedulerRepo.logError("news", err);
     }
   };
 
   console.log(`Starting news scheduler with cron: ${intervalCron}`);
 
   // Run immediately on start
-  runPipeline().catch((err) => console.error("Initial news fetch failed:", err));
+  run();
 
-  newsTask = cron.schedule(intervalCron, runPipeline);
+  newsTask = cron.schedule(intervalCron, run);
 }
 
 export function stopPriceScheduler(): void {
@@ -95,14 +123,20 @@ export function startAlertScheduler(intervalCron: string = "*/2 * * * *"): void 
   const runCycle = async () => {
     try {
       const result = await engine.runCycle();
+      schedulerStatus.alert.lastRun = new Date().toISOString();
       if (result.alertsTriggered > 0) {
         console.log(`Alert cycle: ${result.alertsTriggered} alerts triggered`);
       }
       if (result.errors.length > 0) {
         console.error("Alert cycle errors:", result.errors);
+        for (const e of result.errors) {
+          schedulerRepo.logError("alert", e);
+        }
       }
     } catch (err) {
       console.error("Alert cycle failed:", err);
+      schedulerStatus.alert.lastError = new Date().toISOString();
+      schedulerRepo.logError("alert", err);
     }
   };
 
@@ -132,11 +166,14 @@ export function startDigestScheduler(intervalCron: string = "0 8 * * *"): void {
   const runDigest = async () => {
     try {
       const results = await delivery.runDaily();
+      schedulerStatus.digest.lastRun = new Date().toISOString();
       const totalEmails = results.reduce((sum, r) => sum + r.emailsSent, 0);
       const totalTelegrams = results.reduce((sum, r) => sum + r.telegramsSent, 0);
       console.log(`Digest sent: ${totalEmails} emails, ${totalTelegrams} telegrams`);
     } catch (err) {
       console.error("Digest pipeline failed:", err);
+      schedulerStatus.digest.lastError = new Date().toISOString();
+      schedulerRepo.logError("digest", err);
     }
   };
 

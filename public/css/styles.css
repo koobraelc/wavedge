@@ -3042,3 +3042,102 @@ a:hover { text-decoration: underline; }
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Missed Alerts Banner */
+.missed-alerts-banner {
+  background: linear-gradient(135deg, rgba(248, 81, 73, 0.08), rgba(210, 153, 34, 0.08));
+  border: 1px solid rgba(248, 81, 73, 0.25);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.missed-alerts-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.missed-alerts-icon {
+  color: var(--red, #f85149);
+  flex-shrink: 0;
+}
+
+.missed-alerts-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.missed-alerts-text strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  display: block;
+}
+
+.missed-alerts-sub {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.missed-alerts-cta {
+  flex-shrink: 0;
+  padding: 0.4rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.missed-alerts-cta:hover {
+  background: var(--accent-hover);
+}
+
+.missed-alerts-list {
+  border-top: 1px solid rgba(248, 81, 73, 0.15);
+  padding: 0.5rem 1rem;
+}
+
+.missed-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.missed-alert-token {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 3.5rem;
+}
+
+.missed-alert-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.missed-alert-time {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .missed-alerts-content {
+    flex-wrap: wrap;
+  }
+  .missed-alerts-cta {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.25rem;
+  }
+}

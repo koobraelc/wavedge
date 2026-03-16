@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import { AlertRepository, type AlertPreferencesRow } from "../db/alert-repository.js";
 import { PriceRepository } from "../db/price-repository.js";
+import { UserRepository } from "../db/user-repository.js";
 import {
   detectNewsFrequency,
   detectPriceMovement,
@@ -8,21 +9,25 @@ import {
   type Signal,
 } from "./signal-detectors.js";
 import { channelRegistry, type AlertPayload } from "./notification-channels.js";
+import { canReceiveAlert, TIER_LIMITS } from "./tier-limiter.js";
 
 export interface AlertEngineResult {
   checkedTokens: number;
   alertsTriggered: number;
+  alertsMissed: number;
   errors: string[];
 }
 
 export class AlertEngine {
   private alertRepo: AlertRepository;
   private priceRepo: PriceRepository;
+  private userRepo: UserRepository;
   private db: Database.Database | undefined;
 
   constructor(alertRepo: AlertRepository, priceRepo: PriceRepository, db?: Database.Database) {
     this.alertRepo = alertRepo;
     this.priceRepo = priceRepo;
+    this.userRepo = new UserRepository(db);
     this.db = db;
   }
 
@@ -30,15 +35,16 @@ export class AlertEngine {
    * Run one check cycle: for each enabled user preference, scan tokens and fire alerts.
    */
   async runCycle(): Promise<AlertEngineResult> {
-    const result: AlertEngineResult = { checkedTokens: 0, alertsTriggered: 0, errors: [] };
+    const result: AlertEngineResult = { checkedTokens: 0, alertsTriggered: 0, alertsMissed: 0, errors: [] };
 
     const allPrefs = this.alertRepo.getAllEnabledPreferences();
     if (allPrefs.length === 0) return result;
 
     for (const pref of allPrefs) {
       try {
-        const triggered = await this.checkForUser(pref);
+        const { triggered, missed } = await this.checkForUser(pref);
         result.alertsTriggered += triggered;
+        result.alertsMissed += missed;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         result.errors.push(`User ${pref.user_id}: ${msg}`);
@@ -48,7 +54,7 @@ export class AlertEngine {
     return result;
   }
 
-  private async checkForUser(pref: AlertPreferencesRow): Promise<number> {
+  private async checkForUser(pref: AlertPreferencesRow): Promise<{ triggered: number; missed: number }> {
     let tokenSymbols: string[] = JSON.parse(pref.token_symbols);
 
     // If no tokens configured, use top tokens by market cap
@@ -57,7 +63,12 @@ export class AlertEngine {
       tokenSymbols = latestPrices.slice(0, 20).map((p) => p.symbol.toUpperCase());
     }
 
+    // Determine user's tier
+    const user = this.userRepo.findById(pref.user_id);
+    const tier = user?.tier ?? "free";
+
     let triggered = 0;
+    let missed = 0;
 
     for (const symbol of tokenSymbols) {
       // Skip if we already alerted recently for this token (30 min dedup)
@@ -67,12 +78,19 @@ export class AlertEngine {
 
       const signals = this.detectSignals(symbol, pref);
       if (signals.length >= pref.min_signals) {
-        await this.fireAlert(pref, symbol, signals);
-        triggered++;
+        // Check tier limit before firing
+        if (canReceiveAlert(pref.user_id, tier)) {
+          await this.fireAlert(pref, symbol, signals);
+          triggered++;
+        } else {
+          // Record as missed alert for free tier users
+          this.recordMissedAlert(pref, symbol, signals);
+          missed++;
+        }
       }
     }
 
-    return triggered;
+    return { triggered, missed };
   }
 
   private detectSignals(tokenSymbol: string, pref: AlertPreferencesRow): Signal[] {
@@ -145,6 +163,26 @@ export class AlertEngine {
 
     console.log(
       `Alert fired: ${tokenSymbol} (${signals.length} signals) for user ${pref.user_id}, delivered to: ${deliveredChannels.join(", ") || "none"}`
+    );
+  }
+
+  private recordMissedAlert(
+    pref: AlertPreferencesRow,
+    tokenSymbol: string,
+    signals: Signal[]
+  ): void {
+    const summary = this.buildSummary(tokenSymbol, signals);
+    this.alertRepo.insertMissedAlert({
+      userId: pref.user_id,
+      tokenSymbol,
+      signals: signals.map((s) => ({ type: s.type, value: s.value, detail: s.detail })),
+      signalCount: signals.length,
+      summary,
+      deliveredChannels: [],
+    });
+
+    console.log(
+      `Alert missed (free tier limit): ${tokenSymbol} (${signals.length} signals) for user ${pref.user_id}`
     );
   }
 

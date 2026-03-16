@@ -182,6 +182,43 @@ export class AlertRepository {
       .all(userId, `-${hours} hours`) as TriggeredAlertRow[];
   }
 
+  insertMissedAlert(insert: TriggeredAlertInsert): number {
+    const result = this.db
+      .prepare(
+        `INSERT INTO missed_alerts (user_id, token_symbol, signals, signal_count, summary)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        insert.userId,
+        insert.tokenSymbol,
+        JSON.stringify(insert.signals),
+        insert.signalCount,
+        insert.summary
+      );
+    return result.lastInsertRowid as number;
+  }
+
+  getDailyMissedAlertCount(userId: string): number {
+    const today = new Date().toISOString().split("T")[0];
+    const result = this.db
+      .prepare(
+        "SELECT COUNT(*) as count FROM missed_alerts WHERE user_id = ? AND date(created_at) = ?"
+      )
+      .get(userId, today) as { count: number };
+    return result.count;
+  }
+
+  getRecentMissedAlerts(userId: string, hours: number = 24): TriggeredAlertRow[] {
+    return this.db
+      .prepare(
+        `SELECT id, user_id, token_symbol, signals, signal_count, summary, '[]' as delivered_channels, created_at
+         FROM missed_alerts
+         WHERE user_id = ? AND created_at >= datetime('now', ?)
+         ORDER BY created_at DESC`
+      )
+      .all(userId, `-${hours} hours`) as TriggeredAlertRow[];
+  }
+
   /** Check if we already alerted for this token recently (dedup window) */
   hasRecentAlert(userId: string, tokenSymbol: string, minutes: number = 30): boolean {
     const row = this.db

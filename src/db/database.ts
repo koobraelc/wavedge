@@ -149,6 +149,21 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_triggered_alerts_token ON triggered_alerts(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_triggered_alerts_created ON triggered_alerts(created_at);
 
+    -- Missed alerts (for free tier users who exceeded daily limit)
+    CREATE TABLE IF NOT EXISTS missed_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      token_symbol TEXT NOT NULL,
+      signals TEXT NOT NULL,
+      signal_count INTEGER NOT NULL,
+      summary TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_missed_alerts_user ON missed_alerts(user_id);
+    CREATE INDEX IF NOT EXISTS idx_missed_alerts_created ON missed_alerts(created_at);
+    CREATE INDEX IF NOT EXISTS idx_missed_alerts_user_date ON missed_alerts(user_id, created_at);
+
     -- Daily digest tables
     CREATE TABLE IF NOT EXISTS digest_subscribers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

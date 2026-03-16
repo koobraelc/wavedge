@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { AlertRepository } from "../db/alert-repository.js";
+import { UserRepository } from "../db/user-repository.js";
+import { TIER_LIMITS } from "../services/tier-limiter.js";
 
 const VALID_SENSITIVITIES = ["low", "medium", "high"];
 const VALID_CHANNELS = ["telegram", "email", "web"];
@@ -102,6 +104,43 @@ export function createAlertsRouter(repo?: AlertRepository): Router {
         createdAt: a.created_at,
       })),
       count: alerts.length,
+    });
+  });
+
+  // GET /api/alerts/missed — get missed alerts summary for free tier users
+  router.get("/missed", (req: Request, res: Response) => {
+    const userId = (req.query.userId as string) || "default";
+
+    const userRepo = new UserRepository();
+    const user = userRepo.findById(userId);
+    const tier = user?.tier ?? "free";
+
+    if (tier === "pro") {
+      res.json({
+        data: { missedToday: 0, alerts: [], tier: "pro", dailyLimit: null },
+      });
+      return;
+    }
+
+    const missedToday = alertRepo.getDailyMissedAlertCount(userId);
+    const missedAlerts = alertRepo.getRecentMissedAlerts(userId, 24);
+    const deliveredToday = userRepo.getDailyAlertCount(userId);
+
+    res.json({
+      data: {
+        missedToday,
+        deliveredToday,
+        dailyLimit: TIER_LIMITS.free.alertsPerDay,
+        tier,
+        alerts: missedAlerts.map((a) => ({
+          id: a.id,
+          tokenSymbol: a.token_symbol,
+          signals: JSON.parse(a.signals),
+          signalCount: a.signal_count,
+          summary: a.summary,
+          createdAt: a.created_at,
+        })),
+      },
     });
   });
 

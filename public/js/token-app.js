@@ -355,6 +355,98 @@
     container.innerHTML = items || '<p class="loading-state">No recent events.</p>';
   }
 
+  // --- FAQ Section ---
+  async function loadFaq() {
+    const container = document.getElementById('token-faq');
+    try {
+      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/faq`);
+      if (!res.ok) throw new Error('Failed');
+      const { data } = await res.json();
+
+      if (!data.faqs || data.faqs.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const faqItems = data.faqs.map((faq, i) => `
+        <div class="faq-item${i === 0 ? ' faq-item-open' : ''}">
+          <button class="faq-question" aria-expanded="${i === 0 ? 'true' : 'false'}">
+            <span>${escHtml(faq.question)}</span>
+            <span class="faq-toggle">${i === 0 ? '−' : '+'}</span>
+          </button>
+          <div class="faq-answer"${i === 0 ? '' : ' style="display:none"'}>
+            <p>${escHtml(faq.answer)}</p>
+          </div>
+        </div>`).join('');
+
+      container.innerHTML = `
+        <div class="section-header"><h2>Frequently Asked Questions</h2></div>
+        <div class="faq-list">${faqItems}</div>`;
+
+      // Accordion behavior
+      container.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = btn.parentElement;
+          const answer = item.querySelector('.faq-answer');
+          const toggle = btn.querySelector('.faq-toggle');
+          const isOpen = item.classList.contains('faq-item-open');
+          item.classList.toggle('faq-item-open');
+          answer.style.display = isOpen ? 'none' : 'block';
+          toggle.textContent = isOpen ? '+' : '−';
+          btn.setAttribute('aria-expanded', !isOpen);
+        });
+      });
+
+      // Inject FAQ structured data for SEO
+      const faqLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': data.faqs.map(faq => ({
+          '@type': 'Question',
+          'name': faq.question,
+          'acceptedAnswer': { '@type': 'Answer', 'text': faq.answer }
+        }))
+      };
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(faqLd);
+      document.head.appendChild(script);
+    } catch {
+      container.innerHTML = '';
+    }
+  }
+
+  // --- Related Tokens ---
+  async function loadRelated() {
+    const container = document.getElementById('token-related');
+    try {
+      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/related`);
+      if (!res.ok) throw new Error('Failed');
+      const { data } = await res.json();
+
+      if (!data.related || data.related.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const chips = data.related.map(t => `
+        <a href="/tokens/${encodeURIComponent(t.symbol)}" class="related-token-chip">
+          <span class="related-token-symbol">${escHtml(t.symbol)}</span>
+          <span class="related-token-name">${escHtml(t.name)}</span>
+          <span class="related-token-count">${t.coMentions} shared articles</span>
+        </a>`).join('');
+
+      container.innerHTML = `
+        <div class="section-header">
+          <h2>Related Tokens</h2>
+          <span class="section-meta">Co-mentioned in recent news</span>
+        </div>
+        <div class="related-tokens-grid">${chips}</div>`;
+    } catch {
+      container.innerHTML = '';
+    }
+  }
+
   // --- Utilities ---
   function fmtPrice(n) {
     if (n == null) return '—';
@@ -393,6 +485,8 @@
     loadChart(),
     loadSummary(),
     loadImpact(),
+    loadFaq(),
+    loadRelated(),
     loadNews(),
   ]);
 })();

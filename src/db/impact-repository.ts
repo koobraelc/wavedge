@@ -284,6 +284,91 @@ export class ImpactRepository {
     }[];
   }
 
+  /** Get FAQ data for a token: top impact categories with data-backed stats */
+  getFaqData(
+    tokenSymbol: string
+  ): {
+    category: string;
+    avgChange24h: number;
+    sampleSize: number;
+    direction: "bullish" | "bearish" | "neutral";
+    recentExample: string | null;
+  }[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+           ie.category,
+           COUNT(*) as sample_size,
+           AVG(ie.change_24h) as avg_change_24h,
+           (SELECT a2.title FROM impact_events ie2
+            JOIN articles a2 ON a2.id = ie2.article_id
+            WHERE ie2.token_symbol = ie.token_symbol AND ie2.category = ie.category
+            ORDER BY ie2.computed_at DESC LIMIT 1) as recent_example
+         FROM impact_events ie
+         WHERE ie.token_symbol = ? AND ie.change_24h IS NOT NULL
+         GROUP BY ie.category
+         HAVING COUNT(*) >= 2
+         ORDER BY ABS(AVG(ie.change_24h)) DESC`
+      )
+      .all(tokenSymbol.toLowerCase()) as {
+      category: string;
+      sample_size: number;
+      avg_change_24h: number;
+      recent_example: string | null;
+    }[];
+
+    return rows.map((r) => ({
+      category: r.category,
+      avgChange24h: r.avg_change_24h,
+      sampleSize: r.sample_size,
+      direction:
+        r.avg_change_24h > 0.1
+          ? "bullish"
+          : r.avg_change_24h < -0.1
+            ? "bearish"
+            : "neutral",
+      recentExample: r.recent_example,
+    }));
+  }
+
+  /** Get tokens frequently co-mentioned in articles with the given token */
+  getRelatedTokens(
+    tokenSymbol: string,
+    limit: number = 8
+  ): { symbol: string; coMentions: number }[] {
+    // Find articles mentioning this token, extract other token tags
+    const rows = this.db
+      .prepare(
+        `SELECT token_tags FROM articles
+         WHERE token_tags LIKE ?
+         AND published_at >= datetime('now', '-30 days')
+         ORDER BY published_at DESC
+         LIMIT 200`
+      )
+      .all(`%"${tokenSymbol.toUpperCase()}"%`) as { token_tags: string }[];
+
+    const counts = new Map<string, number>();
+    const upperSymbol = tokenSymbol.toUpperCase();
+    for (const row of rows) {
+      try {
+        const tags: string[] = JSON.parse(row.token_tags);
+        for (const tag of tags) {
+          if (tag !== upperSymbol) {
+            counts.set(tag, (counts.get(tag) || 0) + 1);
+          }
+        }
+      } catch {
+        // skip malformed
+      }
+    }
+
+    return Array.from(counts.entries())
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([symbol, coMentions]) => ({ symbol, coMentions }));
+  }
+
   getUncategorizedArticleIds(limit: number = 100): number[] {
     const rows = this.db
       .prepare(

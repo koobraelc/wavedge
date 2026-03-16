@@ -346,6 +346,16 @@ app.get("/tokens/:symbol", (req, res) => {
       <div class="loading-state"><span class="spinner"></span>Loading impact data...</div>
     </div>
 
+    <div class="token-faq-section" id="token-faq">
+      <div class="section-header"><h2>Frequently Asked Questions</h2></div>
+      <div class="loading-state"><span class="spinner"></span>Loading FAQ...</div>
+    </div>
+
+    <div class="token-related-section" id="token-related">
+      <div class="section-header"><h2>Related Tokens</h2></div>
+      <div class="loading-state"><span class="spinner"></span>Loading related tokens...</div>
+    </div>
+
     <div class="token-news-section">
       <div class="section-header"><h2>Related News</h2></div>
       <div class="news-timeline" id="news-timeline"></div>

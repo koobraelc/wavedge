@@ -86,5 +86,81 @@ export function createTokensRouter(
     }
   });
 
+  /** GET /api/tokens/:symbol/faq — data-backed FAQ for SEO */
+  router.get("/:symbol/faq", (req, res) => {
+    const symbol = req.params.symbol.toLowerCase();
+    const token = prices.getTokenBySymbol(symbol);
+    if (!token) {
+      res.status(404).json({ error: "Token not found" });
+      return;
+    }
+
+    const displaySymbol = token.symbol.toUpperCase();
+    const displayName = token.name;
+    const faqData = impact.getFaqData(token.symbol);
+
+    const faqs: { question: string; answer: string }[] = [];
+
+    // Always include the main FAQ question
+    if (faqData.length > 0) {
+      const categoryList = faqData
+        .slice(0, 5)
+        .map((f) => {
+          const dir = f.direction === "bullish" ? "+" : f.direction === "bearish" ? "" : "~";
+          return `${f.category} (${dir}${f.avgChange24h.toFixed(2)}% avg 24h impact, ${f.sampleSize} events)`;
+        })
+        .join(", ");
+      faqs.push({
+        question: `What affects ${displayName} (${displaySymbol}) price?`,
+        answer: `Based on ${faqData.reduce((s, f) => s + f.sampleSize, 0)} analyzed events, the top factors affecting ${displaySymbol} price are: ${categoryList}. These impacts are measured as average 24-hour price changes following news in each category.`,
+      });
+
+      // Per-category questions for categories with enough data
+      for (const cat of faqData.slice(0, 4)) {
+        const sign = cat.avgChange24h > 0 ? "+" : "";
+        faqs.push({
+          question: `How does ${cat.category} news affect ${displaySymbol}?`,
+          answer: `${cat.category.charAt(0).toUpperCase() + cat.category.slice(1)} news has a ${cat.direction} effect on ${displaySymbol}, with an average 24-hour price change of ${sign}${cat.avgChange24h.toFixed(2)}% based on ${cat.sampleSize} events.${cat.recentExample ? ` Recent example: "${cat.recentExample}".` : ""}`,
+        });
+      }
+    } else {
+      faqs.push({
+        question: `What affects ${displayName} (${displaySymbol}) price?`,
+        answer: `We are actively tracking news events and their impact on ${displaySymbol} price. Check back soon for data-backed insights on what drives ${displaySymbol} price movements.`,
+      });
+    }
+
+    faqs.push({
+      question: `Where can I get ${displaySymbol} news today?`,
+      answer: `Wavedge aggregates ${displaySymbol} news from 14+ sources in real-time, classifies each article by category, and measures its historical price impact. Visit the ${displayName} page for the latest AI-analyzed news and alerts.`,
+    });
+
+    res.json({ data: { symbol: displaySymbol, name: displayName, faqs } });
+  });
+
+  /** GET /api/tokens/:symbol/related — tokens co-mentioned in articles */
+  router.get("/:symbol/related", (req, res) => {
+    const symbol = req.params.symbol.toLowerCase();
+    const token = prices.getTokenBySymbol(symbol);
+    if (!token) {
+      res.status(404).json({ error: "Token not found" });
+      return;
+    }
+
+    const related = impact.getRelatedTokens(token.symbol);
+
+    // Enrich with token names
+    const enriched = related.map((r) => {
+      const relToken = prices.getTokenBySymbol(r.symbol.toLowerCase());
+      return {
+        symbol: r.symbol,
+        name: relToken?.name || r.symbol,
+        coMentions: r.coMentions,
+      };
+    });
+
+    res.json({ data: { symbol: token.symbol.toUpperCase(), related: enriched } });
+  });
+
   return router;
 }

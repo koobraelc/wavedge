@@ -29,16 +29,16 @@ class ImpactFeed extends HTMLElement {
   }
 
   /**
-   * Returns a Map<symbol, {count, articles}> of symbols with recent articles in last 6 hours.
+   * Returns a Map<symbol, {count, articles}> of symbols with recent articles in last 24 hours.
    * Symbols with 2+ articles are considered "hot".
    */
   getNewsSignals() {
-    const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const recentByToken = {};
 
     for (const a of this._articles) {
       const pubTime = new Date(a.published_at).getTime();
-      if (pubTime < sixHoursAgo) continue;
+      if (pubTime < cutoff) continue;
       const tags = this._parseTags(a.token_tags);
       for (const tag of tags) {
         const key = tag.toUpperCase();

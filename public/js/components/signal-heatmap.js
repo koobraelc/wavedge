@@ -76,7 +76,7 @@ class SignalHeatmap extends HTMLElement {
       }
 
       return `
-        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (6h)' : ''}">
+        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}

@@ -91,7 +91,11 @@ class ImpactFeed extends HTMLElement {
     if (!list) return;
 
     if (!this._articles.length) {
-      list.innerHTML = '<div class="loading-state">No articles yet</div>';
+      const t = window.i18n ? window.i18n.t : (k) => k;
+      list.innerHTML = `<div class="loading-state empty-state-action">
+        <p>${t('impact.emptyTitle')}</p>
+        <a href="/settings/alerts" class="empty-state-link">${t('impact.emptyAction')}</a>
+      </div>`;
       return;
     }
 
@@ -106,7 +110,11 @@ class ImpactFeed extends HTMLElement {
     }
 
     if (!filtered.length) {
-      list.innerHTML = '<div class="loading-state">No articles for this token</div>';
+      const t = window.i18n ? window.i18n.t : (k) => k;
+      list.innerHTML = `<div class="loading-state empty-state-action">
+        <p>${t('impact.noArticlesToken')}</p>
+        <a href="/settings/alerts" class="empty-state-link">${t('impact.emptyAddTokens')}</a>
+      </div>`;
       return;
     }
 

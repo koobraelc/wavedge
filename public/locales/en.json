@@ -14,6 +14,13 @@
   "nav.switchTheme": "Theme",
   "nav.language": "Language",
 
+  "welcome.title": "Welcome to Wavedge!",
+  "welcome.description": "Your crypto intelligence dashboard is ready. Here's how to get started:",
+  "welcome.setupWatchlist": "Set up Watchlist",
+  "welcome.learnImpact": "Learn about Impact Scores",
+  "welcome.setupAlerts": "Configure Alerts",
+  "welcome.dismiss": "Dismiss",
+
   "heatmap.title": "Signal Heatmap",
   "heatmap.tip": "Signals = a composite indicator of news volume + social discussion + whale activity. More signals means this token is worth watching.",
   "heatmap.legendUp": "Up",
@@ -74,6 +81,9 @@
   "impact.avgAfter": "avg after {category} news",
   "impact.sampleCount": "(n={samples})",
   "impact.impactTip": "Based on historical data, the average price change within 24 hours after similar news was published. (n=sample size)",
+  "impact.emptyTitle": "No articles yet",
+  "impact.emptyAction": "Add tokens to your watchlist to see related news",
+  "impact.emptyAddTokens": "Add more tokens to your watchlist",
   "impact.setAlert": "Set Alert",
 
   "alerts.status": "Alert Status",
@@ -164,6 +174,8 @@
   "watchlist.signals": "Signals",
   "watchlist.signalsTip": "The number of news articles and events related to this token in the past 24 hours.",
   "watchlist.noTokens": "No tokens available",
+  "watchlist.emptyTitle": "No tokens on your watchlist yet",
+  "watchlist.emptyAction": "Add tokens in Settings",
   "watchlist.loadFailed": "Unable to load watchlist",
 
   "affiliate.tradeNow": "Trade now",

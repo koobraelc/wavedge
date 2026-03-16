@@ -49,7 +49,11 @@ class WatchlistWidget extends HTMLElement {
     if (!body) return;
 
     if (!this._tokens.length) {
-      body.innerHTML = '<div class="wl-empty">No tokens available</div>';
+      const t = window.i18n ? window.i18n.t : (k) => k;
+      body.innerHTML = `<div class="wl-empty">
+        <p>${t('watchlist.emptyTitle')}</p>
+        <a href="/settings/alerts" class="wl-empty-link">${t('watchlist.emptyAction')}</a>
+      </div>`;
       return;
     }
 

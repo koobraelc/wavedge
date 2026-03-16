@@ -199,6 +199,43 @@
       font-weight: 600;
     }
 
+    /* Guide items */
+    .guide-items {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .guide-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-tertiary);
+    }
+
+    .guide-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .guide-item strong {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .guide-item p {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      line-height: 1.4;
+      margin: 0;
+    }
+
     /* Buttons */
     .onboarding-actions {
       display: flex;
@@ -310,6 +347,7 @@
         <div class="progress-dot active" data-step="0"></div>
         <div class="progress-dot" data-step="1"></div>
         <div class="progress-dot" data-step="2"></div>
+        <div class="progress-dot" data-step="3"></div>
       </div>
 
       <!-- Step 1: Pick Tokens -->
@@ -317,6 +355,7 @@
         <h2 class="step-title">Pick your tokens</h2>
         <p class="step-subtitle">Choose up to 5 tokens to watch. You can change these later.</p>
         <p class="selection-count" id="selection-count">0 of 5 selected</p>
+        <p class="step-hint" style="color:var(--text-muted);font-size:0.8rem;margin-bottom:12px">Recommended: BTC, ETH, SOL</p>
         <div class="token-grid" id="token-grid">
           <!-- Populated by JS -->
         </div>
@@ -329,14 +368,14 @@
       <!-- Step 2: Telegram -->
       <div class="onboarding-step" id="step-telegram">
         <h2 class="step-title">Get alerts on Telegram</h2>
-        <p class="step-subtitle">Optional — receive real-time alerts in Telegram.</p>
+        <p class="step-subtitle">Optional — receive real-time alerts in Telegram. You can skip this and set it up later.</p>
         <div class="telegram-section">
           <div class="telegram-icon">&#x2708;</div>
           <p>Enter your Telegram chat ID to receive alerts there.</p>
           <div class="telegram-input-row">
             <input type="text" id="telegram-id" placeholder="e.g. 123456789" autocomplete="off" />
           </div>
-          <p class="telegram-hint">Message <strong>@userinfobot</strong> on Telegram to get your chat ID.</p>
+          <p class="telegram-hint">Message <a href="https://t.me/userinfobot" target="_blank" rel="noopener"><strong>@userinfobot</strong></a> on Telegram to get your chat ID.</p>
         </div>
         <div class="onboarding-actions">
           <button class="btn-skip" id="skip-telegram">Skip</button>
@@ -344,7 +383,40 @@
         </div>
       </div>
 
-      <!-- Step 3: Done -->
+      <!-- Step 3: What's Next -->
+      <div class="onboarding-step" id="step-guide">
+        <h2 class="step-title">Your Dashboard at a Glance</h2>
+        <p class="step-subtitle">Here's what you'll find on your dashboard:</p>
+        <div class="guide-items">
+          <div class="guide-item">
+            <span class="guide-icon">&#9632;</span>
+            <div>
+              <strong>Signal Heatmap</strong>
+              <p>See all tokens at a glance — color shows price movement, badges show news, social, and whale activity.</p>
+            </div>
+          </div>
+          <div class="guide-item">
+            <span class="guide-icon">&#9889;</span>
+            <div>
+              <strong>Impact Feed</strong>
+              <p>News articles ranked by how much they historically affect token prices. The impact score tells you how significant each story is.</p>
+            </div>
+          </div>
+          <div class="guide-item">
+            <span class="guide-icon">&#9733;</span>
+            <div>
+              <strong>Watchlist</strong>
+              <p>Your selected tokens with live prices, 24h change, and signal counts.</p>
+            </div>
+          </div>
+        </div>
+        <p class="step-hint" style="color:var(--text-muted);font-size:0.82rem;margin-top:16px">You can always change your preferences in Settings.</p>
+        <div class="onboarding-actions">
+          <button class="btn-next" id="next-guide">Go to Dashboard &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Done -->
       <div class="onboarding-step" id="step-done">
         <div class="done-section">
           <div class="done-icon">&#x2705;</div>
@@ -374,6 +446,7 @@
       var steps = [
         document.getElementById('step-tokens'),
         document.getElementById('step-telegram'),
+        document.getElementById('step-guide'),
         document.getElementById('step-done')
       ];
       var dots = document.querySelectorAll('.progress-dot');
@@ -468,6 +541,10 @@
         finishOnboarding();
       });
 
+      document.getElementById('next-guide').addEventListener('click', function() {
+        window.location.href = '/dashboard';
+      });
+
       document.getElementById('go-dashboard').addEventListener('click', function() {
         window.location.href = '/dashboard';
       });
@@ -477,8 +554,11 @@
         var channels = ['web'];
         if (telegramChatId) channels.push('telegram');
 
-        // Show done step immediately
+        // Show guide step, then done
         showStep(2);
+
+        // Also prepare done step for if user navigates there
+
 
         // Render summary
         var doneTags = document.getElementById('done-tokens');

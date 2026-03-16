@@ -11,6 +11,17 @@
   "nav.language": "語言",
   "nav.searchPlaceholder": "搜尋代幣或新聞...",
   "nav.searchLabel": "搜尋",
+  "welcome.title": "歡迎來到 Wavedge！",
+  "welcome.description": "你的加密貨幣情報總覽已就緒。以下是快速上手指南：",
+  "welcome.setupWatchlist": "設定觀察清單",
+  "welcome.learnImpact": "了解影響評分",
+  "welcome.setupAlerts": "設定提醒",
+  "welcome.dismiss": "關閉",
+  "watchlist.emptyTitle": "觀察清單還沒有代幣",
+  "watchlist.emptyAction": "去設定加入代幣",
+  "impact.emptyTitle": "暫無相關新聞",
+  "impact.emptyAction": "添加代幣到觀察清單以查看相關新聞",
+  "impact.emptyAddTokens": "添加更多代幣到觀察清單",
   "nav.login": "登入",
   "nav.logout": "登出"
 }

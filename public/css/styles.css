@@ -5087,6 +5087,132 @@ watchlist-widget {
   }
 }
 
+/* === Empty State Actions === */
+.empty-state-action {
+  text-align: center;
+}
+
+.empty-state-action p {
+  margin-bottom: 8px;
+}
+
+.empty-state-link,
+.wl-empty-link {
+  display: inline-block;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.empty-state-link:hover,
+.wl-empty-link:hover {
+  text-decoration: underline;
+}
+
+.wl-empty {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.wl-empty p {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+/* === Welcome Banner === */
+.welcome-banner {
+  position: relative;
+  background: linear-gradient(135deg, rgba(31, 111, 235, 0.08), rgba(31, 111, 235, 0.02));
+  border: 1px solid rgba(31, 111, 235, 0.2);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.welcome-dismiss {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.welcome-dismiss:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.welcome-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.welcome-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.welcome-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.welcome-cta:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.welcome-cta-icon {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .welcome-banner {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .welcome-actions {
+    flex-direction: column;
+  }
+
+  .welcome-cta {
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
 /* === Info Tip === */
 info-tip {
   display: inline-flex;

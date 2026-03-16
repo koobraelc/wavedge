@@ -11,6 +11,17 @@
   "nav.language": "言語",
   "nav.searchPlaceholder": "トークンやニュースを検索...",
   "nav.searchLabel": "検索",
+  "welcome.title": "Wavedgeへようこそ！",
+  "welcome.description": "暗号通貨インテリジェンスダッシュボードの準備ができました。始め方：",
+  "welcome.setupWatchlist": "ウォッチリストを設定",
+  "welcome.learnImpact": "影響スコアについて",
+  "welcome.setupAlerts": "アラートを設定",
+  "welcome.dismiss": "閉じる",
+  "watchlist.emptyTitle": "ウォッチリストにトークンがありません",
+  "watchlist.emptyAction": "設定でトークンを追加",
+  "impact.emptyTitle": "まだ関連ニュースがありません",
+  "impact.emptyAction": "ウォッチリストにトークンを追加して関連ニュースを表示",
+  "impact.emptyAddTokens": "ウォッチリストにトークンを追加",
   "nav.login": "ログイン",
   "nav.logout": "ログアウト"
 }

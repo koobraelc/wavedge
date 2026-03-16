@@ -417,9 +417,15 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   // --- Data loaders ---
+  _fetchWithTimeout(url, timeoutMs = 5000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(id));
+  }
+
   async _loadSentiment(symbol) {
     try {
-      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/sentiment`);
+      const res = await this._fetchWithTimeout(`/api/tokens/${encodeURIComponent(symbol)}/sentiment`);
       if (!res.ok) return null;
       const json = await res.json();
       return json.data || null;
@@ -428,7 +434,7 @@ class SignalDetailPanel extends HTMLElement {
 
   async _loadImpact(symbol) {
     try {
-      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/impact`);
+      const res = await this._fetchWithTimeout(`/api/tokens/${encodeURIComponent(symbol)}/impact`);
       if (!res.ok) return null;
       const json = await res.json();
       return json.data || null;

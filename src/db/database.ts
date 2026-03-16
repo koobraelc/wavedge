@@ -61,6 +61,7 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
     CREATE INDEX IF NOT EXISTS idx_articles_relevance ON articles(relevance_score);
     CREATE INDEX IF NOT EXISTS idx_articles_guid ON articles(guid);
+    CREATE INDEX IF NOT EXISTS idx_articles_published_tags ON articles(published_at, token_tags);
 
     CREATE TABLE IF NOT EXISTS news_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,6 +305,7 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_social_mentions_token ON social_mentions(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_social_mentions_fetched ON social_mentions(fetched_at);
     CREATE INDEX IF NOT EXISTS idx_social_mentions_token_fetched ON social_mentions(token_symbol, fetched_at);
+    CREATE INDEX IF NOT EXISTS idx_social_mentions_source_token_fetched ON social_mentions(source, token_symbol, fetched_at);
 
     -- Whale transaction tracking
     CREATE TABLE IF NOT EXISTS whale_transactions (

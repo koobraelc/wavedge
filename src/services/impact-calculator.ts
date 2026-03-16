@@ -93,6 +93,9 @@ export class ImpactCalculator {
     // Get token tags from article
     const tokenTags: string[] = JSON.parse(article.token_tags);
 
+    // Fetch all impact events for this article once (not per-token)
+    const allImpactEvents = this.impactRepo.getImpactByArticleId(articleId);
+
     // Build token impacts with historical data
     const tokenImpacts: TokenImpact[] = tokenTags.map((symbol) => {
       const historical = this.impactRepo.getHistoricalImpact(
@@ -102,8 +105,7 @@ export class ImpactCalculator {
       const confidenceScore = computeConfidence(historical.sampleSize);
 
       // Check for actual impact event data
-      const impactEvents = this.impactRepo.getImpactByArticleId(articleId);
-      const event = impactEvents.find((e) => e.token_symbol === symbol);
+      const event = allImpactEvents.find((e) => e.token_symbol === symbol);
 
       const actual: ActualImpact | null = event
         ? {
@@ -137,6 +139,23 @@ export class ImpactCalculator {
       categoryConfidence: classification.confidence,
       tokenImpacts,
     };
+  }
+
+  /**
+   * Get impact data for multiple articles in a single batch.
+   * Much more efficient than calling getArticleImpact() N times.
+   */
+  async getArticleImpactBatch(articleIds: number[]): Promise<ArticleImpact[]> {
+    if (articleIds.length === 0) return [];
+
+    const results: ArticleImpact[] = [];
+
+    for (const articleId of articleIds) {
+      const impact = await this.getArticleImpact(articleId);
+      if (impact) results.push(impact);
+    }
+
+    return results;
   }
 
   /**

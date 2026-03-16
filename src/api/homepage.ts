@@ -95,10 +95,10 @@ export function createHomepageRouter(db?: Database.Database): Router {
             `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
                     (SELECT COUNT(*) FROM articles a
                      WHERE a.published_at >= datetime('now', '-24 hours')
-                       AND a.token_tags LIKE '%"' || t.symbol || '"%') AS news_count_24h
+                       AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
              FROM tokens t
-             JOIN prices p ON p.token_id = t.id
-               AND p.fetched_at = (SELECT MAX(p2.fetched_at) FROM prices p2 WHERE p2.token_id = t.id)
+             JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
+             JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
              WHERE t.symbol IN (${placeholders})
              ORDER BY p.market_cap DESC`
           )
@@ -109,10 +109,10 @@ export function createHomepageRouter(db?: Database.Database): Router {
             `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
                     (SELECT COUNT(*) FROM articles a
                      WHERE a.published_at >= datetime('now', '-24 hours')
-                       AND a.token_tags LIKE '%"' || t.symbol || '"%') AS news_count_24h
+                       AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
              FROM tokens t
-             JOIN prices p ON p.token_id = t.id
-               AND p.fetched_at = (SELECT MAX(p2.fetched_at) FROM prices p2 WHERE p2.token_id = t.id)
+             JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
+             JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
              ORDER BY p.market_cap DESC
              LIMIT 8`
           )

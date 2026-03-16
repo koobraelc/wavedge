@@ -36,6 +36,31 @@ export function createNewsRouter(
     res.json({ data: sources });
   });
 
+  /** POST /api/news/batch-impact — get impact scores for multiple articles at once */
+  router.post("/batch-impact", async (req, res) => {
+    const ids: number[] = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: "ids must be a non-empty array of article IDs" });
+      return;
+    }
+
+    // Cap at 50 to prevent abuse
+    const capped = ids.slice(0, 50).filter((id) => typeof id === "number" && !isNaN(id));
+
+    try {
+      const impacts = await calculator.getArticleImpactBatch(capped);
+      // Return as a map keyed by articleId for easy lookup
+      const map: Record<number, any> = {};
+      for (const impact of impacts) {
+        map[impact.articleId] = impact;
+      }
+      res.json({ data: map });
+    } catch (error) {
+      console.error("Batch impact calculation error:", error);
+      res.status(500).json({ error: "Failed to calculate batch impacts" });
+    }
+  });
+
   /** GET /api/news/:id/impact — get impact score for a specific article */
   router.get("/:id/impact", async (req, res) => {
     const id = parseInt(req.params.id);

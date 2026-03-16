@@ -112,37 +112,38 @@
   }
 
   async function loadImpacts(articles) {
-    const enriched = [...newsData];
-    let changed = false;
-
-    // Load impacts in parallel batches of 5
     const batch = articles.slice(0, 20);
-    const results = await Promise.allSettled(
-      batch.map(async (article) => {
-        const res = await fetch(`/api/news/${article.id}/impact`);
-        if (res.ok) {
-          const { data } = await res.json();
-          return { id: article.id, impact: data };
-        }
-        return null;
-      })
-    );
+    if (batch.length === 0) return;
 
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
-        const { id, impact } = result.value;
-        const idx = enriched.findIndex(a => a.id === id);
+    try {
+      const res = await fetch('/api/news/batch-impact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: batch.map(a => a.id) })
+      });
+      if (!res.ok) return;
+
+      const { data: impactMap } = await res.json();
+      if (!impactMap) return;
+
+      const enriched = [...newsData];
+      let changed = false;
+
+      for (const [idStr, impact] of Object.entries(impactMap)) {
+        const idx = enriched.findIndex(a => a.id === Number(idStr));
         if (idx !== -1) {
           enriched[idx] = { ...enriched[idx], _impact: impact };
           changed = true;
         }
       }
-    }
 
-    if (changed) {
-      newsData = enriched;
-      const pricesMap = buildPricesMap(pricesData);
-      impactFeed.update(newsData, pricesMap);
+      if (changed) {
+        newsData = enriched;
+        const pricesMap = buildPricesMap(pricesData);
+        impactFeed.update(newsData, pricesMap);
+      }
+    } catch (err) {
+      console.error('Failed to load batch impacts:', err);
     }
   }
 

@@ -11,6 +11,7 @@ import { createAuthRouter } from "./api/auth.js";
 import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { createAffiliateRouter } from "./api/affiliate.js";
 import { createApiKeysRouter } from "./api/api-keys.js";
+import { createHomepageRouter } from "./api/homepage.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
@@ -146,6 +147,7 @@ app.use("/api/billing", createBillingRouter());
 app.use("/api/webhooks", createWebhookRouter());
 app.use("/api/affiliate", createAffiliateRouter());
 app.use("/api/api-keys", createApiKeysRouter());
+app.use("/api/homepage", createHomepageRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");

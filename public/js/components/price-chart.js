@@ -52,6 +52,7 @@ class PriceChart extends HTMLElement {
       container.innerHTML = '';
       this._renderChart(container, data);
     } catch (err) {
+      console.error('[price-chart] Failed to load chart data:', err);
       container.innerHTML = `<div class="placeholder">Failed to load chart data</div>`;
     }
   }
@@ -89,28 +90,22 @@ class PriceChart extends HTMLElement {
     const candles = this._toCandles(data, 3600);
 
     if (candles.length > 1) {
-      const candleSeries = chart.addSeries(
-        LightweightCharts.CandlestickSeries,
-        {
-          upColor: '#3fb950',
-          downColor: '#f85149',
-          borderDownColor: '#f85149',
-          borderUpColor: '#3fb950',
-          wickDownColor: '#f85149',
-          wickUpColor: '#3fb950',
-        }
-      );
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: '#3fb950',
+        downColor: '#f85149',
+        borderDownColor: '#f85149',
+        borderUpColor: '#3fb950',
+        wickDownColor: '#f85149',
+        wickUpColor: '#3fb950',
+      });
       candleSeries.setData(candles);
       this._series = candleSeries;
     } else {
       // Not enough data for candles, show line
-      const lineSeries = chart.addSeries(
-        LightweightCharts.LineSeries,
-        {
-          color: '#1f6feb',
-          lineWidth: 2,
-        }
-      );
+      const lineSeries = chart.addLineSeries({
+        color: '#1f6feb',
+        lineWidth: 2,
+      });
       const lineData = data
         .map(d => ({
           time: Math.floor(new Date(d.fetched_at).getTime() / 1000),

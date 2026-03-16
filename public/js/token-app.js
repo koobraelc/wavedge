@@ -29,6 +29,7 @@
       allPriceData = data;
       renderChart(container, data);
     } catch (err) {
+      console.error('[token-app] Failed to load chart data:', err);
       container.innerHTML = '<div class="placeholder">Failed to load chart data</div>';
     }
   }
@@ -59,7 +60,7 @@
     const candles = toCandles(data, 3600);
 
     if (candles.length > 1) {
-      series = chart.addSeries(LightweightCharts.CandlestickSeries, {
+      series = chart.addCandlestickSeries({
         upColor: '#3fb950',
         downColor: '#f85149',
         borderDownColor: '#f85149',
@@ -69,7 +70,7 @@
       });
       series.setData(candles);
     } else {
-      series = chart.addSeries(LightweightCharts.LineSeries, {
+      series = chart.addLineSeries({
         color: '#1f6feb',
         lineWidth: 2,
       });

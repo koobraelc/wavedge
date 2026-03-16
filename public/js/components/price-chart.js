@@ -3,6 +3,8 @@ class PriceChart extends HTMLElement {
     super();
     this._chart = null;
     this._series = null;
+    this._chartType = localStorage.getItem('wavedge-chart-type') || 'line';
+    this._data = null;
   }
 
   connectedCallback() {
@@ -14,12 +16,32 @@ class PriceChart extends HTMLElement {
             <span class="price" id="chart-price"></span>
             <span class="change" id="chart-change"></span>
           </div>
+          <div class="chart-type-toggle" id="chart-type-toggle" hidden>
+            <button type="button" class="chart-type-btn ${this._chartType === 'line' ? 'active' : ''}" data-type="line">折線 Line</button>
+            <button type="button" class="chart-type-btn ${this._chartType === 'candle' ? 'active' : ''}" data-type="candle">K線 Candlestick</button>
+          </div>
         </div>
         <div class="chart-container" id="chart-target">
           <div class="placeholder">Click a token row to load its price chart</div>
         </div>
       </div>
     `;
+
+    this.querySelector('#chart-type-toggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-type-btn');
+      if (!btn) return;
+      const type = btn.dataset.type;
+      if (type === this._chartType) return;
+      this._chartType = type;
+      localStorage.setItem('wavedge-chart-type', type);
+      this.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (this._data) {
+        const container = this.querySelector('#chart-target');
+        container.innerHTML = '';
+        this._renderChart(container, this._data);
+      }
+    });
   }
 
   async loadToken(symbol, currentPrice) {
@@ -50,6 +72,8 @@ class PriceChart extends HTMLElement {
       }
 
       container.innerHTML = '';
+      this._data = data;
+      this.querySelector('#chart-type-toggle').hidden = false;
       this._renderChart(container, data);
     } catch (err) {
       console.error('[price-chart] Failed to load chart data:', err);
@@ -89,7 +113,7 @@ class PriceChart extends HTMLElement {
     // Group data into OHLC candles (1h)
     const candles = this._toCandles(data, 3600);
 
-    if (candles.length > 1) {
+    if (this._chartType === 'candle' && candles.length > 1) {
       const candleSeries = chart.addCandlestickSeries({
         upColor: '#3fb950',
         downColor: '#f85149',
@@ -101,9 +125,11 @@ class PriceChart extends HTMLElement {
       candleSeries.setData(candles);
       this._series = candleSeries;
     } else {
-      // Not enough data for candles, show line
-      const lineSeries = chart.addLineSeries({
-        color: '#1f6feb',
+      // Line / area chart (default)
+      const lineSeries = chart.addAreaSeries({
+        topColor: 'rgba(31, 111, 235, 0.4)',
+        bottomColor: 'rgba(31, 111, 235, 0.0)',
+        lineColor: '#1f6feb',
         lineWidth: 2,
       });
       const lineData = data

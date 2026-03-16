@@ -285,6 +285,34 @@ a:hover { text-decoration: underline; }
   font-size: 0.9rem;
 }
 
+/* Chart type toggle */
+.chart-type-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.chart-type-btn {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chart-type-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.chart-type-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* === News Cards === */
 .news-grid {
   display: flex;
@@ -706,6 +734,43 @@ a:hover { text-decoration: underline; }
 
 .signal-heatmap-title {
   color: var(--text-secondary);
+}
+
+.signal-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.hm-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.hm-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.hm-legend-up { background: #3fb950; }
+.hm-legend-down { background: #f85149; }
+
+.hm-legend-sep {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.hm-legend-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
 }
 
 .signal-heatmap-grid {
@@ -1713,6 +1778,20 @@ watchlist-widget {
 .signal-option span {
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+/* Recommended badge */
+.recommended-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(31, 111, 235, 0.15);
+  color: var(--accent);
+  border-radius: 10px;
+  margin-bottom: 2px;
 }
 
 /* Settings actions */

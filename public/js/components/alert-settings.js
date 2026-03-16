@@ -138,6 +138,7 @@ class AlertSettings extends HTMLElement {
               <span class="sensitivity-detail">8% price, 200% volume, 50% social, $10M whale</span>
             </button>
             <button type="button" class="sensitivity-btn ${sensitivity === 'medium' ? 'active' : ''}" data-level="medium">
+              <span class="recommended-badge">推薦 Recommended</span>
               <strong>Medium</strong>
               <span>Balanced alerts</span>
               <span class="sensitivity-detail">5% price, 100% volume, 30% social, $1M whale</span>
@@ -162,6 +163,7 @@ class AlertSettings extends HTMLElement {
             ${[1, 2, 3, 4, 5].map(n => `
               <label class="signal-option ${minSignals === n ? 'active' : ''}">
                 <input type="radio" name="minSignals" value="${n}" ${minSignals === n ? 'checked' : ''}>
+                ${n === 2 ? '<span class="recommended-badge">推薦 Recommended</span>' : ''}
                 <strong>${n} signal${n > 1 ? 's' : ''}</strong>
                 <span>${n === 1 ? 'Any single signal' : n === 2 ? 'Two+ signals together' : n === 3 ? 'Three+ signals' : n === 4 ? 'Four+ signals' : 'All five signals'}</span>
               </label>

@@ -14,6 +14,17 @@ class SignalHeatmap extends HTMLElement {
           <span class="pulse-dot"></span>
           <span class="signal-heatmap-title">Signal Heatmap <info-tip text="信號=新聞數量+社群討論+大戶動態的綜合指標。信號越多，代表這個幣越值得關注。"></info-tip></span>
         </div>
+        <div class="signal-heatmap-legend">
+          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-up"></span>漲 Up</span>
+          <span class="hm-legend-sep">←→</span>
+          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-down"></span>跌 Down</span>
+          <span class="hm-legend-divider"></span>
+          <span class="hm-legend-item">大格=市值高</span>
+          <span class="hm-legend-divider"></span>
+          <span class="hm-legend-item">📰 新聞</span>
+          <span class="hm-legend-item">💬 社群</span>
+          <span class="hm-legend-item">🐋 大戶</span>
+        </div>
         <div class="signal-heatmap-grid" id="heatmap-grid"></div>
       </div>
     `;

@@ -595,6 +595,11 @@ app.get("/market", (req, res) => {
 </html>`);
 });
 
+// Redirect /alerts to /settings/alerts
+app.get("/alerts", (_req, res) => {
+  res.redirect(301, "/settings/alerts");
+});
+
 // Alert settings page
 app.get("/settings/alerts", (req, res) => {
   const lang = toLangTag(req.locale || "en");

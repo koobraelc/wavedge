@@ -8,22 +8,24 @@ class SignalHeatmap extends HTMLElement {
   }
 
   connectedCallback() {
+    const t = window.i18n ? window.i18n.t : (k) => k;
+
     this.innerHTML = `
       <div class="signal-heatmap">
         <div class="signal-heatmap-header">
           <span class="pulse-dot"></span>
-          <span class="signal-heatmap-title">Signal Heatmap <info-tip text="信號=新聞數量+社群討論+大戶動態的綜合指標。信號越多，代表這個幣越值得關注。"></info-tip></span>
+          <span class="signal-heatmap-title">${t('heatmap.title')} <info-tip text="${t('heatmap.tip')}"></info-tip></span>
         </div>
         <div class="signal-heatmap-legend">
-          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-up"></span>漲 Up</span>
+          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-up"></span>${t('heatmap.legendUp')}</span>
           <span class="hm-legend-sep">←→</span>
-          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-down"></span>跌 Down</span>
+          <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-down"></span>${t('heatmap.legendDown')}</span>
           <span class="hm-legend-divider"></span>
-          <span class="hm-legend-item">大格=市值高</span>
+          <span class="hm-legend-item">${t('heatmap.legendSize')}</span>
           <span class="hm-legend-divider"></span>
-          <span class="hm-legend-item">📰 新聞</span>
-          <span class="hm-legend-item">💬 社群</span>
-          <span class="hm-legend-item">🐋 大戶</span>
+          <span class="hm-legend-item">📰 ${t('heatmap.legendNews')}</span>
+          <span class="hm-legend-item">💬 ${t('heatmap.legendSocial')}</span>
+          <span class="hm-legend-item">🐋 ${t('heatmap.legendWhale')}</span>
         </div>
         <div class="signal-heatmap-grid" id="heatmap-grid"></div>
       </div>
@@ -51,9 +53,10 @@ class SignalHeatmap extends HTMLElement {
   _render() {
     const grid = this.querySelector('#heatmap-grid');
     if (!grid) return;
+    const t = window.i18n ? window.i18n.t : (k) => k;
 
     if (!this._tokens.length) {
-      grid.innerHTML = '<div class="signal-heatmap-empty">No token data</div>';
+      grid.innerHTML = `<div class="signal-heatmap-empty">${t('heatmap.noData')}</div>`;
       return;
     }
 
@@ -103,7 +106,7 @@ class SignalHeatmap extends HTMLElement {
         const usdFormatted = whale.totalUsd >= 1e9 ? '$' + (whale.totalUsd / 1e9).toFixed(1) + 'B'
           : whale.totalUsd >= 1e6 ? '$' + (whale.totalUsd / 1e6).toFixed(1) + 'M'
           : '$' + (whale.totalUsd / 1e3).toFixed(0) + 'K';
-        whaleBadgeHtml = `<span class="hm-whale-badge" title="Whale: ${whale.transactionCount} large txs, ${usdFormatted}">\u{1F433}</span>`;
+        whaleBadgeHtml = `<span class="hm-whale-badge" title="${t('heatmap.whale', { count: whale.transactionCount })}, ${usdFormatted}">\u{1F433}</span>`;
       }
 
       // Price display for larger cells
@@ -113,8 +116,15 @@ class SignalHeatmap extends HTMLElement {
         priceHtml = `<span class="hm-price">${this._formatPrice(tokenPrice)}</span>`;
       }
 
+      // Build tooltip
+      const tooltipParts = [`${this._esc(symbol)} ${sign}${pct.toFixed(1)}%`];
+      if (signal) tooltipParts.push(t('heatmap.articles24h', { count: signal.count }));
+      if (social) tooltipParts.push(t('heatmap.sentiment', { label: social.sentimentLabel || 'neutral' }));
+      if (whale && whale.transactionCount > 0) tooltipParts.push(t('heatmap.whale', { count: whale.transactionCount }));
+      const tooltip = tooltipParts.join(' | ');
+
       return `
-        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}${social ? ' | Sentiment: ' + (social.sentimentLabel || 'neutral') : ''}${whale && whale.transactionCount > 0 ? ' | Whale: ' + whale.transactionCount + ' txs' : ''}">
+        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${tooltip}">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}
@@ -124,10 +134,6 @@ class SignalHeatmap extends HTMLElement {
     }).join('');
   }
 
-  /**
-   * Determine dominant sentiment from articles' impact scores.
-   * Returns positive number for bullish, negative for bearish, 0 for neutral.
-   */
   _dominantSentiment(articles) {
     let total = 0;
     let count = 0;
@@ -153,13 +159,11 @@ class SignalHeatmap extends HTMLElement {
     const intensity = Math.abs(clamped) / 10;
 
     if (clamped >= 0) {
-      // Interpolate from dark neutral green to bright green
       const r = Math.round(13 + (20 - 13) * (1 - intensity));
       const g = Math.round(94 * 0.6 + 94 * 0.4 * intensity);
       const b = Math.round(46 * 0.6 + 46 * 0.4 * (1 - intensity));
       return `rgb(${r}, ${g}, ${b})`;
     } else {
-      // Interpolate from dark neutral red to bright red
       const r = Math.round(125 * 0.6 + 125 * 0.4 * intensity);
       const g = Math.round(26 + (26 - 26) * (1 - intensity));
       const b = Math.round(26 + (26 - 26) * (1 - intensity));

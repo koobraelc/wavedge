@@ -9,8 +9,9 @@ class NewsFeed extends HTMLElement {
 
   update(articles) {
     const grid = this.querySelector('#news-grid');
+    const t = window.i18n ? window.i18n.t : (k) => k;
     if (!articles.length) {
-      grid.innerHTML = '<div class="loading-state">No articles yet</div>';
+      grid.innerHTML = `<div class="loading-state">${t('feed.noArticles')}</div>`;
       return;
     }
 
@@ -47,16 +48,18 @@ class NewsFeed extends HTMLElement {
     const avg24h = first.historical.avgChange24h;
     if (avg24h == null) return '';
 
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const cls = avg24h > 0.1 ? 'positive' : avg24h < -0.1 ? 'negative' : 'neutral';
     const sign = avg24h > 0 ? '+' : '';
     const cat = impact.category || '';
     const samples = first.historical.sampleSize;
-    const tooltipText = `${cat ? cat + ' news: ' : ''}Historical avg 24h price change based on ${samples} similar event${samples > 1 ? 's' : ''}`;
+    const tooltipText = (cat ? t('feed.newsTooltip', { category: cat }) : '') +
+      t('feed.historicalTooltip', { samples, plural: samples > 1 ? 's' : '' });
 
     return `
       <span>·</span>
       <span class="impact-badge ${cls}">
-        ${cat ? '<span class="category-badge">' + this._esc(cat) + '</span> ' : ''}${sign}${avg24h.toFixed(2)}% avg
+        ${cat ? '<span class="category-badge">' + this._esc(cat) + '</span> ' : ''}${sign}${avg24h.toFixed(2)}% ${t('feed.avg')}
         <span class="impact-tooltip">${this._esc(tooltipText)}</span>
       </span>
     `;
@@ -85,14 +88,15 @@ class NewsFeed extends HTMLElement {
   }
 
   _relativeTime(iso) {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return t('time.justNow');
+    if (mins < 60) return t('time.mAgo', { n: mins });
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
+    if (hrs < 24) return t('time.hAgo', { n: hrs });
     const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    return t('time.dAgo', { n: days });
   }
 
   _fullTime(iso) {

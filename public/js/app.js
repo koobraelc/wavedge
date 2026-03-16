@@ -11,6 +11,19 @@
   const impactFeed = document.querySelector('impact-feed');
   const signalHeatmap = document.querySelector('signal-heatmap');
   const watchlistWidget = document.querySelector('watchlist-widget');
+  const signalDetailPanel = document.querySelector('signal-detail-panel');
+
+  // Open signal detail panel when a heatmap cell is clicked
+  document.addEventListener('signal-detail-open', (e) => {
+    if (!signalDetailPanel) return;
+    const d = e.detail;
+    signalDetailPanel.open(d.symbol, {
+      price: d.price,
+      newsSignal: d.newsSignal,
+      socialSentiment: d.socialSentiment,
+      whaleActivity: d.whaleActivity,
+    });
+  });
 
   // --- Search ---
   document.addEventListener('nav-search', async (e) => {

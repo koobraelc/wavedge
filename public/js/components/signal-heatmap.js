@@ -124,14 +124,39 @@ class SignalHeatmap extends HTMLElement {
       const tooltip = tooltipParts.join(' | ');
 
       return `
-        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${tooltip}">
+        <div class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${tooltip}"
+             data-symbol="${this._esc(symbol)}" data-href="/tokens/${encodeURIComponent(symbol)}" role="button" tabindex="0">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}
           <span class="hm-badges">${badgeHtml}${sentimentBadgeHtml}${whaleBadgeHtml}</span>
-        </a>
+        </div>
       `;
     }).join('');
+
+    // Bind click handlers: left-click opens detail panel, cmd/ctrl+click navigates
+    grid.querySelectorAll('.hm-cell[data-symbol]').forEach(cell => {
+      cell.addEventListener('click', (e) => {
+        const sym = cell.dataset.symbol;
+        if (e.metaKey || e.ctrlKey) {
+          window.open(cell.dataset.href, '_blank');
+          return;
+        }
+        this.dispatchEvent(new CustomEvent('signal-detail-open', {
+          bubbles: true,
+          detail: {
+            symbol: sym,
+            price: this._tokens.find(t => t.symbol.toUpperCase() === sym),
+            newsSignal: this._newsSignals.get(sym) || this._newsSignals.get(sym.toLowerCase()),
+            socialSentiment: this._socialSentiment.get(sym) || this._socialSentiment.get(sym.toLowerCase()),
+            whaleActivity: this._whaleActivity.get(sym) || this._whaleActivity.get(sym.toLowerCase()),
+          }
+        }));
+      });
+      cell.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') cell.click();
+      });
+    });
   }
 
   _dominantSentiment(articles) {

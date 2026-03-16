@@ -1,48 +1,6 @@
 import { RSSClient, type FeedItem } from "./rss-client.js";
 import { NewsRepository, type ArticleInsert } from "../db/news-repository.js";
-
-// Token tagging configuration
-// "safe" keywords: always match case-insensitively with word boundaries
-// "uppercaseOnly" keywords: short symbols that collide with English words —
-//   only match when written in UPPERCASE (case-sensitive) to avoid false positives
-interface TokenConfig {
-  safe: string[];        // case-insensitive word-boundary match
-  uppercaseOnly?: string[]; // case-sensitive uppercase-only match
-}
-
-const TOKEN_CONFIG: Record<string, TokenConfig> = {
-  btc: { safe: ["bitcoin", "btc"] },
-  eth: { safe: ["ethereum", "eth", "ether"] },
-  sol: { safe: ["solana"], uppercaseOnly: ["SOL"] },
-  xrp: { safe: ["ripple", "xrp"] },
-  ada: { safe: ["cardano"], uppercaseOnly: ["ADA"] },
-  doge: { safe: ["dogecoin", "doge"] },
-  dot: { safe: ["polkadot"], uppercaseOnly: ["DOT"] },
-  avax: { safe: ["avalanche", "avax"] },
-  matic: { safe: ["polygon", "matic"] },
-  link: { safe: ["chainlink"], uppercaseOnly: ["LINK"] },
-  uni: { safe: ["uniswap"], uppercaseOnly: ["UNI"] },
-  atom: { safe: ["cosmos"], uppercaseOnly: ["ATOM"] },
-  near: { safe: ["near protocol"], uppercaseOnly: ["NEAR"] },
-  apt: { safe: ["aptos", "apt"] },
-  arb: { safe: ["arbitrum", "arb"] },
-  op: { safe: ["optimism"], uppercaseOnly: ["OP"] },
-  bnb: { safe: ["binance", "bnb"] },
-  trx: { safe: ["tron", "trx"] },
-  ltc: { safe: ["litecoin", "ltc"] },
-  shib: { safe: ["shiba", "shib"] },
-  sui: { safe: ["sui"] },
-  pepe: { safe: ["pepe"] },
-  ton: { safe: ["toncoin"], uppercaseOnly: ["TON"] },
-  wld: { safe: ["worldcoin", "wld"] },
-  sei: { safe: ["sei"] },
-  inj: { safe: ["injective", "inj"] },
-  stx: { safe: ["stacks", "stx"] },
-  ondo: { safe: ["ondo"] },
-  render: { safe: ["render", "rndr"] },
-  fet: { safe: ["fetch.ai", "fet"] },
-  wlfi: { safe: ["wlfi", "world liberty financial"] },
-};
+import { type TokenConfig, getTokenConfig } from "./token-config.js";
 
 // High-signal keywords for relevance scoring
 const HIGH_RELEVANCE_KEYWORDS = [
@@ -70,8 +28,9 @@ export interface NewsPipelineResult {
 export function extractTokenTags(text: string): string[] {
   const lower = text.toLowerCase();
   const tags = new Set<string>();
+  const tokenConfig = getTokenConfig();
 
-  for (const [symbol, config] of Object.entries(TOKEN_CONFIG)) {
+  for (const [symbol, config] of Object.entries(tokenConfig)) {
     let matched = false;
 
     // Safe keywords: case-insensitive word-boundary match

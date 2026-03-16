@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NewsPipeline, extractTokenTags, computeRelevanceScore, normalizeArticle } from "./news-pipeline.js";
 import { NewsRepository } from "../db/news-repository.js";
 import { RSSClient, type FeedItem } from "./rss-client.js";
 import { createTestDatabase } from "../db/database.js";
+import { setTokenConfig, resetTokenConfig } from "./token-config.js";
 
 function makeFeedItem(overrides?: Partial<FeedItem>): FeedItem {
   return {
@@ -18,6 +19,47 @@ function makeFeedItem(overrides?: Partial<FeedItem>): FeedItem {
 }
 
 describe("extractTokenTags", () => {
+  beforeEach(() => {
+    // Set config equivalent to the old hardcoded TOKEN_CONFIG for these tests
+    setTokenConfig({
+      btc: { safe: ["bitcoin", "btc"] },
+      eth: { safe: ["ethereum", "eth", "ether"] },
+      sol: { safe: ["solana"], uppercaseOnly: ["SOL"] },
+      xrp: { safe: ["ripple", "xrp"] },
+      ada: { safe: ["cardano"], uppercaseOnly: ["ADA"] },
+      doge: { safe: ["dogecoin", "doge"] },
+      dot: { safe: ["polkadot"], uppercaseOnly: ["DOT"] },
+      avax: { safe: ["avalanche", "avax"] },
+      matic: { safe: ["polygon", "matic"] },
+      link: { safe: ["chainlink"], uppercaseOnly: ["LINK"] },
+      uni: { safe: ["uniswap"], uppercaseOnly: ["UNI"] },
+      atom: { safe: ["cosmos"], uppercaseOnly: ["ATOM"] },
+      near: { safe: ["near protocol"], uppercaseOnly: ["NEAR"] },
+      apt: { safe: ["aptos", "apt"] },
+      arb: { safe: ["arbitrum", "arb"] },
+      op: { safe: ["optimism"], uppercaseOnly: ["OP"] },
+      bnb: { safe: ["binance", "bnb"] },
+      trx: { safe: ["tron", "trx"] },
+      ltc: { safe: ["litecoin", "ltc"] },
+      shib: { safe: ["shiba", "shib"] },
+      sui: { safe: ["sui"] },
+      pepe: { safe: ["pepe"] },
+      ton: { safe: ["toncoin"], uppercaseOnly: ["TON"] },
+      wld: { safe: ["worldcoin", "wld"] },
+      sei: { safe: ["sei"] },
+      inj: { safe: ["injective", "inj"] },
+      stx: { safe: ["stacks", "stx"] },
+      ondo: { safe: ["ondo"] },
+      render: { safe: ["render", "rndr"] },
+      fet: { safe: ["fetch.ai", "fet"] },
+      wlfi: { safe: ["wlfi", "world liberty financial"] },
+    });
+  });
+
+  afterEach(() => {
+    resetTokenConfig();
+  });
+
   it("should extract bitcoin mentions", () => {
     const tags = extractTokenTags("Bitcoin price surges to new high");
     expect(tags).toContain("btc");
@@ -133,6 +175,16 @@ describe("computeRelevanceScore", () => {
 });
 
 describe("normalizeArticle", () => {
+  beforeEach(() => {
+    setTokenConfig({
+      eth: { safe: ["ethereum", "eth", "ether"] },
+    });
+  });
+
+  afterEach(() => {
+    resetTokenConfig();
+  });
+
   it("should convert FeedItem to ArticleInsert with tags and score", () => {
     const item = makeFeedItem({
       title: "Ethereum DeFi protocol launches new feature",
@@ -156,6 +208,14 @@ describe("NewsPipeline", () => {
     const db = createTestDatabase();
     repo = new NewsRepository(db);
     mockClient = new RSSClient([]);
+    setTokenConfig({
+      btc: { safe: ["bitcoin", "btc"] },
+      eth: { safe: ["ethereum", "eth", "ether"] },
+    });
+  });
+
+  afterEach(() => {
+    resetTokenConfig();
   });
 
   it("should ingest articles into the database", async () => {

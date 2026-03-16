@@ -160,6 +160,7 @@ app.get("/sitemap.xml", (_req, res) => {
     { loc: "/", priority: "1.0", changefreq: "daily" },
     { loc: "/dashboard", priority: "0.8", changefreq: "hourly" },
     { loc: "/market", priority: "0.8", changefreq: "hourly" },
+    { loc: "/compare", priority: "0.7", changefreq: "daily" },
     { loc: "/login", priority: "0.3", changefreq: "monthly" },
     { loc: "/billing", priority: "0.3", changefreq: "monthly" },
     { loc: "/digest/latest", priority: "0.7", changefreq: "daily" },
@@ -516,6 +517,103 @@ app.get("/digest/latest", (req, res) => {
 // Shortcut: /digest redirects to /digest/latest
 app.get("/digest", (_req, res) => {
   res.redirect("/digest/latest");
+});
+
+// Token Comparison page
+app.get("/compare", (_req, res) => {
+  const title = "Compare Tokens — Side-by-Side Price & News Impact | Wavedge";
+  const description = "Compare 2-3 crypto tokens side by side. Price charts, news impact scores, and alert history in one view. Shareable comparison links.";
+
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${baseUrl}/compare">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(description)}">
+  <link rel="canonical" href="${baseUrl}/compare">
+  <link rel="stylesheet" href="/css/styles.css">
+  ${ga4Snippet()}
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content compare-page">
+    <div class="compare-header">
+      <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+      <h1>Compare Tokens</h1>
+      <p class="compare-subtitle">Select 2–3 tokens to compare price trends and news impact side by side.</p>
+    </div>
+
+    <div class="compare-token-picker" id="token-picker">
+      <div class="compare-picker-slots">
+        <div class="picker-slot" data-slot="0">
+          <input type="text" class="picker-input" placeholder="Search token (e.g. BTC)" autocomplete="off">
+          <div class="picker-dropdown"></div>
+          <div class="picker-selected"></div>
+        </div>
+        <span class="picker-vs">vs</span>
+        <div class="picker-slot" data-slot="1">
+          <input type="text" class="picker-input" placeholder="Search token (e.g. ETH)" autocomplete="off">
+          <div class="picker-dropdown"></div>
+          <div class="picker-selected"></div>
+        </div>
+        <span class="picker-vs">vs</span>
+        <div class="picker-slot" data-slot="2">
+          <input type="text" class="picker-input" placeholder="Search token (e.g. SOL)" autocomplete="off">
+          <div class="picker-dropdown"></div>
+          <div class="picker-selected"></div>
+        </div>
+      </div>
+      <div class="compare-actions">
+        <button class="btn-compare" id="btn-compare" disabled>Compare</button>
+        <button class="btn-share" id="btn-share" title="Copy shareable link">Share Link</button>
+      </div>
+    </div>
+
+    <div class="compare-time-range" id="compare-time-range" style="display:none">
+      <button class="range-btn" data-range="1d">1D</button>
+      <button class="range-btn" data-range="1w">1W</button>
+      <button class="range-btn active" data-range="1m">1M</button>
+      <button class="range-btn" data-range="3m">3M</button>
+    </div>
+
+    <div class="compare-charts" id="compare-charts"></div>
+
+    <div class="compare-metrics" id="compare-metrics"></div>
+
+    <div class="compare-impact" id="compare-impact"></div>
+
+    <div class="compare-news" id="compare-news"></div>
+
+    <ad-slot variant="banner"></ad-slot>
+  </main>
+
+  <bottom-nav></bottom-nav>
+
+  <div id="copy-toast" class="copy-toast">Link copied!</div>
+
+  <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
+  <script src="/js/components/ad-slot.js"></script>
+
+  <script>
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js';
+    s.onload = function() {
+      var e = document.createElement('script'); e.src = '/js/compare-app.js'; document.body.appendChild(e);
+    };
+    document.body.appendChild(s);
+  </script>
+</body>
+</html>`);
 });
 
 app.get("/tokens/:symbol", (req, res) => {

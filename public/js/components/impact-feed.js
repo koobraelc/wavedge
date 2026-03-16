@@ -223,6 +223,7 @@ class ImpactFeed extends HTMLElement {
     const avg24h = first.historical.avgChange24h;
     if (avg24h == null) return '';
 
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const cls = avg24h > 0.1 ? 'positive' : avg24h < -0.1 ? 'negative' : 'neutral';
     const sign = avg24h > 0 ? '+' : '';
     const cat = article._impact.category || '';
@@ -232,9 +233,9 @@ class ImpactFeed extends HTMLElement {
     return `
       <div class="feed-impact">
         <span class="impact-badge ${cls}">
-          ${symbol ? this._esc(symbol) + ' ' : ''}${sign}${avg24h.toFixed(2)}% avg after ${cat ? this._esc(cat) : 'similar'} news
-          <span class="impact-sample">(n=${samples})</span>
-          <info-tip text="根據歷史數據，類似新聞發布後24小時內的平均價格變化。(n=樣本數)"></info-tip>
+          ${symbol ? this._esc(symbol) + ' ' : ''}${sign}${avg24h.toFixed(2)}% ${t('impact.avgAfter', { category: cat || 'similar' })}
+          <span class="impact-sample">${t('impact.sampleCount', { samples })}</span>
+          <info-tip text="${t('impact.impactTip')}"></info-tip>
         </span>
       </div>
     `;

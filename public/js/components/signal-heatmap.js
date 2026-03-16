@@ -18,14 +18,14 @@ class SignalHeatmap extends HTMLElement {
         </div>
         <div class="signal-heatmap-legend">
           <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-up"></span>${t('heatmap.legendUp')}</span>
-          <span class="hm-legend-sep">←→</span>
+          <span class="hm-legend-sep">&harr;</span>
           <span class="hm-legend-item"><span class="hm-legend-swatch hm-legend-down"></span>${t('heatmap.legendDown')}</span>
           <span class="hm-legend-divider"></span>
-          <span class="hm-legend-item">${t('heatmap.legendSize')}</span>
+          <span class="hm-legend-item">${t('heatmap.legendSize')} <info-tip text="${t('heatmap.legendSizeTip')}"></info-tip></span>
           <span class="hm-legend-divider"></span>
-          <span class="hm-legend-item">📰 ${t('heatmap.legendNews')}</span>
-          <span class="hm-legend-item">💬 ${t('heatmap.legendSocial')}</span>
-          <span class="hm-legend-item">🐋 ${t('heatmap.legendWhale')}</span>
+          <span class="hm-legend-item">📰 ${t('heatmap.legendNews')} <info-tip text="${t('heatmap.legendNewsTip')}"></info-tip></span>
+          <span class="hm-legend-item">💬 ${t('heatmap.legendSocial')} <info-tip text="${t('heatmap.legendSocialTip')}"></info-tip></span>
+          <span class="hm-legend-item">🐋 ${t('heatmap.legendWhale')} <info-tip text="${t('heatmap.legendWhaleTip')}"></info-tip></span>
         </div>
         <div class="signal-heatmap-grid" id="heatmap-grid"></div>
       </div>

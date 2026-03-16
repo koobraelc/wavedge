@@ -41,8 +41,8 @@ class AlertSettings extends HTMLElement {
       <form class="settings-form" id="alert-form">
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-step-header">
-              <span class="step-number">1</span>
+            <div class="settings-section-header">
+              <span class="section-icon">&#9889;</span>
               <h3>Alert Status</h3>
             </div>
             <label class="toggle-switch">
@@ -56,8 +56,8 @@ class AlertSettings extends HTMLElement {
         <div class="settings-divider"></div>
 
         <div class="settings-card">
-          <div class="settings-step-header">
-            <span class="step-number">2</span>
+          <div class="settings-section-header">
+            <span class="section-icon">&#9733;</span>
             <h3>Token Watchlist</h3>
           </div>
           <p class="settings-hint">Select tokens you want to receive alerts for.</p>
@@ -73,8 +73,8 @@ class AlertSettings extends HTMLElement {
         <div class="settings-divider"></div>
 
         <div class="settings-card">
-          <div class="settings-step-header">
-            <span class="step-number">3</span>
+          <div class="settings-section-header">
+            <span class="section-icon">&#128276;</span>
             <h3>Notification Channels</h3>
           </div>
           <p class="settings-hint">Choose how you want to receive alerts.</p>
@@ -126,8 +126,8 @@ class AlertSettings extends HTMLElement {
         <div class="settings-divider"></div>
 
         <div class="settings-card">
-          <div class="settings-step-header">
-            <span class="step-number">4</span>
+          <div class="settings-section-header">
+            <span class="section-icon">&#9881;</span>
             <h3>Sensitivity <info-tip text="靈敏度越高，越容易觸發提醒。新手建議選「中」。"></info-tip></h3>
           </div>
           <p class="settings-hint">Controls how easily alerts are triggered. Higher sensitivity = more alerts.</p>
@@ -135,18 +135,18 @@ class AlertSettings extends HTMLElement {
             <button type="button" class="sensitivity-btn ${sensitivity === 'low' ? 'active' : ''}" data-level="low">
               <strong>Low</strong>
               <span>Major moves only</span>
-              <span class="sensitivity-detail">8% price, 200% volume, 50% social, $10M whale</span>
+              <span class="sensitivity-detail">e.g. price change &gt; 8%, volume spike &gt; 200%</span>
             </button>
             <button type="button" class="sensitivity-btn ${sensitivity === 'medium' ? 'active' : ''}" data-level="medium">
-              <span class="recommended-badge">推薦 Recommended</span>
+              <span class="recommended-badge">Recommended</span>
               <strong>Medium</strong>
-              <span>Balanced alerts</span>
-              <span class="sensitivity-detail">5% price, 100% volume, 30% social, $1M whale</span>
+              <span>Balanced — catches important moves without noise</span>
+              <span class="sensitivity-detail">e.g. price change &gt; 5%, volume spike &gt; 100%</span>
             </button>
             <button type="button" class="sensitivity-btn ${sensitivity === 'high' ? 'active' : ''}" data-level="high">
               <strong>High</strong>
               <span>Don't miss anything</span>
-              <span class="sensitivity-detail">2% price, 50% volume, 15% social, $500K whale</span>
+              <span class="sensitivity-detail">e.g. price change &gt; 2%, volume spike &gt; 50%</span>
             </button>
           </div>
         </div>
@@ -154,8 +154,8 @@ class AlertSettings extends HTMLElement {
         <div class="settings-divider"></div>
 
         <div class="settings-card">
-          <div class="settings-step-header">
-            <span class="step-number">5</span>
+          <div class="settings-section-header">
+            <span class="section-icon">&#128202;</span>
             <h3>Signal Requirements <info-tip text="需要幾個信號同時出現才觸發提醒。建議新手選2-3個，避免太多雜訊。"></info-tip></h3>
           </div>
           <p class="settings-hint">How many signals must fire simultaneously to trigger an alert.</p>

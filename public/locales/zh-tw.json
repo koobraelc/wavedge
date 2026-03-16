@@ -22,6 +22,10 @@
   "impact.emptyTitle": "暫無相關新聞",
   "impact.emptyAction": "添加代幣到觀察清單以查看相關新聞",
   "impact.emptyAddTokens": "添加更多代幣到觀察清單",
+  "heatmap.legendSizeTip": "格子越大 = 市值越高。最大的代幣佔據最多空間。",
+  "heatmap.legendNewsTip": "過去24小時的新聞文章數量。箭頭表示情緒是看漲還是看跌。",
+  "heatmap.legendSocialTip": "來自 Twitter、Reddit 和 Telegram 的社群媒體提及與情緒。",
+  "heatmap.legendWhaleTip": "過去24小時在鏈上偵測到的大額交易（鯨魚活動）。",
   "nav.login": "登入",
   "nav.logout": "登出"
 }

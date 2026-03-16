@@ -53,8 +53,8 @@ class MissedAlertsBanner extends HTMLElement {
             </svg>
           </div>
           <div class="missed-alerts-text">
-            <strong>You missed ${this._esc(String(d.missedToday))} alert${d.missedToday === 1 ? '' : 's'} today</strong>
-            <span class="missed-alerts-sub">Pro users got them all. Free plan: ${d.dailyLimit} alerts/day.</span>
+            <strong>${this._esc(String(d.missedToday + d.dailyLimit))} alert${(d.missedToday + d.dailyLimit) === 1 ? '' : 's'} triggered today</strong>
+            <span class="missed-alerts-sub">Free plan includes ${d.dailyLimit} alerts/day. Upgrade to Pro for unlimited alerts.</span>
           </div>
           <a href="/billing" class="missed-alerts-cta">Upgrade to Pro</a>
         </div>

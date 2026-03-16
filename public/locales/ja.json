@@ -22,6 +22,10 @@
   "impact.emptyTitle": "まだ関連ニュースがありません",
   "impact.emptyAction": "ウォッチリストにトークンを追加して関連ニュースを表示",
   "impact.emptyAddTokens": "ウォッチリストにトークンを追加",
+  "heatmap.legendSizeTip": "セルが大きいほど時価総額が高いです。",
+  "heatmap.legendNewsTip": "過去24時間のニュース記事数。矢印は強気/弱気の感情を示します。",
+  "heatmap.legendSocialTip": "Twitter、Reddit、Telegramでのソーシャルメディアの言及と感情。",
+  "heatmap.legendWhaleTip": "過去24時間にオンチェーンで検出された大規模取引（クジラ活動）。",
   "nav.login": "ログイン",
   "nav.logout": "ログアウト"
 }

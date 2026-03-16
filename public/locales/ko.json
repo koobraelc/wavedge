@@ -22,6 +22,10 @@
   "impact.emptyTitle": "아직 관련 뉴스가 없습니다",
   "impact.emptyAction": "관심 목록에 토큰을 추가하여 관련 뉴스 보기",
   "impact.emptyAddTokens": "관심 목록에 더 많은 토큰 추가",
+  "heatmap.legendSizeTip": "셀이 클수록 시가총액이 높습니다.",
+  "heatmap.legendNewsTip": "지난 24시간 뉴스 기사 수. 화살표는 긍정/부정 감성을 나타냅니다.",
+  "heatmap.legendSocialTip": "Twitter, Reddit, Telegram의 소셜 미디어 언급 및 감성.",
+  "heatmap.legendWhaleTip": "지난 24시간 온체인에서 감지된 대규모 거래(고래 활동).",
   "nav.login": "로그인",
   "nav.logout": "로그아웃"
 }

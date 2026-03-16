@@ -545,7 +545,10 @@ app.get("/market", (req, res) => {
 
   <main class="main-content market-page">
     <div class="market-header">
-      <h1>Market Overview</h1>
+      <div>
+        <h1>Market Overview</h1>
+        <p class="page-subtitle">Real-time crypto market data with heatmap, sector performance, and top movers.</p>
+      </div>
       <span class="market-updated" id="last-updated"></span>
     </div>
 

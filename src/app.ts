@@ -21,6 +21,7 @@ import { getDatabase } from "./db/database.js";
 import { schedulerStatus } from "./scrapers/scheduler.js";
 import { SchedulerRepository } from "./db/scheduler-repository.js";
 import { cacheMiddleware } from "./services/response-cache.js";
+import { getEnvConfig } from "./config/env.js";
 
 // i18n: locale support
 declare global {
@@ -90,7 +91,7 @@ function toLangTag(locale: string): string {
 
 /** Generate <link rel="alternate" hreflang> tags for a given path */
 function hreflangTags(pagePath: string): string {
-  const base = process.env.BASE_URL || "https://wavedge.io";
+  const base = getEnvConfig().BASE_URL;
   const canonical = pagePath === "/" ? "" : pagePath;
   const lines = [
     `<link rel="alternate" hreflang="en" href="${base}${canonical}">`,
@@ -245,7 +246,7 @@ app.get("/api/health/freshness", (_req, res) => {
 app.get("/api/config", (_req, res) => {
   res.json({
     gaId: process.env.GOOGLE_ANALYTICS_ID || "",
-    baseUrl: process.env.BASE_URL || "https://wavedge.io",
+    baseUrl: getEnvConfig().BASE_URL,
   });
 });
 
@@ -295,7 +296,7 @@ app.use(express.static(publicDir));
 // SEO: Dynamic sitemap.xml
 const sitemapRepo = new PriceRepository();
 app.get("/sitemap.xml", (_req, res) => {
-  const baseUrl = process.env.BASE_URL || "https://wavedge.io";
+  const baseUrl = getEnvConfig().BASE_URL;
   const tokens = sitemapRepo.getAllTokens();
   const today = new Date().toISOString().split("T")[0];
 
@@ -337,7 +338,7 @@ ${urls.join("\n")}
 
 // SEO: robots.txt
 app.get("/robots.txt", (_req, res) => {
-  const baseUrl = process.env.BASE_URL || "https://wavedge.io";
+  const baseUrl = getEnvConfig().BASE_URL;
   res.type("text/plain").send(
     `User-agent: *
 Allow: /
@@ -835,7 +836,7 @@ app.get("/settings/api-keys", (req, res) => {
 
 // SEO helpers
 const priceRepo = new PriceRepository();
-const baseUrl = process.env.BASE_URL || "https://wavedge.io";
+const baseUrl = getEnvConfig().BASE_URL;
 const gaId = process.env.GOOGLE_ANALYTICS_ID || "";
 
 function escapeHtml(str: string): string {

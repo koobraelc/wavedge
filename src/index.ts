@@ -1,8 +1,12 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
+import { validateEnv } from "./config/env.js";
 import { app } from "./app.js";
 import { startPriceScheduler, startNewsScheduler, startAlertScheduler, startDigestScheduler, startSentimentScheduler, startWhaleScheduler, startImpactScheduler } from "./scrapers/scheduler.js";
+
+// Validate all required env vars before anything else runs
+validateEnv();
 
 const port = parseInt(process.env.PORT ?? "3000", 10);
 

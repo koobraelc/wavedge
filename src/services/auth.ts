@@ -2,8 +2,9 @@ import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { UserRepository, type User } from "../db/user-repository.js";
 import { ApiKeyRepository } from "../db/api-key-repository.js";
+import { getEnvConfig } from "../config/env.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "wavedge-dev-secret-change-in-production";
+const JWT_SECRET = getEnvConfig().JWT_SECRET;
 const JWT_EXPIRES_IN = "7d";
 
 export interface AuthenticatedRequest extends Request {

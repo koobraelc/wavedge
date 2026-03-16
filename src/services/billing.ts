@@ -1,11 +1,13 @@
 import Stripe from "stripe";
 import crypto from "crypto";
 import { UserRepository } from "../db/user-repository.js";
+import { getEnvConfig } from "../config/env.js";
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-const STRIPE_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || "";
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
+const env = getEnvConfig();
+const STRIPE_SECRET_KEY = env.STRIPE_SECRET_KEY;
+const STRIPE_WEBHOOK_SECRET = env.STRIPE_WEBHOOK_SECRET;
+const STRIPE_PRICE_ID = env.STRIPE_PRO_PRICE_ID;
+const APP_URL = env.APP_URL;
 
 function getStripe(): Stripe | null {
   if (!STRIPE_SECRET_KEY) return null;

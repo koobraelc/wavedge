@@ -4,17 +4,14 @@ class SignalDetailPanel extends HTMLElement {
     this._open = false;
     this._symbol = null;
     this._data = {};
-    this._onClickOutside = this._onClickOutside.bind(this);
-    this._onKeyDown = this._onKeyDown.bind(this);
-    this._onScroll = this._onScroll.bind(this);
   }
 
   connectedCallback() {
-    this.innerHTML = `<div class="sdp-popover" id="sdp-popover" role="dialog" aria-label="Token details"></div>`;
+    this.innerHTML = `<div class="sdp-card" id="sdp-card"></div>`;
   }
 
   open(symbol, data) {
-    // If clicking the same token, toggle off
+    // Toggle off if clicking the same token
     if (this._open && this._symbol === symbol.toUpperCase()) {
       this.close();
       return;
@@ -25,140 +22,94 @@ class SignalDetailPanel extends HTMLElement {
     this._open = true;
 
     this._render();
-    this._position(data.anchorRect);
 
-    const popover = this.querySelector('#sdp-popover');
-    if (popover) popover.classList.add('sdp-visible');
-
-    // Delay listener so the current click doesn't immediately close
-    setTimeout(() => {
-      document.addEventListener('click', this._onClickOutside, true);
-    }, 0);
-    document.addEventListener('keydown', this._onKeyDown);
-    window.addEventListener('scroll', this._onScroll, true);
+    const card = this.querySelector('#sdp-card');
+    if (card) {
+      card.classList.add('sdp-visible');
+      // Smooth scroll into view
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 
   close() {
     this._open = false;
-    const popover = this.querySelector('#sdp-popover');
-    if (popover) popover.classList.remove('sdp-visible');
-    document.removeEventListener('click', this._onClickOutside, true);
-    document.removeEventListener('keydown', this._onKeyDown);
-    window.removeEventListener('scroll', this._onScroll, true);
-  }
-
-  _onClickOutside(e) {
-    const popover = this.querySelector('#sdp-popover');
-    if (popover && !popover.contains(e.target)) {
-      this.close();
+    this._symbol = null;
+    const card = this.querySelector('#sdp-card');
+    if (card) {
+      card.classList.remove('sdp-visible');
+      card.innerHTML = '';
     }
-  }
-
-  _onKeyDown(e) {
-    if (e.key === 'Escape') this.close();
-  }
-
-  _onScroll() {
-    this.close();
-  }
-
-  _position(anchorRect) {
-    const popover = this.querySelector('#sdp-popover');
-    if (!popover) return;
-
-    const isMobile = window.innerWidth <= 768;
-
-    if (isMobile) {
-      // Mobile: centered at bottom above bottom-nav
-      popover.style.position = 'fixed';
-      popover.style.bottom = '70px';
-      popover.style.left = '12px';
-      popover.style.right = '12px';
-      popover.style.top = 'auto';
-      popover.style.width = 'auto';
-      return;
-    }
-
-    if (!anchorRect) {
-      // Fallback: center on screen
-      popover.style.position = 'fixed';
-      popover.style.top = '50%';
-      popover.style.left = '50%';
-      popover.style.transform = 'translate(-50%, -50%)';
-      return;
-    }
-
-    // Desktop: position near the clicked cell
-    popover.style.position = 'fixed';
-    popover.style.transform = '';
-    const popW = 300;
-    const popH = popover.offsetHeight || 200;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // Prefer below the cell, centered horizontally
-    let top = anchorRect.bottom + 8;
-    let left = anchorRect.left + anchorRect.width / 2 - popW / 2;
-
-    // Flip above if not enough space below
-    if (top + popH > vh - 20) {
-      top = anchorRect.top - popH - 8;
-    }
-    // Clamp horizontal
-    if (left < 12) left = 12;
-    if (left + popW > vw - 12) left = vw - 12 - popW;
-    // Clamp vertical
-    if (top < 12) top = 12;
-
-    popover.style.top = top + 'px';
-    popover.style.left = left + 'px';
-    popover.style.bottom = 'auto';
-    popover.style.right = 'auto';
-    popover.style.width = popW + 'px';
   }
 
   _render() {
-    const popover = this.querySelector('#sdp-popover');
-    if (!popover) return;
+    const card = this.querySelector('#sdp-card');
+    if (!card) return;
     const t = this._t();
     const priceData = this._data.price || {};
     const pct = priceData.price_change_percentage_24h ?? 0;
     const sign = pct >= 0 ? '+' : '';
     const pctClass = pct >= 0 ? 'sdp-green' : 'sdp-red';
     const price = priceData.current_price || priceData.price_usd;
+    const mcap = priceData.market_cap;
 
-    // Build one-line signal summary
-    const signals = [];
+    // Signal pills
     const news = this._data.newsSignal;
     const social = this._data.socialSentiment;
     const whale = this._data.whaleActivity;
 
+    let pills = '';
     if (news && news.count > 0) {
-      signals.push(`📰 ${news.count} article${news.count > 1 ? 's' : ''}`);
+      pills += `<span class="sdp-pill sdp-pill-active">📰 ${news.count} article${news.count > 1 ? 's' : ''}</span>`;
     }
     if (social && social.mentionCount > 0) {
       const label = social.sentimentLabel || 'neutral';
-      signals.push(`💬 ${label}`);
+      const cls = label === 'bullish' ? 'sdp-pill-bull' : label === 'bearish' ? 'sdp-pill-bear' : 'sdp-pill-active';
+      pills += `<span class="sdp-pill ${cls}">💬 ${this._capitalize(label)}</span>`;
     }
     if (whale && whale.transactionCount > 0) {
-      signals.push(`🐋 ${whale.transactionCount} tx`);
+      pills += `<span class="sdp-pill sdp-pill-active">🐋 ${whale.transactionCount} tx · ${this._formatUsd(whale.totalUsd)}</span>`;
     }
-    const signalLine = signals.length > 0
-      ? signals.join(' · ')
-      : t('signal.noActiveSignals', { symbol: this._esc(this._symbol) });
 
-    popover.innerHTML = `
-      <div class="sdp-pop-header">
-        <span class="sdp-pop-symbol">${this._esc(this._symbol)}</span>
-        ${price ? `<span class="sdp-pop-price">${this._formatPrice(price)}</span>` : ''}
-        <span class="sdp-pop-pct ${pctClass}">${sign}${pct.toFixed(2)}%</span>
-      </div>
-      <div class="sdp-pop-signals">${signalLine}</div>
-      <div class="sdp-pop-actions">
-        <a href="/settings/alerts?token=${encodeURIComponent(this._symbol)}" class="sdp-pop-btn sdp-pop-btn-secondary">${t('Set Alert')}</a>
-        <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-pop-btn sdp-pop-btn-primary">${t('Full Analysis')} →</a>
+    // Price pill (always shown)
+    const priceClass = pct >= 0 ? 'sdp-pill-bull' : 'sdp-pill-bear';
+    pills += `<span class="sdp-pill ${priceClass}">📈 ${sign}${pct.toFixed(1)}% (24h)</span>`;
+
+    // Recent news headlines (max 3)
+    let newsHtml = '';
+    if (news && news.articles && news.articles.length > 0) {
+      const items = news.articles.slice(0, 3).map(a => {
+        const title = this._esc(a.title || 'Untitled');
+        const source = this._esc(a.source || '');
+        const timeAgo = this._timeAgo(a.published_at);
+        return `<div class="sdp-card-news-item">
+          <a href="${this._esc(a.url || '#')}" target="_blank" rel="noopener">${title}</a>
+          <span class="sdp-card-news-meta">${source}${source && timeAgo ? ' · ' : ''}${timeAgo}</span>
+        </div>`;
+      }).join('');
+      newsHtml = `<div class="sdp-card-news">${items}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="sdp-card-inner">
+        <div class="sdp-card-header">
+          <div class="sdp-card-title">
+            <span class="sdp-card-symbol">${this._esc(this._symbol)}</span>
+            ${price ? `<span class="sdp-card-price">${this._formatPrice(price)}</span>` : ''}
+            <span class="sdp-card-pct ${pctClass}">${sign}${pct.toFixed(2)}%</span>
+            ${mcap ? `<span class="sdp-card-mcap">${t('MCap')}: ${this._formatUsd(mcap)}</span>` : ''}
+          </div>
+          <button class="sdp-card-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="sdp-card-pills">${pills}</div>
+        ${newsHtml}
+        <div class="sdp-card-actions">
+          <a href="/settings/alerts?token=${encodeURIComponent(this._symbol)}" class="sdp-card-btn sdp-card-btn-secondary">${t('Set Alert')}</a>
+          <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-card-btn sdp-card-btn-primary">${t('Full Analysis')} →</a>
+        </div>
       </div>
     `;
+
+    card.querySelector('.sdp-card-close').addEventListener('click', () => this.close());
   }
 
   // --- Utilities ---
@@ -173,10 +124,36 @@ class SignalDetailPanel extends HTMLElement {
     return d.innerHTML;
   }
 
+  _capitalize(s) {
+    if (!s) return '';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   _formatPrice(n) {
     if (n >= 1000) return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     if (n >= 1) return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  }
+
+  _formatUsd(n) {
+    if (!n) return '$0';
+    if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+    return '$' + n.toFixed(0);
+  }
+
+  _timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    return days + 'd ago';
   }
 }
 

@@ -5665,97 +5665,151 @@ info-tip {
   }
 }
 
-/* === Signal Detail Popover === */
-.sdp-popover {
+/* === Signal Detail Inline Card === */
+.sdp-card {
   display: none;
-  position: fixed;
-  z-index: 301;
+  margin-top: var(--spacing-md);
+}
+.sdp-card.sdp-visible { display: block; }
+
+.sdp-card-inner {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  width: 300px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  animation: sdp-pop-in 0.15s ease-out;
+  border-radius: var(--radius, 8px);
+  padding: 16px 20px;
+  animation: sdp-slide-in 0.2s ease-out;
 }
-.sdp-popover.sdp-visible { display: block; }
-
-@keyframes sdp-pop-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes sdp-slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 768px) {
-  .sdp-popover {
-    width: auto;
-    border-radius: 12px;
-  }
+/* Header row */
+.sdp-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
-
-.sdp-pop-header {
+.sdp-card-title {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
 }
-.sdp-pop-symbol {
-  font-size: 1.1rem;
+.sdp-card-symbol {
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary);
 }
-.sdp-pop-price {
-  font-size: 0.95rem;
+.sdp-card-price {
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
-.sdp-pop-pct {
-  font-size: 0.85rem;
+.sdp-card-pct {
+  font-size: 0.9rem;
   font-weight: 600;
+}
+.sdp-card-mcap {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 .sdp-green { color: var(--green); }
 .sdp-red { color: var(--red); }
 
-.sdp-pop-signals {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.sdp-card-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.sdp-card-close:hover { color: var(--text-primary); }
+
+/* Signal pills */
+.sdp-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 12px;
-  line-height: 1.4;
+}
+.sdp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+.sdp-pill-active { border-color: var(--yellow); color: var(--yellow); }
+.sdp-pill-bull { border-color: var(--green); color: var(--green); }
+.sdp-pill-bear { border-color: var(--red); color: var(--red); }
+
+/* News headlines */
+.sdp-card-news {
+  margin-bottom: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.sdp-card-news-item {
+  margin-bottom: 8px;
+}
+.sdp-card-news-item:last-child { margin-bottom: 0; }
+.sdp-card-news-item a {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--link);
+  text-decoration: none;
+  display: block;
+  line-height: 1.3;
+}
+.sdp-card-news-item a:hover { text-decoration: underline; }
+.sdp-card-news-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
-.sdp-pop-actions {
+/* Action buttons */
+.sdp-card-actions {
   display: flex;
   gap: 8px;
 }
-.sdp-pop-btn {
+.sdp-card-btn {
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.15s;
+  transition: background 0.15s, opacity 0.15s;
 }
-.sdp-pop-btn-secondary {
+.sdp-card-btn-secondary {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
-.sdp-pop-btn-secondary:hover {
+.sdp-card-btn-secondary:hover {
   background: var(--border);
   color: var(--text-primary);
 }
-.sdp-pop-btn-primary {
+.sdp-card-btn-primary {
   background: var(--green, #3fb950);
   color: #fff;
   border: 1px solid transparent;
 }
-.sdp-pop-btn-primary:hover {
-  opacity: 0.9;
-}
+.sdp-card-btn-primary:hover { opacity: 0.9; }
 
 /* Impact explanation in feed (kept for feed component) */
 .impact-explanation {

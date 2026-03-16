@@ -17,6 +17,13 @@
   --link: #58a6ff;
   --radius: 8px;
   --radius-sm: 6px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --card-padding: 20px;
+  --card-gap: 16px;
 }
 
 html { font-size: 16px; }
@@ -1820,6 +1827,51 @@ watchlist-widget {
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-tertiary {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s;
+  text-decoration: none;
+}
+
+.btn-tertiary:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.82rem;
 }
 
 .save-status {
@@ -5081,6 +5133,26 @@ watchlist-widget {
     padding: 6px 16px;
     font-size: 0.75rem;
   }
+}
+
+/* === Unified Widget Card === */
+.widget-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--card-padding);
+}
+
+.widget-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.widget-card-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* === Page Subtitle === */

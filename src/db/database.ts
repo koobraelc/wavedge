@@ -124,6 +124,7 @@ export function initializeSchema(database: Database.Database): void {
       price_change_threshold REAL NOT NULL DEFAULT 5.0,
       volume_change_threshold REAL NOT NULL DEFAULT 100.0,
       sentiment_change_threshold REAL NOT NULL DEFAULT 30.0,
+      whale_transaction_threshold REAL NOT NULL DEFAULT 1000000.0,
       min_signals INTEGER NOT NULL DEFAULT 2,
       enabled INTEGER NOT NULL DEFAULT 1,
       telegram_chat_id TEXT,
@@ -303,6 +304,25 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_social_mentions_token ON social_mentions(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_social_mentions_fetched ON social_mentions(fetched_at);
     CREATE INDEX IF NOT EXISTS idx_social_mentions_token_fetched ON social_mentions(token_symbol, fetched_at);
+
+    -- Whale transaction tracking
+    CREATE TABLE IF NOT EXISTS whale_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_symbol TEXT NOT NULL,
+      transaction_hash TEXT NOT NULL UNIQUE,
+      from_address TEXT,
+      to_address TEXT,
+      amount REAL NOT NULL,
+      amount_usd REAL NOT NULL,
+      blockchain TEXT NOT NULL DEFAULT 'unknown',
+      transaction_type TEXT NOT NULL DEFAULT 'transfer',
+      fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_whale_tx_token ON whale_transactions(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_whale_tx_fetched ON whale_transactions(fetched_at);
+    CREATE INDEX IF NOT EXISTS idx_whale_tx_token_fetched ON whale_transactions(token_symbol, fetched_at);
+    CREATE INDEX IF NOT EXISTS idx_whale_tx_hash ON whale_transactions(transaction_hash);
 
     -- Scheduler error logging
     CREATE TABLE IF NOT EXISTS scheduler_errors (

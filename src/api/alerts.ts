@@ -46,6 +46,7 @@ export function createAlertsRouter(repo?: AlertRepository, pushRepo?: PushReposi
       priceChangeThreshold: body.priceChangeThreshold,
       volumeChangeThreshold: body.volumeChangeThreshold,
       sentimentChangeThreshold: body.sentimentChangeThreshold,
+      whaleTransactionThreshold: body.whaleTransactionThreshold,
       minSignals: body.minSignals,
       enabled: body.enabled,
       telegramChatId: body.telegramChatId,
@@ -82,6 +83,7 @@ export function createAlertsRouter(repo?: AlertRepository, pushRepo?: PushReposi
       priceChangeThreshold: body.priceChangeThreshold,
       volumeChangeThreshold: body.volumeChangeThreshold,
       sentimentChangeThreshold: body.sentimentChangeThreshold,
+      whaleTransactionThreshold: body.whaleTransactionThreshold,
       minSignals: body.minSignals,
       enabled: body.enabled,
       telegramChatId: body.telegramChatId,
@@ -210,6 +212,7 @@ function formatPreferences(row: NonNullable<ReturnType<AlertRepository["getPrefe
     priceChangeThreshold: row.price_change_threshold,
     volumeChangeThreshold: row.volume_change_threshold,
     sentimentChangeThreshold: row.sentiment_change_threshold,
+    whaleTransactionThreshold: row.whale_transaction_threshold,
     minSignals: row.min_signals,
     enabled: row.enabled === 1,
     telegramChatId: row.telegram_chat_id,
@@ -236,7 +239,11 @@ function validatePreferencesBody(body: Record<string, unknown>, partial: boolean
   }
   if (body.minSignals !== undefined) {
     const ms = Number(body.minSignals);
-    if (ms < 1 || ms > 4) return "minSignals must be between 1 and 4";
+    if (ms < 1 || ms > 5) return "minSignals must be between 1 and 5";
+  }
+  if (body.whaleTransactionThreshold !== undefined) {
+    const wt = Number(body.whaleTransactionThreshold);
+    if (wt <= 0) return "whaleTransactionThreshold must be positive";
   }
   if (body.priceChangeThreshold !== undefined) {
     const pct = Number(body.priceChangeThreshold);

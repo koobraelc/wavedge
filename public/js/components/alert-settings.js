@@ -135,17 +135,17 @@ class AlertSettings extends HTMLElement {
             <button type="button" class="sensitivity-btn ${sensitivity === 'low' ? 'active' : ''}" data-level="low">
               <strong>Low</strong>
               <span>Major moves only</span>
-              <span class="sensitivity-detail">8% price, 200% volume, 50% social</span>
+              <span class="sensitivity-detail">8% price, 200% volume, 50% social, $10M whale</span>
             </button>
             <button type="button" class="sensitivity-btn ${sensitivity === 'medium' ? 'active' : ''}" data-level="medium">
               <strong>Medium</strong>
               <span>Balanced alerts</span>
-              <span class="sensitivity-detail">5% price, 100% volume, 30% social</span>
+              <span class="sensitivity-detail">5% price, 100% volume, 30% social, $1M whale</span>
             </button>
             <button type="button" class="sensitivity-btn ${sensitivity === 'high' ? 'active' : ''}" data-level="high">
               <strong>High</strong>
               <span>Don't miss anything</span>
-              <span class="sensitivity-detail">2% price, 50% volume, 15% social</span>
+              <span class="sensitivity-detail">2% price, 50% volume, 15% social, $500K whale</span>
             </button>
           </div>
         </div>
@@ -159,11 +159,11 @@ class AlertSettings extends HTMLElement {
           </div>
           <p class="settings-hint">How many signals must fire simultaneously to trigger an alert.</p>
           <div class="signal-selector">
-            ${[1, 2, 3, 4].map(n => `
+            ${[1, 2, 3, 4, 5].map(n => `
               <label class="signal-option ${minSignals === n ? 'active' : ''}">
                 <input type="radio" name="minSignals" value="${n}" ${minSignals === n ? 'checked' : ''}>
                 <strong>${n} signal${n > 1 ? 's' : ''}</strong>
-                <span>${n === 1 ? 'Any single signal' : n === 2 ? 'Two+ signals together' : n === 3 ? 'Three+ signals' : 'All four signals'}</span>
+                <span>${n === 1 ? 'Any single signal' : n === 2 ? 'Two+ signals together' : n === 3 ? 'Three+ signals' : n === 4 ? 'Four+ signals' : 'All five signals'}</span>
               </label>
             `).join('')}
           </div>

@@ -13,6 +13,7 @@ import { createAffiliateRouter } from "./api/affiliate.js";
 import { createApiKeysRouter } from "./api/api-keys.js";
 import { createHomepageRouter } from "./api/homepage.js";
 import { createAdminRouter } from "./api/admin.js";
+import { createWhalesRouter } from "./api/whales.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
@@ -150,6 +151,7 @@ app.use("/api/affiliate", createAffiliateRouter());
 app.use("/api/api-keys", createApiKeysRouter());
 app.use("/api/homepage", createHomepageRouter());
 app.use("/api/admin", createAdminRouter());
+app.use("/api/whales", createWhalesRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
@@ -430,6 +432,7 @@ app.get("/admin", (_req, res) => {
 
   <bottom-nav></bottom-nav>
 
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/admin-app.js"></script>
@@ -503,6 +506,7 @@ app.get("/market", (_req, res) => {
 
   <bottom-nav></bottom-nav>
 
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
@@ -557,6 +561,7 @@ app.get("/settings/alerts", (_req, res) => {
   <bottom-nav></bottom-nav>
 
   <!-- Web Components -->
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/alert-settings.js"></script>
   <script src="/js/components/alert-history.js"></script>
@@ -656,6 +661,7 @@ app.get("/settings/api-keys", (_req, res) => {
 
   <bottom-nav></bottom-nav>
 
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/api-key-manager.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
@@ -799,6 +805,7 @@ app.get("/digest/latest", (req, res) => {
 
   <div id="copy-toast" class="copy-toast">Link copied!</div>
 
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/ad-slot.js"></script>
 </body>
@@ -891,6 +898,7 @@ app.get("/compare", (_req, res) => {
 
   <div id="copy-toast" class="copy-toast">Link copied!</div>
 
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
@@ -1058,6 +1066,7 @@ app.get("/tokens/:symbol", (req, res) => {
   <bottom-nav></bottom-nav>
 
   <!-- Web Components -->
+  <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/news-feed.js"></script>
   <script src="/js/components/bottom-nav.js"></script>

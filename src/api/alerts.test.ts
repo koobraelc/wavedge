@@ -77,7 +77,7 @@ describe("POST /api/alerts/preferences", () => {
     const { app } = createApp();
     const res = await request(app)
       .post("/api/alerts/preferences")
-      .send({ minSignals: 5 });
+      .send({ minSignals: 6 });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toContain("minSignals");

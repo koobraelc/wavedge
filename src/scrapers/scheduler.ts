@@ -12,6 +12,7 @@ import { DigestGenerator } from "../services/digest-generator.js";
 import { DigestDelivery } from "../services/digest-delivery.js";
 import { DigestRepository } from "../db/digest-repository.js";
 import { SocialPipeline } from "./social-pipeline.js";
+import { WhalePipeline } from "./whale-pipeline.js";
 import { SchedulerRepository } from "../db/scheduler-repository.js";
 
 let priceTask: ScheduledTask | null = null;
@@ -19,6 +20,7 @@ let newsTask: ScheduledTask | null = null;
 let alertTask: ScheduledTask | null = null;
 let digestTask: ScheduledTask | null = null;
 let sentimentTask: ScheduledTask | null = null;
+let whaleTask: ScheduledTask | null = null;
 
 const schedulerRepo = new SchedulerRepository();
 
@@ -29,6 +31,7 @@ export const schedulerStatus: Record<string, { lastRun: string | null; lastError
   alert: { lastRun: null, lastError: null },
   digest: { lastRun: null, lastError: null },
   sentiment: { lastRun: null, lastError: null },
+  whale: { lastRun: null, lastError: null },
 };
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
@@ -227,5 +230,42 @@ export function stopSentimentScheduler(): void {
     sentimentTask.stop();
     sentimentTask = null;
     console.log("Sentiment scheduler stopped");
+  }
+}
+
+/** Whale transaction scheduler — runs every 10 minutes */
+export function startWhaleScheduler(intervalCron: string = "*/10 * * * *"): void {
+  if (whaleTask) {
+    console.warn("Whale scheduler already running");
+    return;
+  }
+
+  const pipeline = new WhalePipeline();
+
+  const run = async () => {
+    try {
+      const result = await pipeline.ingest();
+      schedulerStatus.whale.lastRun = new Date().toISOString();
+      console.log(`Whale pipeline: ${result.transactionsIngested} txs (${result.source}) in ${result.durationMs}ms`);
+    } catch (err) {
+      console.error("Whale pipeline failed:", err);
+      schedulerStatus.whale.lastError = new Date().toISOString();
+      schedulerRepo.logError("whale", err);
+    }
+  };
+
+  console.log(`Starting whale scheduler with cron: ${intervalCron}`);
+
+  // Run immediately on start
+  run();
+
+  whaleTask = cron.schedule(intervalCron, run);
+}
+
+export function stopWhaleScheduler(): void {
+  if (whaleTask) {
+    whaleTask.stop();
+    whaleTask = null;
+    console.log("Whale scheduler stopped");
   }
 }

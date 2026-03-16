@@ -4,6 +4,7 @@ class SignalHeatmap extends HTMLElement {
     this._tokens = [];
     this._newsSignals = new Map();
     this._socialSentiment = new Map();
+    this._whaleActivity = new Map();
   }
 
   connectedCallback() {
@@ -22,14 +23,16 @@ class SignalHeatmap extends HTMLElement {
    * @param {Array} prices - array of price objects with symbol, market_cap, price_change_percentage_24h, current_price
    * @param {Map} newsSignals - Map<symbol, {count, articles}> from getNewsSignals()
    * @param {Map} socialSentiment - Map<symbol, {mentionCount, sentimentScore, sentimentLabel}> (optional)
+   * @param {Map} whaleActivity - Map<symbol, {transactionCount, totalUsd}> (optional)
    */
-  update(prices, newsSignals, socialSentiment) {
+  update(prices, newsSignals, socialSentiment, whaleActivity) {
     this._tokens = (prices || [])
       .filter(p => p.market_cap > 0)
       .sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0))
       .slice(0, 30);
     this._newsSignals = newsSignals || new Map();
     this._socialSentiment = socialSentiment || new Map();
+    this._whaleActivity = whaleActivity || new Map();
 
     this._render();
   }
@@ -82,6 +85,16 @@ class SignalHeatmap extends HTMLElement {
         sentimentBadgeHtml = `<span class="hm-sentiment-badge ${sentClass}" title="Social: ${social.mentionCount} mentions, ${label}">${icon}</span>`;
       }
 
+      // Whale activity badge
+      const whale = this._whaleActivity.get(symbol) || this._whaleActivity.get(symbol.toLowerCase());
+      let whaleBadgeHtml = '';
+      if (whale && whale.transactionCount > 0) {
+        const usdFormatted = whale.totalUsd >= 1e9 ? '$' + (whale.totalUsd / 1e9).toFixed(1) + 'B'
+          : whale.totalUsd >= 1e6 ? '$' + (whale.totalUsd / 1e6).toFixed(1) + 'M'
+          : '$' + (whale.totalUsd / 1e3).toFixed(0) + 'K';
+        whaleBadgeHtml = `<span class="hm-whale-badge" title="Whale: ${whale.transactionCount} large txs, ${usdFormatted}">\u{1F433}</span>`;
+      }
+
       // Price display for larger cells
       let priceHtml = '';
       if ((sizeClass === 'hm-xl' || sizeClass === 'hm-lg') && token.current_price) {
@@ -89,11 +102,11 @@ class SignalHeatmap extends HTMLElement {
       }
 
       return `
-        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}${social ? ' | Sentiment: ' + (social.sentimentLabel || 'neutral') : ''}">
+        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}${social ? ' | Sentiment: ' + (social.sentimentLabel || 'neutral') : ''}${whale && whale.transactionCount > 0 ? ' | Whale: ' + whale.transactionCount + ' txs' : ''}">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}
-          <span class="hm-badges">${badgeHtml}${sentimentBadgeHtml}</span>
+          <span class="hm-badges">${badgeHtml}${sentimentBadgeHtml}${whaleBadgeHtml}</span>
         </a>
       `;
     }).join('');

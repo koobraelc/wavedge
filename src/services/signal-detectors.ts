@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { getDatabase } from "../db/database.js";
 
 export interface Signal {
-  type: "news_frequency" | "price_movement" | "volume_change" | "sentiment_shift";
+  type: "news_frequency" | "price_movement" | "volume_change" | "sentiment_shift" | "whale_alert";
   tokenSymbol: string;
   value: number;
   threshold: number;
@@ -173,6 +173,43 @@ export function detectSentimentShift(
       value: changePercent,
       threshold: thresholdPercent,
       detail: `${tokenSymbol.toUpperCase()} social mentions ${direction}${changePercent.toFixed(1)}%, sentiment: ${sentimentEmoji} (threshold: ±${thresholdPercent}%)`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Detect whale alert: check for large on-chain transfers within a time window.
+ * Fires when the total USD value of whale transactions exceeds the threshold.
+ */
+export function detectWhaleAlert(
+  tokenSymbol: string,
+  thresholdUsd: number,
+  windowHours: number = 1,
+  db?: Database.Database
+): Signal | null {
+  const database = db || getDatabase();
+
+  const row = database
+    .prepare(
+      `SELECT COUNT(*) as tx_count, COALESCE(SUM(amount_usd), 0) as total_usd
+       FROM whale_transactions
+       WHERE token_symbol = ? AND fetched_at >= datetime('now', ?)`
+    )
+    .get(tokenSymbol.toUpperCase(), `-${windowHours} hours`) as { tx_count: number; total_usd: number };
+
+  if (row.total_usd >= thresholdUsd) {
+    const formatted = row.total_usd >= 1_000_000_000
+      ? `$${(row.total_usd / 1_000_000_000).toFixed(1)}B`
+      : row.total_usd >= 1_000_000
+        ? `$${(row.total_usd / 1_000_000).toFixed(1)}M`
+        : `$${(row.total_usd / 1_000).toFixed(0)}K`;
+    return {
+      type: "whale_alert",
+      tokenSymbol,
+      value: row.total_usd,
+      threshold: thresholdUsd,
+      detail: `${tokenSymbol.toUpperCase()} whale activity: ${row.tx_count} large tx totaling ${formatted} in last ${windowHours}h (threshold: $${(thresholdUsd / 1_000_000).toFixed(0)}M)`,
     };
   }
   return null;

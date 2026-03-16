@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createTestDatabase } from "../db/database.js";
 import { NewsRepository } from "../db/news-repository.js";
 import { PriceRepository } from "../db/price-repository.js";
-import { detectNewsFrequency, detectPriceMovement, detectVolumeChange, detectSentimentShift } from "./signal-detectors.js";
+import { detectNewsFrequency, detectPriceMovement, detectVolumeChange, detectSentimentShift, detectWhaleAlert } from "./signal-detectors.js";
+import { WhaleRepository } from "../db/whale-repository.js";
 import type Database from "better-sqlite3";
 
 describe("Signal Detectors", () => {
@@ -195,6 +196,70 @@ describe("Signal Detectors", () => {
       expect(signal).not.toBeNull();
       expect(signal!.value).toBeLessThan(0);
       expect(signal!.detail).toContain("bearish");
+    });
+  });
+
+  describe("detectWhaleAlert", () => {
+    let whaleRepo: WhaleRepository;
+
+    beforeEach(() => {
+      whaleRepo = new WhaleRepository(db);
+    });
+
+    it("returns null with no whale data", () => {
+      const signal = detectWhaleAlert("BTC", 1_000_000, 1, db);
+      expect(signal).toBeNull();
+    });
+
+    it("returns null when below threshold", () => {
+      whaleRepo.insert({
+        tokenSymbol: "BTC",
+        transactionHash: "0x1",
+        amount: 5,
+        amountUsd: 500_000,
+        blockchain: "bitcoin",
+      });
+      const signal = detectWhaleAlert("BTC", 1_000_000, 1, db);
+      expect(signal).toBeNull();
+    });
+
+    it("returns signal when whale volume exceeds threshold", () => {
+      whaleRepo.insertBatch([
+        { tokenSymbol: "BTC", transactionHash: "0x1", amount: 10, amountUsd: 3_000_000, blockchain: "bitcoin" },
+        { tokenSymbol: "BTC", transactionHash: "0x2", amount: 20, amountUsd: 5_000_000, blockchain: "bitcoin" },
+      ]);
+
+      const signal = detectWhaleAlert("BTC", 1_000_000, 1, db);
+      expect(signal).not.toBeNull();
+      expect(signal!.type).toBe("whale_alert");
+      expect(signal!.value).toBe(8_000_000);
+      expect(signal!.detail).toContain("whale activity");
+      expect(signal!.detail).toContain("2 large tx");
+    });
+
+    it("filters by token symbol", () => {
+      whaleRepo.insert({
+        tokenSymbol: "ETH",
+        transactionHash: "0x1",
+        amount: 1000,
+        amountUsd: 5_000_000,
+        blockchain: "ethereum",
+      });
+      expect(detectWhaleAlert("BTC", 1_000_000, 1, db)).toBeNull();
+      expect(detectWhaleAlert("ETH", 1_000_000, 1, db)).not.toBeNull();
+    });
+
+    it("formats large values correctly", () => {
+      whaleRepo.insert({
+        tokenSymbol: "BTC",
+        transactionHash: "0xbig",
+        amount: 50000,
+        amountUsd: 2_500_000_000,
+        blockchain: "bitcoin",
+      });
+      const signal = detectWhaleAlert("BTC", 1_000_000, 1, db);
+      expect(signal).not.toBeNull();
+      expect(signal!.detail).toContain("$2.5B");
     });
   });
 });

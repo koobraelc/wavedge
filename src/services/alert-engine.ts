@@ -7,6 +7,7 @@ import {
   detectPriceMovement,
   detectVolumeChange,
   detectSentimentShift,
+  detectWhaleAlert,
   type Signal,
 } from "./signal-detectors.js";
 import { channelRegistry, type AlertPayload } from "./notification-channels.js";
@@ -128,6 +129,15 @@ export class AlertEngine {
     );
     if (sentimentSignal) signals.push(sentimentSignal);
 
+    const whaleThreshold = (pref as any).whale_transaction_threshold ?? 1_000_000;
+    const whaleSignal = detectWhaleAlert(
+      tokenSymbol,
+      whaleThreshold,
+      1, // 1-hour window
+      this.db
+    );
+    if (whaleSignal) signals.push(whaleSignal);
+
     return signals;
   }
 
@@ -210,6 +220,11 @@ export class AlertEngine {
       } else if (s.type === "sentiment_shift") {
         const dir = s.value > 0 ? "up" : "down";
         parts.push(`social mentions ${dir} ${Math.abs(s.value).toFixed(1)}%`);
+      } else if (s.type === "whale_alert") {
+        const formatted = s.value >= 1_000_000_000
+          ? `$${(s.value / 1_000_000_000).toFixed(1)}B`
+          : `$${(s.value / 1_000_000).toFixed(1)}M`;
+        parts.push(`whale activity ${formatted}`);
       }
     }
     return parts.join(", ");

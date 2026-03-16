@@ -3,6 +3,14 @@
   "nav.market": "市場",
   "nav.alerts": "提醒",
   "nav.billing": "帳單",
+  "nav.settings": "設定",
+  "nav.alertSettings": "提醒設定",
+  "nav.watchlist": "觀察清單",
+  "nav.apiKeys": "API 金鑰",
+  "nav.switchTheme": "主題",
+  "nav.language": "語言",
+  "nav.searchPlaceholder": "搜尋代幣或新聞...",
+  "nav.searchLabel": "搜尋",
   "nav.login": "登入",
   "nav.logout": "登出"
 }

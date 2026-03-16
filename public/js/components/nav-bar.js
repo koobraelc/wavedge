@@ -7,48 +7,71 @@ class NavBar extends HTMLElement {
     const t = window.i18n ? window.i18n.t : (k) => k;
 
     const themeOptions = Object.entries(themes).map(([key, th]) =>
-      `<button class="theme-btn${key === currentTheme ? ' active' : ''}" data-theme="${key}">${th.label}</button>`
+      `<button class="settings-menu-btn theme-btn${key === currentTheme ? ' active' : ''}" data-theme="${key}">${th.label}</button>`
     ).join('');
 
     // Language switcher options
     const locales = window.i18n ? window.i18n.SUPPORTED_LOCALES : ['en'];
     const labels = window.i18n ? window.i18n.LOCALE_LABELS : { en: 'English' };
     const currentLocale = window.i18n ? window.i18n.locale : 'en';
-    const currentLabel = (currentLocale || 'en').toUpperCase().replace('-', '');
     const langOptions = locales.map(loc =>
-      `<button class="lang-btn${loc === currentLocale ? ' active' : ''}" data-locale="${loc}">${labels[loc] || loc}</button>`
+      `<button class="settings-menu-btn lang-btn${loc === currentLocale ? ' active' : ''}" data-locale="${loc}">${labels[loc] || loc}</button>`
     ).join('');
 
     this.innerHTML = `
       <header class="app-header">
         <a href="/" class="logo">Wave<span>edge</span></a>
         <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="7" cy="7" r="5"/>
+            <path d="M11 11l3.5 3.5"/>
+          </svg>
           <input type="search" placeholder="${t('nav.searchPlaceholder')}" aria-label="${t('nav.searchLabel')}" />
         </div>
         <nav class="header-nav">
           <a href="/dashboard">${t('nav.dashboard')}</a>
           <a href="/market">${t('nav.market')}</a>
-          <a href="/settings/alerts">${t('nav.alerts')}</a>
-          <div class="theme-switcher">
-            <button class="theme-toggle" aria-label="${t('nav.switchTheme')}" title="${t('nav.switchTheme')}">
+          <div class="settings-dropdown">
+            <button class="settings-toggle" aria-label="${t('nav.settings')}" title="${t('nav.settings')}">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="8" cy="8" r="3.5"/>
-                <path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M3.4 12.6l.7-.7M11.9 4.1l.7-.7"/>
+                <circle cx="8" cy="8" r="2.5"/>
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
               </svg>
+              <span class="settings-label">${t('nav.settings')}</span>
             </button>
-            <div class="theme-dropdown">${themeOptions}</div>
-          </div>
-          <div class="lang-switcher">
-            <button class="lang-toggle" aria-label="${t('nav.language')}" title="${t('nav.language')}">
-              <span class="lang-globe">🌐</span> ${currentLabel} ▾
-            </button>
-            <div class="lang-dropdown">${langOptions}</div>
+            <div class="settings-menu">
+              <a href="/settings/alerts" class="settings-menu-item">
+                <span class="settings-menu-icon">&#9888;</span>
+                ${t('nav.alertSettings')}
+              </a>
+              <a href="/settings/watchlist" class="settings-menu-item">
+                <span class="settings-menu-icon">&#9733;</span>
+                ${t('nav.watchlist')}
+              </a>
+              <a href="/settings/api-keys" class="settings-menu-item">
+                <span class="settings-menu-icon">&#128273;</span>
+                ${t('nav.apiKeys')}
+              </a>
+              <a href="/billing" class="settings-menu-item">
+                <span class="settings-menu-icon">&#128179;</span>
+                ${t('nav.billing')}
+              </a>
+              <div class="settings-menu-divider"></div>
+              <div class="settings-menu-section">${t('nav.switchTheme')}</div>
+              <div class="settings-theme-list">${themeOptions}</div>
+              <div class="settings-menu-divider"></div>
+              <div class="settings-menu-section">${t('nav.language')}</div>
+              <div class="settings-lang-list">${langOptions}</div>
+            </div>
           </div>
           ${isLoggedIn
-            ? `<a href="/billing">${t('nav.billing')}</a><button class="link-btn nav-logout">${t('nav.logout')}</button>`
+            ? `<button class="link-btn nav-logout">${t('nav.logout')}</button>`
             : `<a href="/login" class="btn-login">${t('nav.login')}</a>`
           }
         </nav>
+        <button class="hamburger-btn" aria-label="Menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
       </header>
     `;
 
@@ -74,40 +97,30 @@ class NavBar extends HTMLElement {
       });
     }
 
-    // Theme switcher
-    const toggle = this.querySelector('.theme-toggle');
-    const dropdown = this.querySelector('.theme-dropdown');
-    if (toggle && dropdown) {
-      toggle.addEventListener('click', (e) => {
+    // Settings dropdown
+    const settingsToggle = this.querySelector('.settings-toggle');
+    const settingsMenu = this.querySelector('.settings-menu');
+    if (settingsToggle && settingsMenu) {
+      settingsToggle.addEventListener('click', (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('open');
-        // Close lang dropdown if open
-        this.querySelector('.lang-dropdown')?.classList.remove('open');
+        const isOpen = settingsMenu.classList.toggle('open');
+        settingsToggle.setAttribute('aria-expanded', isOpen);
       });
 
-      dropdown.querySelectorAll('.theme-btn').forEach(btn => {
+      // Theme buttons
+      settingsMenu.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const theme = btn.dataset.theme;
           if (window.__wavedgeApplyTheme) {
             window.__wavedgeApplyTheme(theme);
           }
-          dropdown.classList.remove('open');
+          settingsMenu.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
         });
       });
-    }
 
-    // Language switcher
-    const langToggle = this.querySelector('.lang-toggle');
-    const langDropdown = this.querySelector('.lang-dropdown');
-    if (langToggle && langDropdown) {
-      langToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        langDropdown.classList.toggle('open');
-        // Close theme dropdown if open
-        this.querySelector('.theme-dropdown')?.classList.remove('open');
-      });
-
-      langDropdown.querySelectorAll('.lang-btn').forEach(btn => {
+      // Language buttons
+      settingsMenu.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const locale = btn.dataset.locale;
           if (window.i18n) {
@@ -117,10 +130,29 @@ class NavBar extends HTMLElement {
       });
     }
 
-    // Close all dropdowns on outside click
+    // Hamburger menu (mobile)
+    const hamburger = this.querySelector('.hamburger-btn');
+    const headerNav = this.querySelector('.header-nav');
+    if (hamburger && headerNav) {
+      hamburger.addEventListener('click', () => {
+        const isOpen = headerNav.classList.toggle('mobile-open');
+        hamburger.classList.toggle('active', isOpen);
+        hamburger.setAttribute('aria-expanded', isOpen);
+      });
+    }
+
+    // Close dropdowns on outside click
     document.addEventListener('click', () => {
-      this.querySelector('.theme-dropdown')?.classList.remove('open');
-      this.querySelector('.lang-dropdown')?.classList.remove('open');
+      settingsMenu?.classList.remove('open');
+      settingsToggle?.setAttribute('aria-expanded', 'false');
+    });
+
+    // Prevent settings menu clicks from closing the menu
+    settingsMenu?.addEventListener('click', (e) => {
+      // Only stop propagation for non-link clicks (theme/lang buttons)
+      if (!e.target.closest('a')) {
+        e.stopPropagation();
+      }
     });
   }
 }

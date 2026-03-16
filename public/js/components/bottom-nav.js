@@ -17,11 +17,11 @@ class BottomNav extends HTMLElement {
             <span class="bottom-nav-icon">&#9888;</span>
             <span>Alerts</span>
           </a>
-          <a href="/tokens/BTC" class="bottom-nav-item${path.startsWith('/tokens') ? ' active' : ''}" aria-label="Tokens">
+          <a href="/market" class="bottom-nav-item${path === '/market' ? ' active' : ''}" aria-label="Tokens">
             <span class="bottom-nav-icon">&#11044;</span>
             <span>Tokens</span>
           </a>
-          <a href="/billing" class="bottom-nav-item${path === '/billing' ? ' active' : ''}" aria-label="Settings">
+          <a href="/settings/alerts" class="bottom-nav-item${path.startsWith('/settings') || path === '/billing' ? ' active' : ''}" aria-label="Settings">
             <span class="bottom-nav-icon">&#9881;</span>
             <span>Settings</span>
           </a>

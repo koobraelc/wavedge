@@ -7,7 +7,11 @@
   "nav.logout": "Log out",
   "nav.searchPlaceholder": "Search tokens or news...",
   "nav.searchLabel": "Search",
-  "nav.switchTheme": "Switch theme",
+  "nav.settings": "Settings",
+  "nav.alertSettings": "Alert Settings",
+  "nav.watchlist": "Watchlist",
+  "nav.apiKeys": "API Keys",
+  "nav.switchTheme": "Theme",
   "nav.language": "Language",
 
   "heatmap.title": "Signal Heatmap",

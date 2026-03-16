@@ -3,6 +3,14 @@
   "nav.market": "マーケット",
   "nav.alerts": "アラート",
   "nav.billing": "請求",
+  "nav.settings": "設定",
+  "nav.alertSettings": "アラート設定",
+  "nav.watchlist": "ウォッチリスト",
+  "nav.apiKeys": "APIキー",
+  "nav.switchTheme": "テーマ",
+  "nav.language": "言語",
+  "nav.searchPlaceholder": "トークンやニュースを検索...",
+  "nav.searchLabel": "検索",
   "nav.login": "ログイン",
   "nav.logout": "ログアウト"
 }

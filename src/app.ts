@@ -619,9 +619,9 @@ app.get("/settings/alerts", (req, res) => {
 </head>
 <body>
   <nav-bar></nav-bar>
+  <breadcrumb-nav></breadcrumb-nav>
 
   <main class="main-content settings-page">
-    <a href="/dashboard" class="back-link">&larr; Dashboard</a>
     <h1 class="settings-title">Settings</h1>
 
     <div class="settings-nav" style="display:flex;gap:0.5rem;margin-bottom:1.5rem">
@@ -643,6 +643,7 @@ app.get("/settings/alerts", (req, res) => {
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/breadcrumb-nav.js"></script>
   <script src="/js/components/alert-settings.js"></script>
   <script src="/js/components/alert-history.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
@@ -728,9 +729,9 @@ app.get("/settings/api-keys", (req, res) => {
 </head>
 <body>
   <nav-bar></nav-bar>
+  <breadcrumb-nav></breadcrumb-nav>
 
   <main class="main-content settings-page">
-    <a href="/dashboard" class="back-link">&larr; Dashboard</a>
     <h1 class="settings-title">Settings</h1>
 
     <div class="settings-nav">
@@ -745,6 +746,7 @@ app.get("/settings/api-keys", (req, res) => {
 
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/breadcrumb-nav.js"></script>
   <script src="/js/components/api-key-manager.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
 </body>
@@ -1081,11 +1083,11 @@ app.get("/tokens/:symbol", (req, res) => {
 </head>
 <body>
   <nav-bar></nav-bar>
+  <breadcrumb-nav></breadcrumb-nav>
 
   <main class="main-content token-page" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(displayName)}">
     <div class="token-hero">
       <div class="token-hero-info">
-        <a href="/dashboard" class="back-link">&larr; Dashboard</a>
         <h1 class="token-hero-title">${escapeHtml(displayName)} <span class="token-hero-symbol">${escapeHtml(displaySymbol)}</span></h1>
         <div class="token-hero-price" id="hero-price"></div>
       </div>
@@ -1159,6 +1161,7 @@ app.get("/tokens/:symbol", (req, res) => {
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/breadcrumb-nav.js"></script>
   <script src="/js/components/news-feed.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/affiliate-cta.js"></script>

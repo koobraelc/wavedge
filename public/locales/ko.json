@@ -3,6 +3,14 @@
   "nav.market": "시장",
   "nav.alerts": "알림",
   "nav.billing": "결제",
+  "nav.settings": "설정",
+  "nav.alertSettings": "알림 설정",
+  "nav.watchlist": "관심 목록",
+  "nav.apiKeys": "API 키",
+  "nav.switchTheme": "테마",
+  "nav.language": "언어",
+  "nav.searchPlaceholder": "토큰 또는 뉴스 검색...",
+  "nav.searchLabel": "검색",
   "nav.login": "로그인",
   "nav.logout": "로그아웃"
 }

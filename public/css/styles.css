@@ -835,6 +835,231 @@ watchlist-widget {
   margin-bottom: 24px;
 }
 
+.wl-widget {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.wl-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wl-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wl-body { padding: 0; }
+
+.wl-empty {
+  padding: 32px 18px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wl-table thead th {
+  padding: 8px 14px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.wl-th-price,
+.wl-th-change,
+.wl-th-signals { text-align: right; }
+
+.wl-th-chart { width: 56px; }
+
+.wl-row {
+  transition: background 0.15s;
+}
+
+.wl-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.wl-row td {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.wl-row:last-child td {
+  border-bottom: none;
+}
+
+.wl-cell-token a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.wl-cell-token a:hover { color: var(--link); }
+
+.wl-symbol {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.wl-name {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-cell-price {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.wl-cell-change {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.wl-up { color: var(--green); }
+.wl-down { color: var(--red); }
+
+.wl-cell-signals {
+  text-align: right;
+}
+
+.wl-badge {
+  display: inline-block;
+  background: rgba(31, 111, 235, 0.15);
+  color: var(--accent-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.wl-badge-empty {
+  display: inline-block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 2px 7px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.wl-cell-chart {
+  text-align: right;
+  padding-right: 14px;
+}
+
+.wl-sparkline {
+  display: block;
+  margin-left: auto;
+}
+
+.wl-cards { display: none; }
+
+/* Watchlist skeleton */
+.wl-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wl-skel-row:last-child { border-bottom: none; }
+.wl-skel-token { width: 80px; height: 14px; border-radius: 4px; }
+.wl-skel-price { width: 60px; height: 14px; border-radius: 4px; margin-left: auto; }
+.wl-skel-change { width: 44px; height: 14px; border-radius: 4px; }
+
+/* Watchlist responsive: 2-col grid on mobile */
+@media (max-width: 600px) {
+  .wl-table { display: none; }
+
+  .wl-body { padding: 8px; }
+
+  .wl-body::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+
+  watchlist-widget .wl-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .wl-card {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.15s;
+  }
+
+  .wl-card:hover {
+    background: var(--border);
+    text-decoration: none;
+  }
+
+  .wl-card-symbol {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .wl-card-name {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wl-card-price {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+
+  .wl-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .wl-card-change {
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+}
+
 /* === Token Page === */
 .token-page .back-link {
   color: var(--text-secondary);

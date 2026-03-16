@@ -10,6 +10,7 @@
   const statsRow = document.querySelector('stats-row');
   const impactFeed = document.querySelector('impact-feed');
   const signalHeatmap = document.querySelector('signal-heatmap');
+  const watchlistWidget = document.querySelector('watchlist-widget');
 
   // --- Search ---
   document.addEventListener('nav-search', async (e) => {
@@ -134,6 +135,7 @@
       const hotSymbols = impactFeed.getHotSymbols();
       signalHeatmap.update(prices, hotSymbols);
     }
+    if (watchlistWidget) watchlistWidget.refresh();
     loadImpacts(news);
   }, 60000);
 })();

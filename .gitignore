@@ -7,3 +7,5 @@ coverage/
 data/
 .vscode/
 *.tsbuildinfo
+agents/*/memory/
+agents/*/life/

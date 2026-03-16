@@ -6,10 +6,11 @@ class WatchlistWidget extends HTMLElement {
   }
 
   connectedCallback() {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     this.innerHTML = `
       <div class="wl-widget">
         <div class="wl-header">
-          <span class="wl-title">Top Tokens</span>
+          <span class="wl-title">${t('watchlist.topTokens')}</span>
         </div>
         <div class="wl-body" id="wl-body">
           ${this._skeletonRows(4)}
@@ -42,8 +43,9 @@ class WatchlistWidget extends HTMLElement {
   }
 
   _render() {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const title = this.querySelector('.wl-title');
-    if (title) title.textContent = this._isPersonalized ? 'Your Watchlist' : 'Top Tokens';
+    if (title) title.textContent = this._isPersonalized ? t('watchlist.yourWatchlist') : t('watchlist.topTokens');
 
     const body = this.querySelector('#wl-body');
     if (!body) return;
@@ -61,10 +63,10 @@ class WatchlistWidget extends HTMLElement {
       <table class="wl-table">
         <thead>
           <tr>
-            <th class="wl-th-token">Token</th>
-            <th class="wl-th-price">Price</th>
-            <th class="wl-th-change">24h</th>
-            <th class="wl-th-signals">Signals <info-tip text="過去24小時內與此幣相關的新聞和事件數量。"></info-tip></th>
+            <th class="wl-th-token">${t('watchlist.token')}</th>
+            <th class="wl-th-price">${t('watchlist.price')}</th>
+            <th class="wl-th-change">${t('watchlist.change24h')}</th>
+            <th class="wl-th-signals">${t('watchlist.signals')} <info-tip text="${this._esc(t('watchlist.signalsTip'))}"></info-tip></th>
             <th class="wl-th-chart"></th>
           </tr>
         </thead>
@@ -136,8 +138,9 @@ class WatchlistWidget extends HTMLElement {
   }
 
   _renderError() {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const body = this.querySelector('#wl-body');
-    if (body) body.innerHTML = '<div class="wl-empty">Unable to load watchlist</div>';
+    if (body) body.innerHTML = `<div class="wl-empty">${t('watchlist.loadFailed')}</div>`;
   }
 
   _formatPrice(n) {

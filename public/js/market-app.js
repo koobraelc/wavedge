@@ -57,6 +57,13 @@
     Other: '#6e7681'
   };
 
+  function escHtml(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
   function getSector(symbol) {
     return SECTORS[symbol.toLowerCase()] || 'Other';
   }
@@ -122,8 +129,8 @@
     filtered.forEach(function (t, i) {
       var pct = t.price_change_percentage_24h;
       var size = tileSize(i + 1, filtered.length);
-      html += '<a href="/tokens/' + t.symbol + '" class="heatmap-tile ' + size + '" style="background:' + heatColor(pct) + '">';
-      html += '<span class="heatmap-symbol">' + t.symbol.toUpperCase() + '</span>';
+      html += '<a href="/tokens/' + encodeURIComponent(t.symbol) + '" class="heatmap-tile ' + size + '" style="background:' + heatColor(pct) + '">';
+      html += '<span class="heatmap-symbol">' + escHtml(t.symbol.toUpperCase()) + '</span>';
       html += '<span class="heatmap-change ' + changeClass(pct) + '">' + formatChange(pct) + '</span>';
       html += '</a>';
     });
@@ -175,8 +182,8 @@
       html += '<div class="sector-tokens">';
       sec.tokens.slice(0, 3).forEach(function (t) {
         var pct = t.price_change_percentage_24h;
-        html += '<a href="/tokens/' + t.symbol + '" class="sector-token">';
-        html += '<span>' + t.symbol.toUpperCase() + '</span>';
+        html += '<a href="/tokens/' + encodeURIComponent(t.symbol) + '" class="sector-token">';
+        html += '<span>' + escHtml(t.symbol.toUpperCase()) + '</span>';
         html += '<span class="' + changeClass(pct) + '">' + formatChange(pct) + '</span>';
         html += '</a>';
       });
@@ -212,11 +219,11 @@
     var html = '<div class="ranking-list">';
     list.forEach(function (t, i) {
       var pct = t.price_change_percentage_24h;
-      html += '<a href="/tokens/' + t.symbol + '" class="ranking-row">';
+      html += '<a href="/tokens/' + encodeURIComponent(t.symbol) + '" class="ranking-row">';
       html += '<span class="ranking-rank">' + (i + 1) + '</span>';
       html += '<div class="ranking-info">';
-      html += '<span class="ranking-symbol">' + t.symbol.toUpperCase() + '</span>';
-      html += '<span class="ranking-name">' + t.name + '</span>';
+      html += '<span class="ranking-symbol">' + escHtml(t.symbol.toUpperCase()) + '</span>';
+      html += '<span class="ranking-name">' + escHtml(t.name) + '</span>';
       html += '</div>';
       html += '<span class="ranking-price">' + formatPrice(t.price_usd) + '</span>';
       html += '<span class="ranking-change ' + changeClass(pct) + '">' + formatChange(pct) + '</span>';
@@ -232,7 +239,7 @@
     var latest = tokens[0].fetched_at;
     if (latest) {
       var d = new Date(latest + (latest.endsWith('Z') ? '' : 'Z'));
-      el.textContent = 'Last updated: ' + d.toLocaleTimeString();
+      el.textContent = t('market.lastUpdated', { time: d.toLocaleTimeString() });
     }
   }
 

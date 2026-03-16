@@ -72,8 +72,9 @@ class ImpactFeed extends HTMLElement {
     }
 
     container.style.display = '';
+    const t = window.i18n ? window.i18n.t : (k) => k;
     container.innerHTML = `
-      <button class="feed-filter-tab${this._activeFilter === 'all' ? ' active' : ''}" data-filter="all">All</button>
+      <button class="feed-filter-tab${this._activeFilter === 'all' ? ' active' : ''}" data-filter="all">${t('impact.all')}</button>
       ${tokens.map(t => `<button class="feed-filter-tab${this._activeFilter === t ? ' active' : ''}" data-filter="${this._esc(t)}">${this._esc(t)}</button>`).join('')}
     `;
 
@@ -169,8 +170,9 @@ class ImpactFeed extends HTMLElement {
     }
 
     // Set Alert link for first token
+    const _t = window.i18n ? window.i18n.t : (k) => k;
     const alertLink = firstToken
-      ? `<a href="/settings/alerts?token=${encodeURIComponent(firstToken.toUpperCase())}" class="feed-alert-link">Set Alert</a>`
+      ? `<a href="/settings/alerts?token=${encodeURIComponent(firstToken.toUpperCase())}" class="feed-alert-link">${_t('impact.setAlert')}</a>`
       : '';
 
     return `
@@ -312,14 +314,15 @@ class ImpactFeed extends HTMLElement {
   }
 
   _relativeTime(iso) {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return t('time.justNow');
+    if (mins < 60) return t('time.mAgo', { n: mins });
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
+    if (hrs < 24) return t('time.hAgo', { n: hrs });
     const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    return t('time.dAgo', { n: days });
   }
 
   _fullTime(iso) {

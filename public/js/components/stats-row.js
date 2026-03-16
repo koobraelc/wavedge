@@ -12,6 +12,7 @@ class StatsRow extends HTMLElement {
 
   update(prices, newsCount) {
     const row = this.querySelector('.stats-row');
+    const t = window.i18n ? window.i18n.t : (k) => k;
 
     const btc = prices.find(p => p.symbol.toLowerCase() === 'btc');
     const eth = prices.find(p => p.symbol.toLowerCase() === 'eth');
@@ -29,7 +30,7 @@ class StatsRow extends HTMLElement {
       ${this._priceCard('ETH', eth)}
       ${this._mcapCard(totalMcap, mcapChange)}
       <div class="stat-card stat-card-sentiment" id="sentiment-card">
-        <div class="label">Market Sentiment <info-tip text="市場情緒：看多(Bullish)=大家看好，看空(Bearish)=大家看衰。"></info-tip></div>
+        <div class="label">${t('stats.sentiment')} <info-tip text="${this._esc(t('stats.sentimentTip'))}"></info-tip></div>
         <div class="value" style="color: var(--text-muted)">...</div>
       </div>
     `;
@@ -38,10 +39,11 @@ class StatsRow extends HTMLElement {
   }
 
   _priceCard(symbol, data) {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     if (!data) {
       return `
         <div class="stat-card">
-          <div class="label">${symbol} Price</div>
+          <div class="label">${this._esc(symbol)} ${t('stats.price')}</div>
           <div class="value">--</div>
         </div>
       `;
@@ -53,22 +55,23 @@ class StatsRow extends HTMLElement {
 
     return `
       <div class="stat-card">
-        <div class="label">${this._esc(symbol)} Price</div>
+        <div class="label">${this._esc(symbol)} ${t('stats.price')}</div>
         <div class="value market-pulse-price">${price}</div>
-        <div class="market-pulse-change ${cls}">${sign}${pct.toFixed(2)}% <info-tip text="過去24小時的價格變化百分比。"></info-tip> <span class="change-period">24h</span></div>
+        <div class="market-pulse-change ${cls}">${sign}${pct.toFixed(2)}% <info-tip text="${this._esc(t('stats.priceTip'))}"></info-tip> <span class="change-period">${t('stats.24h')}</span></div>
       </div>
     `;
   }
 
   _mcapCard(totalMcap, mcapChange) {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     const cls = mcapChange >= 0 ? 'change-positive' : 'change-negative';
     const sign = mcapChange >= 0 ? '+' : '';
 
     return `
       <div class="stat-card">
-        <div class="label">Total Market Cap <info-tip text="所有流通幣的總價值。越高代表市場越大。"></info-tip></div>
+        <div class="label">${t('stats.marketCap')} <info-tip text="${this._esc(t('stats.marketCapTip'))}"></info-tip></div>
         <div class="value market-pulse-price">${this._formatMcap(totalMcap)}</div>
-        <div class="market-pulse-change ${cls}">${sign}${mcapChange.toFixed(2)}% <span class="change-period">24h</span></div>
+        <div class="market-pulse-change ${cls}">${sign}${mcapChange.toFixed(2)}% <span class="change-period">${t('stats.24h')}</span></div>
       </div>
     `;
   }
@@ -102,8 +105,9 @@ class StatsRow extends HTMLElement {
         pillCls = 'sentiment-bearish';
       }
 
+      const t = window.i18n ? window.i18n.t : (k) => k;
       card.innerHTML = `
-        <div class="label">Market Sentiment <info-tip text="市場情緒：看多(Bullish)=大家看好，看空(Bearish)=大家看衰。"></info-tip></div>
+        <div class="label">${t('stats.sentiment')} <info-tip text="${this._esc(t('stats.sentimentTip'))}"></info-tip></div>
         <div class="value"><span class="sentiment-pill ${pillCls}">${this._esc(label)}</span></div>
         <div class="sentiment-bar">
           <div class="sentiment-bar-fill" style="width: ${Math.max(0, Math.min(100, score))}%; background: ${color}"></div>
@@ -115,9 +119,10 @@ class StatsRow extends HTMLElement {
   }
 
   _renderSentimentFallback(card) {
+    const t = window.i18n ? window.i18n.t : (k) => k;
     card.innerHTML = `
-      <div class="label">Market Sentiment <info-tip text="市場情緒：看多(Bullish)=大家看好，看空(Bearish)=大家看衰。"></info-tip></div>
-      <div class="value"><span class="sentiment-pill sentiment-neutral">N/A</span></div>
+      <div class="label">${t('stats.sentiment')} <info-tip text="${this._esc(t('stats.sentimentTip'))}"></info-tip></div>
+      <div class="value"><span class="sentiment-pill sentiment-neutral">${t('stats.na')}</span></div>
     `;
   }
 

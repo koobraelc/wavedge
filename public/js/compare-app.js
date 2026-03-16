@@ -261,15 +261,16 @@
         return;
       }
 
+      var colors = getChartThemeColors();
       var chartHeight = window.innerWidth <= 480 ? 220 : 300;
       var chart = LightweightCharts.createChart(chartEl, {
         width: chartEl.clientWidth,
         height: chartHeight,
-        layout: { background: { color: '#161b22' }, textColor: '#8b949e' },
-        grid: { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+        layout: { background: { color: colors.bg }, textColor: colors.text },
+        grid: { vertLines: { color: colors.grid }, horzLines: { color: colors.grid } },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-        rightPriceScale: { borderColor: '#30363d' },
-        timeScale: { borderColor: '#30363d', timeVisible: true },
+        rightPriceScale: { borderColor: colors.border },
+        timeScale: { borderColor: colors.border, timeVisible: true },
       });
 
       var candles = toCandles(filtered, 3600);
@@ -403,6 +404,17 @@
 
     container.innerHTML = '<div class="section-header"><h2>Detailed Analysis</h2></div>'
       + '<div class="compare-news-links">' + links + '</div>';
+  }
+
+  /** Read current theme colors from CSS custom properties */
+  function getChartThemeColors() {
+    var s = getComputedStyle(document.documentElement);
+    return {
+      bg: s.getPropertyValue('--bg-secondary').trim() || '#161b22',
+      text: s.getPropertyValue('--text-secondary').trim() || '#8b949e',
+      grid: s.getPropertyValue('--bg-tertiary').trim() || '#21262d',
+      border: s.getPropertyValue('--border').trim() || '#30363d',
+    };
   }
 
   // --- Utilities ---

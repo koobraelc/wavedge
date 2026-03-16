@@ -21,6 +21,7 @@ let alertTask: ScheduledTask | null = null;
 let digestTask: ScheduledTask | null = null;
 let sentimentTask: ScheduledTask | null = null;
 let whaleTask: ScheduledTask | null = null;
+let impactTask: ScheduledTask | null = null;
 
 const schedulerRepo = new SchedulerRepository();
 
@@ -32,6 +33,7 @@ export const schedulerStatus: Record<string, { lastRun: string | null; lastError
   digest: { lastRun: null, lastError: null },
   sentiment: { lastRun: null, lastError: null },
   whale: { lastRun: null, lastError: null },
+  impact: { lastRun: null, lastError: null },
 };
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
@@ -260,6 +262,50 @@ export function startWhaleScheduler(intervalCron: string = "*/10 * * * *"): void
   run();
 
   whaleTask = cron.schedule(intervalCron, run);
+}
+
+/** Impact computation scheduler — runs every hour to compute price impact for classified articles */
+export function startImpactScheduler(intervalCron: string = "0 * * * *"): void {
+  if (impactTask) {
+    console.warn("Impact scheduler already running");
+    return;
+  }
+
+  const calculator = new ImpactCalculator(
+    new ImpactRepository(),
+    new NewsRepository(),
+    new NewsClassifier(),
+    new PriceRepository()
+  );
+
+  const run = () => {
+    try {
+      const count = calculator.computeImpactEvents(200);
+      schedulerStatus.impact.lastRun = new Date().toISOString();
+      if (count > 0) {
+        console.log(`Impact scheduler: computed ${count} events`);
+      }
+    } catch (err) {
+      console.error("Impact computation failed:", err);
+      schedulerStatus.impact.lastError = new Date().toISOString();
+      schedulerRepo.logError("impact", err);
+    }
+  };
+
+  console.log(`Starting impact scheduler with cron: ${intervalCron}`);
+
+  // Run immediately to backfill existing articles
+  run();
+
+  impactTask = cron.schedule(intervalCron, run);
+}
+
+export function stopImpactScheduler(): void {
+  if (impactTask) {
+    impactTask.stop();
+    impactTask = null;
+    console.log("Impact scheduler stopped");
+  }
 }
 
 export function stopWhaleScheduler(): void {

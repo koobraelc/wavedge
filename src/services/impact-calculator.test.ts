@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createTestDatabase } from "../db/database.js";
 import { ImpactRepository } from "../db/impact-repository.js";
 import { NewsRepository, type ArticleInsert } from "../db/news-repository.js";
+import { PriceRepository } from "../db/price-repository.js";
 import { ImpactCalculator, computeConfidence } from "./impact-calculator.js";
 import { NewsClassifier } from "./news-classifier.js";
 import type Database from "better-sqlite3";
@@ -158,6 +159,152 @@ describe("ImpactCalculator", () => {
       });
 
       const count = await calculator.classifyNewArticles();
+      expect(count).toBe(0);
+    });
+  });
+
+  describe("computeImpactEvents", () => {
+    let priceRepo: PriceRepository;
+    let calcWithPrices: ImpactCalculator;
+
+    beforeEach(() => {
+      priceRepo = new PriceRepository(db);
+      calcWithPrices = new ImpactCalculator(impactRepo, newsRepo, classifier, priceRepo);
+    });
+
+    it("should throw if no PriceRepository provided", () => {
+      expect(() => calculator.computeImpactEvents()).toThrow(
+        "PriceRepository required"
+      );
+    });
+
+    it("should compute impact events for classified articles with price data", () => {
+      // Insert an article published 48 hours ago
+      const publishedAt = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+      newsRepo.insertArticle(
+        makeArticleInsert({
+          guid: "impact-test-1",
+          title: "SEC Approves Bitcoin ETF",
+          publishedAt,
+          tokenTags: ["BTC"],
+        })
+      );
+      const article = newsRepo.getArticleByGuid("impact-test-1")!;
+
+      // Classify the article
+      impactRepo.upsertCategory({
+        articleId: article.id,
+        category: "etf",
+        confidence: 0.9,
+      });
+
+      // Insert token and price data at various timestamps
+      priceRepo.upsertToken("bitcoin", "btc", "Bitcoin");
+
+      // Format timestamps for SQLite (YYYY-MM-DD HH:MM:SS)
+      const formatForSqlite = (iso: string) =>
+        iso.replace("T", " ").replace("Z", "").slice(0, 19);
+
+      const baseTime = new Date(publishedAt);
+      const t0 = formatForSqlite(baseTime.toISOString());
+      const t1h = formatForSqlite(
+        new Date(baseTime.getTime() + 1 * 3600 * 1000).toISOString()
+      );
+      const t4h = formatForSqlite(
+        new Date(baseTime.getTime() + 4 * 3600 * 1000).toISOString()
+      );
+      const t24h = formatForSqlite(
+        new Date(baseTime.getTime() + 24 * 3600 * 1000).toISOString()
+      );
+
+      // Insert prices directly
+      db.prepare(
+        `INSERT INTO prices (token_id, price_usd, fetched_at) VALUES (?, ?, ?)`
+      ).run("bitcoin", 85000, t0);
+      db.prepare(
+        `INSERT INTO prices (token_id, price_usd, fetched_at) VALUES (?, ?, ?)`
+      ).run("bitcoin", 85500, t1h);
+      db.prepare(
+        `INSERT INTO prices (token_id, price_usd, fetched_at) VALUES (?, ?, ?)`
+      ).run("bitcoin", 86000, t4h);
+      db.prepare(
+        `INSERT INTO prices (token_id, price_usd, fetched_at) VALUES (?, ?, ?)`
+      ).run("bitcoin", 87000, t24h);
+
+      const count = calcWithPrices.computeImpactEvents();
+
+      expect(count).toBe(1);
+
+      const events = impactRepo.getImpactByArticleId(article.id);
+      expect(events).toHaveLength(1);
+      expect(events[0].token_symbol).toBe("BTC");
+      expect(events[0].price_at_event).toBe(85000);
+      expect(events[0].price_1h).toBe(85500);
+      expect(events[0].price_4h).toBe(86000);
+      expect(events[0].price_24h).toBe(87000);
+      expect(events[0].change_1h).toBeCloseTo(0.588, 1);
+      expect(events[0].change_4h).toBeCloseTo(1.176, 1);
+      expect(events[0].change_24h).toBeCloseTo(2.353, 1);
+    });
+
+    it("should skip articles without price data", () => {
+      const publishedAt = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+      newsRepo.insertArticle(
+        makeArticleInsert({
+          guid: "no-price-test",
+          publishedAt,
+          tokenTags: ["XYZ"],
+        })
+      );
+      const article = newsRepo.getArticleByGuid("no-price-test")!;
+
+      impactRepo.upsertCategory({
+        articleId: article.id,
+        category: "market",
+        confidence: 0.8,
+      });
+
+      const count = calcWithPrices.computeImpactEvents();
+      expect(count).toBe(0);
+    });
+
+    it("should not recompute existing impact events", () => {
+      const publishedAt = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+      newsRepo.insertArticle(
+        makeArticleInsert({
+          guid: "already-computed",
+          publishedAt,
+          tokenTags: ["BTC"],
+        })
+      );
+      const article = newsRepo.getArticleByGuid("already-computed")!;
+
+      impactRepo.upsertCategory({
+        articleId: article.id,
+        category: "etf",
+        confidence: 0.9,
+      });
+
+      // Pre-insert an impact event
+      impactRepo.upsertImpactEvent({
+        articleId: article.id,
+        tokenSymbol: "BTC",
+        category: "etf",
+        priceAtEvent: 85000,
+        price1h: 85500,
+        price4h: 86000,
+        price24h: 87000,
+        change1h: 0.59,
+        change4h: 1.18,
+        change24h: 2.35,
+        sampleSize: 0,
+        avgChange1h: null,
+        avgChange4h: null,
+        avgChange24h: null,
+        confidenceScore: 0,
+      });
+
+      const count = calcWithPrices.computeImpactEvents();
       expect(count).toBe(0);
     });
   });

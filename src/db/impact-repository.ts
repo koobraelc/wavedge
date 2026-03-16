@@ -369,6 +369,37 @@ export class ImpactRepository {
       .map(([symbol, coMentions]) => ({ symbol, coMentions }));
   }
 
+  /**
+   * Get classified articles that are old enough (24h+) for full impact computation
+   * and don't already have impact events computed.
+   */
+  getArticlesReadyForImpact(limit: number = 100): {
+    articleId: number;
+    publishedAt: string;
+    tokenTags: string;
+    category: string;
+  }[] {
+    return this.db
+      .prepare(
+        `SELECT a.id as articleId, a.published_at as publishedAt,
+                a.token_tags as tokenTags, nc.category
+         FROM articles a
+         JOIN news_categories nc ON nc.article_id = a.id
+         LEFT JOIN impact_events ie ON ie.article_id = a.id
+         WHERE ie.id IS NULL
+           AND a.token_tags != '[]'
+           AND a.published_at <= datetime('now', '-24 hours')
+         ORDER BY a.published_at DESC
+         LIMIT ?`
+      )
+      .all(limit) as {
+      articleId: number;
+      publishedAt: string;
+      tokenTags: string;
+      category: string;
+    }[];
+  }
+
   getUncategorizedArticleIds(limit: number = 100): number[] {
     const rows = this.db
       .prepare(

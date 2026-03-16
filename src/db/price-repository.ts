@@ -112,6 +112,29 @@ export class PriceRepository {
       .all(tokenId, limit) as PriceRow[];
   }
 
+  /**
+   * Find the closest price to a given timestamp for a token symbol.
+   * Returns null if no price exists within 6 hours of the target time.
+   */
+  getPriceNearTimestamp(symbol: string, timestamp: string): PriceRow | null {
+    const token = this.db
+      .prepare(`SELECT id FROM tokens WHERE symbol = ?`)
+      .get(symbol.toLowerCase()) as { id: string } | undefined;
+    if (!token) return null;
+
+    const row = this.db
+      .prepare(
+        `SELECT * FROM prices
+         WHERE token_id = ?
+           AND ABS(strftime('%s', fetched_at) - strftime('%s', ?)) <= 21600
+         ORDER BY ABS(strftime('%s', fetched_at) - strftime('%s', ?)) ASC
+         LIMIT 1`
+      )
+      .get(token.id, timestamp, timestamp) as PriceRow | undefined;
+
+    return row ?? null;
+  }
+
   getTokenBySymbol(symbol: string): TokenRow | undefined {
     return this.db
       .prepare(`SELECT * FROM tokens WHERE symbol = ?`)

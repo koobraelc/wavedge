@@ -209,22 +209,18 @@ class SignalDetailPanel extends HTMLElement {
 
     let pills = '';
 
-    // News pill with threshold
+    // News pill — only show when there's data
     if (news && news.count > 0) {
       const level = news.count >= 5 ? 'sdp-pill-hot' : news.count >= 3 ? 'sdp-pill-hot' : 'sdp-pill-active';
       const threshold = news.count >= 5 ? t('signal.veryHigh') : news.count >= 3 ? t('signal.high') : t('signal.normal');
       pills += `<span class="sdp-pill ${level}">📰 ${news.count} article${news.count > 1 ? 's' : ''} <span class="sdp-threshold">${threshold}</span></span>`;
-    } else {
-      pills += `<span class="sdp-pill sdp-pill-inactive">📰 ${t('signal.noNews')}</span>`;
     }
 
-    // Social pill
+    // Social pill — only show when there's data
     if (social && social.mentionCount > 0) {
       const label = social.sentimentLabel || 'neutral';
       const cls = label === 'bullish' ? 'sdp-pill-bull' : label === 'bearish' ? 'sdp-pill-bear' : 'sdp-pill-active';
       pills += `<span class="sdp-pill ${cls}">💬 ${this._capitalize(label)} · ${social.mentionCount} ${t('signal.mentions')}</span>`;
-    } else {
-      pills += `<span class="sdp-pill sdp-pill-inactive">💬 ${t('signal.noSocialData')}</span>`;
     }
 
     // Whale pill
@@ -257,11 +253,7 @@ class SignalDetailPanel extends HTMLElement {
     const t = this._t();
     const news = this._data.newsSignal;
     if (!news || !news.articles || news.articles.length === 0) {
-      return `
-        <div class="sdp-section">
-          <div class="sdp-section-header"><span>📰 ${t('signal.news')} <info-tip text="${t('signal.newsTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noRecentNews', { symbol: this._esc(this._symbol) })}</p></div>
-        </div>`;
+      return '';
     }
 
     // Threshold explanation
@@ -315,11 +307,7 @@ class SignalDetailPanel extends HTMLElement {
     const detail = this._data.sentiment;
 
     if (!social && !detail) {
-      return `
-        <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>💬 ${t('signal.socialSentiment')} <info-tip text="${t('signal.socialTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noSocialAvailable')}</p></div>
-        </div>`;
+      return '';
     }
 
     const label = (social && social.sentimentLabel) || (detail && detail.sentimentLabel) || 'neutral';
@@ -360,11 +348,7 @@ class SignalDetailPanel extends HTMLElement {
     const t = this._t();
     const whale = this._data.whaleActivity;
     if (!whale || whale.transactionCount === 0) {
-      return `
-        <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>🐋 ${t('signal.whaleActivity')} <info-tip text="${t('signal.whaleTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noWhaleDetected')}</p></div>
-        </div>`;
+      return '';
     }
 
     return `
@@ -389,11 +373,7 @@ class SignalDetailPanel extends HTMLElement {
     const t = this._t();
     const impact = this._data.impact;
     if (!impact || !impact.categories || impact.categories.length === 0) {
-      return `
-        <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>📊 ${t('signal.historicalImpact')} <info-tip text="${t('signal.impactTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noImpactData')}</p></div>
-        </div>`;
+      return '';
     }
 
     const rows = impact.categories.map(cat => {

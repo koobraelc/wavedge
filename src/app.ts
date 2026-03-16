@@ -7,9 +7,14 @@ import { createTokensRouter } from "./api/tokens.js";
 import { createSearchRouter } from "./api/search.js";
 import { createAlertsRouter } from "./api/alerts.js";
 import { createDigestRouter } from "./api/digest.js";
+import { createAuthRouter } from "./api/auth.js";
+import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { PriceRepository } from "./db/price-repository.js";
 
 const app = express();
+
+// Stripe webhooks need raw body — mount before express.json()
+app.use("/api/webhooks", express.raw({ type: "application/json" }));
 
 app.use(express.json());
 
@@ -37,10 +42,46 @@ app.use("/api/tokens", createTokensRouter());
 app.use("/api/search", createSearchRouter());
 app.use("/api/alerts", createAlertsRouter());
 app.use("/api/digest", createDigestRouter());
+app.use("/api/auth", createAuthRouter());
+app.use("/api/billing", createBillingRouter());
+app.use("/api/webhooks", createWebhookRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
+
+// Landing page (root)
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(publicDir, "landing.html"));
+});
+
+// Dashboard
+app.get("/dashboard", (_req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
+
+// Auth pages
+app.get("/login", (_req, res) => {
+  res.sendFile(path.join(publicDir, "login.html"));
+});
+
+// Handle magic link callback — store token client-side and redirect
+app.get("/auth/callback", (_req, res) => {
+  res.type("html").send(`<!DOCTYPE html>
+<html><head><title>Signing in...</title></head>
+<body>
+<script>
+  var t = new URLSearchParams(window.location.search).get('token');
+  if (t) { localStorage.setItem('wavedge_token', t); window.location.href = '/dashboard'; }
+  else { document.body.textContent = 'Invalid login link.'; }
+</script>
+</body></html>`);
+});
+
+// Billing page
+app.get("/billing", (_req, res) => {
+  res.sendFile(path.join(publicDir, "billing.html"));
+});
 
 // Alert settings page
 app.get("/settings/alerts", (_req, res) => {
@@ -60,7 +101,7 @@ app.get("/settings/alerts", (_req, res) => {
   <nav-bar></nav-bar>
 
   <main class="main-content settings-page">
-    <a href="/" class="back-link">&larr; Dashboard</a>
+    <a href="/dashboard" class="back-link">&larr; Dashboard</a>
     <h1 class="settings-title">Alert Settings</h1>
 
     <alert-settings></alert-settings>
@@ -133,7 +174,7 @@ app.get("/tokens/:symbol", (req, res) => {
   <main class="main-content token-page" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(displayName)}">
     <div class="token-hero">
       <div class="token-hero-info">
-        <a href="/" class="back-link">&larr; Dashboard</a>
+        <a href="/dashboard" class="back-link">&larr; Dashboard</a>
         <h1 class="token-hero-title">${escapeHtml(displayName)} <span class="token-hero-symbol">${escapeHtml(displaySymbol)}</span></h1>
         <div class="token-hero-price" id="hero-price"></div>
       </div>

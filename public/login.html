@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In — Wavedge</title>
+  <meta name="description" content="Sign in to Wavedge with a magic link. No passwords needed.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <a href="/" class="logo">Wave<span>edge</span></a>
+    <nav class="header-nav">
+      <a href="/">Home</a>
+    </nav>
+  </header>
+
+  <main class="main-content auth-page">
+    <div class="auth-card" id="auth-card">
+      <h1 class="auth-title">Welcome to Wavedge</h1>
+      <p class="auth-subtitle">Enter your email to receive a magic link. No password needed.</p>
+
+      <form id="magic-link-form" class="auth-form">
+        <label for="email" class="auth-label">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="you@example.com"
+          class="auth-input"
+        />
+        <button type="submit" class="btn-primary btn-full" id="submit-btn">
+          Send Magic Link
+        </button>
+        <p class="auth-status" id="auth-status"></p>
+      </form>
+
+      <div class="auth-sent hidden" id="auth-sent">
+        <div class="sent-icon">&#9993;</div>
+        <h2>Check your email</h2>
+        <p>We sent a magic link to <strong id="sent-email"></strong>. Click the link in the email to sign in.</p>
+        <p class="auth-hint">Didn't receive it? Check your spam folder or <button class="link-btn" id="resend-btn">resend the link</button>.</p>
+      </div>
+    </div>
+
+    <p class="auth-footer">By signing in, you agree to our Terms of Service and Privacy Policy.</p>
+  </main>
+
+  <script>
+    const form = document.getElementById('magic-link-form');
+    const emailInput = document.getElementById('email');
+    const submitBtn = document.getElementById('submit-btn');
+    const status = document.getElementById('auth-status');
+    const sentView = document.getElementById('auth-sent');
+    const sentEmail = document.getElementById('sent-email');
+    const resendBtn = document.getElementById('resend-btn');
+
+    // Check for plan param (from pricing page)
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get('plan');
+
+    async function sendMagicLink(email) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      status.textContent = '';
+      status.className = 'auth-status';
+
+      try {
+        const body = { email };
+        if (plan) body.plan = plan;
+
+        const res = await fetch('/api/auth/magic-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to send magic link');
+        }
+
+        // Show success view
+        form.classList.add('hidden');
+        sentView.classList.remove('hidden');
+        sentEmail.textContent = email;
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = 'auth-status error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Magic Link';
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (email) sendMagicLink(email);
+    });
+
+    resendBtn.addEventListener('click', () => {
+      const email = sentEmail.textContent;
+      sentView.classList.add('hidden');
+      form.classList.remove('hidden');
+      emailInput.value = email;
+      sendMagicLink(email);
+    });
+  </script>
+</body>
+</html>

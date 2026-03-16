@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing — Wavedge</title>
+  <meta name="description" content="Manage your Wavedge subscription and billing.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content settings-page">
+    <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+    <h1 class="settings-title">Billing & Plan</h1>
+
+    <div class="billing-container" id="billing">
+      <div class="loading-state"><span class="spinner"></span>Loading plan details...</div>
+    </div>
+  </main>
+
+  <script src="/js/components/nav-bar.js"></script>
+  <script>
+    const container = document.getElementById('billing');
+
+    async function loadBilling() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('wavedge_token') || '') }
+        });
+
+        if (!res.ok) {
+          // Not authenticated — show free plan default
+          renderPlan({ plan: 'free', email: null });
+          return;
+        }
+
+        const user = await res.json();
+        renderPlan(user);
+      } catch {
+        renderPlan({ plan: 'free', email: null });
+      }
+    }
+
+    function renderPlan(user) {
+      const isFree = !user.plan || user.plan === 'free';
+      const isPro = user.plan === 'pro';
+
+      container.innerHTML = `
+        <div class="billing-plan-card ${isPro ? 'pro' : ''}">
+          <div class="billing-plan-header">
+            <div>
+              <div class="billing-plan-name">${isPro ? 'Pro' : 'Free'} Plan</div>
+              <div class="billing-plan-price">${isPro ? '$19/month' : '$0/month'}</div>
+            </div>
+            ${isPro ? '<span class="pro-badge">PRO</span>' : ''}
+          </div>
+          <div class="billing-plan-details">
+            ${isFree ? `
+              <ul class="pricing-features">
+                <li>Dashboard with impact scores</li>
+                <li>Daily AI digest</li>
+                <li>Top 20 token pages</li>
+                <li>3 alerts per day</li>
+                <li>Web notifications only</li>
+              </ul>
+              <div class="billing-upgrade">
+                <p>Unlock real-time alerts, custom watchlists, Telegram & email alerts, and API access.</p>
+                <button class="btn-primary btn-full" onclick="handleUpgrade()">Upgrade to Pro — $19/mo</button>
+              </div>
+            ` : `
+              <ul class="pricing-features">
+                <li>Real-time alerts (unlimited)</li>
+                <li>Custom watchlists (50 tokens)</li>
+                <li>Historical impact data</li>
+                <li>Telegram & email alerts</li>
+                <li>API access (100 req/day)</li>
+              </ul>
+              ${user.email ? `<p class="billing-email">Billed to <strong>${escapeHtml(user.email)}</strong></p>` : ''}
+              <div class="billing-actions">
+                <button class="btn-secondary" onclick="handleManage()">Manage Subscription</button>
+              </div>
+            `}
+          </div>
+        </div>
+
+        ${isFree ? '' : `
+        <div class="billing-section">
+          <h3>Need to cancel?</h3>
+          <p class="billing-hint">You can cancel anytime. You'll keep Pro access until the end of your billing period.</p>
+          <button class="btn-danger-outline" onclick="handleManage()">Manage in Stripe</button>
+        </div>
+        `}
+      `;
+    }
+
+    function escapeHtml(str) {
+      const el = document.createElement('span');
+      el.textContent = str;
+      return el.innerHTML;
+    }
+
+    async function handleUpgrade() {
+      try {
+        const res = await fetch('/api/billing/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('wavedge_token') || '')
+          },
+          body: JSON.stringify({ plan: 'pro' })
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 401) {
+            window.location.href = '/login?plan=pro';
+            return;
+          }
+          alert(data.error || 'Failed to start checkout');
+          return;
+        }
+
+        const { url } = await res.json();
+        window.location.href = url;
+      } catch (err) {
+        alert('Something went wrong. Please try again.');
+      }
+    }
+
+    async function handleManage() {
+      try {
+        const res = await fetch('/api/billing/portal', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + (localStorage.getItem('wavedge_token') || '')
+          }
+        });
+
+        if (!res.ok) {
+          alert('Failed to open billing portal');
+          return;
+        }
+
+        const { url } = await res.json();
+        window.location.href = url;
+      } catch {
+        alert('Something went wrong. Please try again.');
+      }
+    }
+
+    loadBilling();
+  </script>
+</body>
+</html>

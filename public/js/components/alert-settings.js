@@ -8,18 +8,21 @@ class AlertSettings extends HTMLElement {
   }
 
   async _load() {
-    const [prefsRes, tokensRes] = await Promise.all([
+    const [prefsRes, tokensRes, pushStatusRes] = await Promise.all([
       fetch('/api/alerts/preferences?userId=default'),
-      fetch('/api/prices')
+      fetch('/api/prices'),
+      fetch('/api/alerts/push/status?userId=default')
     ]);
     const prefsJson = await prefsRes.json();
     const tokensJson = await tokensRes.json();
+    const pushStatusJson = await pushStatusRes.json();
 
     this._prefs = prefsJson.data;
     this._tokens = (tokensJson.data || []).map(t => ({
       symbol: t.symbol.toUpperCase(),
       name: t.name
     }));
+    this._pushSubscribed = pushStatusJson.data?.subscribed || false;
 
     this._render();
   }
@@ -105,6 +108,17 @@ class AlertSettings extends HTMLElement {
             <div class="channel-detail ${channels.includes('email') ? '' : 'hidden'}" id="email-detail">
               <label for="email-address">Email Address</label>
               <input type="email" id="email-address" placeholder="you@example.com" value="${this._esc(emailAddress)}">
+            </div>
+            <label class="channel-option">
+              <input type="checkbox" name="channel" value="push" ${channels.includes('push') ? 'checked' : ''}>
+              <div class="channel-info">
+                <strong>Push Notifications</strong>
+                <span>Browser push alerts even when tab is closed</span>
+              </div>
+            </label>
+            <div class="channel-detail ${channels.includes('push') ? '' : 'hidden'}" id="push-detail">
+              <span class="push-status" id="push-status">${this._pushSubscribed ? 'Subscribed to push notifications' : 'Not yet subscribed'}</span>
+              <button type="button" class="btn-secondary btn-sm" id="push-enable-btn">${this._pushSubscribed ? 'Resubscribe' : 'Enable Push'}</button>
             </div>
           </div>
         </div>
@@ -213,12 +227,21 @@ class AlertSettings extends HTMLElement {
       cb.addEventListener('change', () => {
         const telegramDetail = this.querySelector('#telegram-detail');
         const emailDetail = this.querySelector('#email-detail');
+        const pushDetail = this.querySelector('#push-detail');
         const telegramCb = this.querySelector('input[value="telegram"]');
         const emailCb = this.querySelector('input[value="email"]');
+        const pushCb = this.querySelector('input[value="push"]');
         telegramDetail.classList.toggle('hidden', !telegramCb.checked);
         emailDetail.classList.toggle('hidden', !emailCb.checked);
+        pushDetail.classList.toggle('hidden', !pushCb.checked);
       });
     });
+
+    // Push notification enable button
+    const pushEnableBtn = this.querySelector('#push-enable-btn');
+    if (pushEnableBtn) {
+      pushEnableBtn.addEventListener('click', () => this._enablePush());
+    }
 
     // Sensitivity buttons
     this.querySelectorAll('.sensitivity-btn').forEach(btn => {
@@ -296,6 +319,82 @@ class AlertSettings extends HTMLElement {
 
   _getSelectedSymbols() {
     return Array.from(this.querySelectorAll('.token-chip')).map(t => t.dataset.symbol);
+  }
+
+  async _enablePush() {
+    const statusEl = this.querySelector('#push-status');
+    const btn = this.querySelector('#push-enable-btn');
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      AlertSettings._showToast('Push notifications are not supported in this browser', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enabling...';
+
+    try {
+      // Get VAPID public key from server
+      const vapidRes = await fetch('/api/alerts/push/vapid-public-key');
+      if (!vapidRes.ok) {
+        throw new Error('Push notifications not configured on server');
+      }
+      const vapidJson = await vapidRes.json();
+      const vapidPublicKey = vapidJson.data.publicKey;
+
+      // Register service worker
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+
+      // Request permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        throw new Error('Notification permission denied');
+      }
+
+      // Subscribe to push
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this._urlBase64ToUint8Array(vapidPublicKey)
+      });
+
+      // Send subscription to server
+      const subJson = subscription.toJSON();
+      const res = await fetch('/api/alerts/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'default',
+          subscription: {
+            endpoint: subJson.endpoint,
+            keys: subJson.keys
+          }
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to save subscription');
+
+      this._pushSubscribed = true;
+      statusEl.textContent = 'Subscribed to push notifications';
+      btn.textContent = 'Resubscribe';
+      AlertSettings._showToast('Push notifications enabled', 'success');
+    } catch (err) {
+      AlertSettings._showToast(err.message || 'Failed to enable push notifications', 'error');
+      btn.textContent = 'Enable Push';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  _urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   }
 
   async _save() {

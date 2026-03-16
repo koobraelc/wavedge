@@ -255,6 +255,19 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_token ON affiliate_clicks(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_exchange ON affiliate_clicks(exchange);
 
+    -- Web push subscriptions
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subs_endpoint ON push_subscriptions(endpoint);
+
     -- Scheduler error logging
     CREATE TABLE IF NOT EXISTS scheduler_errors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -141,6 +141,7 @@ export class AlertEngine {
       const config: Record<string, string> = {
         telegram_chat_id: pref.telegram_chat_id || "",
         email_address: pref.email_address || "",
+        user_id: pref.user_id,
       };
 
       try {

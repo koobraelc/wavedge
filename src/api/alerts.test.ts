@@ -1,17 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import { createTestDatabase } from "../db/database.js";
 import { AlertRepository } from "../db/alert-repository.js";
+import { PushRepository } from "../db/push-repository.js";
 import { createAlertsRouter } from "./alerts.js";
 
 function createApp() {
   const db = createTestDatabase();
   const alertRepo = new AlertRepository(db);
+  const pushRepo = new PushRepository(db);
   const app = express();
   app.use(express.json());
-  app.use("/api/alerts", createAlertsRouter(alertRepo));
-  return { app, alertRepo };
+  app.use("/api/alerts", createAlertsRouter(alertRepo, pushRepo));
+  return { app, alertRepo, pushRepo, db };
 }
 
 describe("GET /api/alerts/preferences", () => {
@@ -174,5 +176,110 @@ describe("GET /api/alerts/history", () => {
     expect(res.body.data[0].tokenSymbol).toBe("BTC");
     expect(res.body.data[0].signalCount).toBe(2);
     expect(res.body.data[0].deliveredChannels).toEqual(["telegram"]);
+  });
+});
+
+describe("POST /api/alerts/preferences with push channel", () => {
+  it("accepts push as a valid channel", async () => {
+    const { app } = createApp();
+    const res = await request(app)
+      .post("/api/alerts/preferences")
+      .send({ channels: ["web", "push"] });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.channels).toEqual(["web", "push"]);
+  });
+});
+
+describe("GET /api/alerts/push/vapid-public-key", () => {
+  it("returns 503 when VAPID_PUBLIC_KEY not set", async () => {
+    const { app } = createApp();
+    delete process.env.VAPID_PUBLIC_KEY;
+    const res = await request(app).get("/api/alerts/push/vapid-public-key");
+    expect(res.status).toBe(503);
+  });
+
+  it("returns public key when configured", async () => {
+    const { app } = createApp();
+    process.env.VAPID_PUBLIC_KEY = "test-public-key-123";
+    const res = await request(app).get("/api/alerts/push/vapid-public-key");
+    expect(res.status).toBe(200);
+    expect(res.body.data.publicKey).toBe("test-public-key-123");
+    delete process.env.VAPID_PUBLIC_KEY;
+  });
+});
+
+describe("POST /api/alerts/push/subscribe", () => {
+  it("saves a push subscription", async () => {
+    const { app, db } = createApp();
+    const res = await request(app)
+      .post("/api/alerts/push/subscribe")
+      .send({
+        userId: "user1",
+        subscription: {
+          endpoint: "https://push.example.com/sub/1",
+          keys: { p256dh: "test-p256dh", auth: "test-auth" },
+        },
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.subscribed).toBe(true);
+
+    // Verify in DB
+    const pushRepo = new PushRepository(db);
+    expect(pushRepo.hasSubscription("user1")).toBe(true);
+  });
+
+  it("rejects invalid subscription objects", async () => {
+    const { app } = createApp();
+    const res = await request(app)
+      .post("/api/alerts/push/subscribe")
+      .send({ userId: "user1", subscription: {} });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/alerts/push/unsubscribe", () => {
+  it("removes a push subscription", async () => {
+    const { app, db } = createApp();
+    const pushRepo = new PushRepository(db);
+    pushRepo.upsert("user1", "https://push.example.com/sub/1", "k1", "a1");
+
+    const res = await request(app)
+      .post("/api/alerts/push/unsubscribe")
+      .send({ endpoint: "https://push.example.com/sub/1" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.unsubscribed).toBe(true);
+    expect(pushRepo.hasSubscription("user1")).toBe(false);
+  });
+
+  it("requires endpoint", async () => {
+    const { app } = createApp();
+    const res = await request(app)
+      .post("/api/alerts/push/unsubscribe")
+      .send({});
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /api/alerts/push/status", () => {
+  it("returns false when no subscriptions", async () => {
+    const { app } = createApp();
+    const res = await request(app).get("/api/alerts/push/status?userId=user1");
+    expect(res.status).toBe(200);
+    expect(res.body.data.subscribed).toBe(false);
+  });
+
+  it("returns true when subscriptions exist", async () => {
+    const { app, db } = createApp();
+    const pushRepo = new PushRepository(db);
+    pushRepo.upsert("default", "https://push.example.com/sub/1", "k1", "a1");
+
+    const res = await request(app).get("/api/alerts/push/status");
+    expect(res.status).toBe(200);
+    expect(res.body.data.subscribed).toBe(true);
   });
 });

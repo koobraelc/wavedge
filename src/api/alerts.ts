@@ -1,14 +1,16 @@
 import { Router, type Request, type Response } from "express";
 import { AlertRepository } from "../db/alert-repository.js";
+import { PushRepository } from "../db/push-repository.js";
 import { UserRepository } from "../db/user-repository.js";
 import { TIER_LIMITS } from "../services/tier-limiter.js";
 
 const VALID_SENSITIVITIES = ["low", "medium", "high"];
-const VALID_CHANNELS = ["telegram", "email", "web"];
+const VALID_CHANNELS = ["telegram", "email", "web", "push"];
 
-export function createAlertsRouter(repo?: AlertRepository): Router {
+export function createAlertsRouter(repo?: AlertRepository, pushRepo?: PushRepository): Router {
   const router = Router();
   const alertRepo = repo || new AlertRepository();
+  const pushRepository = pushRepo || new PushRepository();
 
   // GET /api/alerts/preferences
   router.get("/preferences", (req: Request, res: Response) => {
@@ -142,6 +144,54 @@ export function createAlertsRouter(repo?: AlertRepository): Router {
         })),
       },
     });
+  });
+
+  // GET /api/alerts/push/vapid-public-key — get VAPID public key for client-side subscription
+  router.get("/push/vapid-public-key", (_req: Request, res: Response) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      res.status(503).json({ error: "Web push not configured" });
+      return;
+    }
+    res.json({ data: { publicKey } });
+  });
+
+  // POST /api/alerts/push/subscribe — save a push subscription
+  router.post("/push/subscribe", (req: Request, res: Response) => {
+    const { userId, subscription } = req.body;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      res.status(400).json({ error: "Invalid push subscription object" });
+      return;
+    }
+
+    pushRepository.upsert(
+      userId || "default",
+      subscription.endpoint,
+      subscription.keys.p256dh,
+      subscription.keys.auth
+    );
+
+    res.status(201).json({ data: { subscribed: true } });
+  });
+
+  // POST /api/alerts/push/unsubscribe — remove a push subscription
+  router.post("/push/unsubscribe", (req: Request, res: Response) => {
+    const { endpoint } = req.body;
+    if (!endpoint) {
+      res.status(400).json({ error: "endpoint is required" });
+      return;
+    }
+
+    pushRepository.removeByEndpoint(endpoint);
+
+    res.json({ data: { unsubscribed: true } });
+  });
+
+  // GET /api/alerts/push/status — check if user has push subscriptions
+  router.get("/push/status", (req: Request, res: Response) => {
+    const userId = (req.query.userId as string) || "default";
+    const hasSubscription = pushRepository.hasSubscription(userId);
+    res.json({ data: { subscribed: hasSubscription } });
   });
 
   return router;

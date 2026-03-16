@@ -1,3 +1,5 @@
+import webpush from "web-push";
+import { PushRepository } from "../db/push-repository.js";
 import type { Signal } from "./signal-detectors.js";
 
 export interface AlertPayload {
@@ -141,8 +143,84 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/**
+ * Web Push notification channel.
+ * Requires VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY env vars.
+ * Sends push notifications to all subscriptions for the user.
+ */
+export const webPushChannel: NotificationChannel = {
+  name: "push",
+  async send(payload: AlertPayload, config: Record<string, string>): Promise<boolean> {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    const userId = config.user_id;
+
+    if (!publicKey || !privateKey) {
+      console.warn("Web Push: missing VAPID keys, skipping");
+      return false;
+    }
+
+    if (!userId) {
+      console.warn("Web Push: missing user_id in config, skipping");
+      return false;
+    }
+
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || "mailto:alerts@wavedge.io",
+      publicKey,
+      privateKey
+    );
+
+    const pushRepo = new PushRepository();
+    const subscriptions = pushRepo.getByUser(userId);
+
+    if (subscriptions.length === 0) {
+      console.warn(`Web Push: no subscriptions for user ${userId}, skipping`);
+      return false;
+    }
+
+    const notificationPayload = JSON.stringify({
+      title: `${payload.tokenSymbol.toUpperCase()} Alert`,
+      body: payload.summary,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-72.png",
+      data: {
+        url: "/dashboard",
+        tokenSymbol: payload.tokenSymbol,
+        signals: payload.signals.map((s) => s.type),
+      },
+    });
+
+    let anySent = false;
+    for (const sub of subscriptions) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          notificationPayload
+        );
+        anySent = true;
+      } catch (err: unknown) {
+        const statusCode = (err as { statusCode?: number }).statusCode;
+        if (statusCode === 410 || statusCode === 404) {
+          // Subscription expired or invalid — clean up
+          pushRepo.removeByEndpoint(sub.endpoint);
+          console.log(`Web Push: removed expired subscription ${sub.endpoint}`);
+        } else {
+          console.error(`Web Push send error for ${sub.endpoint}:`, err);
+        }
+      }
+    }
+
+    return anySent;
+  },
+};
+
 /** Registry of all available channels */
 export const channelRegistry: Record<string, NotificationChannel> = {
   telegram: telegramChannel,
   email: emailChannel,
+  push: webPushChannel,
 };

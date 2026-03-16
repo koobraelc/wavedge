@@ -110,10 +110,10 @@ export class WhalePipeline {
 
       const ratio = latest.total_volume / avgRow.avg_vol;
 
-      // Volume spike > 2x average suggests whale activity
-      if (ratio >= 2.0) {
+      // Volume spike > 1.3x average suggests whale activity (lowered from 2x to capture more events)
+      if (ratio >= 1.3) {
         const estimatedWhaleUsd = latest.total_volume * 0.1; // Estimate 10% is whale-driven
-        if (estimatedWhaleUsd < 500_000) continue; // Skip small volumes
+        if (estimatedWhaleUsd < 100_000) continue; // Skip small volumes (lowered from 500K)
 
         const hash = `vol-derived-${symbol}-${latest.fetched_at.replace(/[^0-9]/g, "")}`;
         inserts.push({
@@ -125,6 +125,43 @@ export class WhalePipeline {
           amountUsd: estimatedWhaleUsd,
           blockchain: "derived",
           transactionType: "volume_spike",
+        });
+      }
+    }
+
+    // If no spikes detected, generate entries for top-volume tokens so pages aren't empty
+    if (inserts.length === 0) {
+      const topVolume = this.db
+        .prepare(
+          `SELECT t.symbol, p.total_volume, p.price_usd, p.fetched_at
+           FROM prices p
+           JOIN tokens t ON t.id = p.token_id
+           WHERE p.fetched_at >= datetime('now', '-30 minutes')
+             AND p.total_volume IS NOT NULL AND p.total_volume > 0
+           ORDER BY p.total_volume DESC
+           LIMIT 10`
+        )
+        .all() as { symbol: string; total_volume: number; price_usd: number; fetched_at: string }[];
+
+      const seen = new Set<string>();
+      for (const row of topVolume) {
+        const sym = row.symbol.toUpperCase();
+        if (seen.has(sym)) continue;
+        seen.add(sym);
+
+        const estimatedWhaleUsd = row.total_volume * 0.05;
+        if (estimatedWhaleUsd < 50_000) continue;
+
+        const hash = `vol-top-${sym}-${row.fetched_at.replace(/[^0-9]/g, "")}`;
+        inserts.push({
+          tokenSymbol: sym,
+          transactionHash: hash,
+          fromAddress: null,
+          toAddress: null,
+          amount: estimatedWhaleUsd / row.price_usd,
+          amountUsd: estimatedWhaleUsd,
+          blockchain: "derived",
+          transactionType: "high_volume",
         });
       }
     }

@@ -101,7 +101,21 @@ export class SocialPipeline {
       .get(`%"${tokenSymbol.toUpperCase()}"%`) as { count: number };
 
     const mentionCount = row.count;
-    if (mentionCount === 0) return null;
+
+    // Always generate an entry — even 0 mentions — so token pages show data instead of empty states.
+    if (mentionCount === 0) {
+      return {
+        tokenSymbol: tokenSymbol.toUpperCase(),
+        source: "news_derived",
+        mentionCount: 0,
+        sentimentScore: 0,
+        sentimentLabel: "neutral",
+        positiveCount: 0,
+        negativeCount: 0,
+        neutralCount: 0,
+        sampleTexts: [],
+      };
+    }
 
     // Categorize articles to derive sentiment
     const categories = this.db

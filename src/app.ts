@@ -10,6 +10,7 @@ import { createDigestRouter } from "./api/digest.js";
 import { createAuthRouter } from "./api/auth.js";
 import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { createAffiliateRouter } from "./api/affiliate.js";
+import { createApiKeysRouter } from "./api/api-keys.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
@@ -144,6 +145,7 @@ app.use("/api/auth", createAuthRouter());
 app.use("/api/billing", createBillingRouter());
 app.use("/api/webhooks", createWebhookRouter());
 app.use("/api/affiliate", createAffiliateRouter());
+app.use("/api/api-keys", createApiKeysRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
@@ -165,6 +167,7 @@ app.get("/sitemap.xml", (_req, res) => {
     { loc: "/billing", priority: "0.3", changefreq: "monthly" },
     { loc: "/digest/latest", priority: "0.7", changefreq: "daily" },
     { loc: "/settings/alerts", priority: "0.5", changefreq: "monthly" },
+    { loc: "/settings/api-keys", priority: "0.5", changefreq: "monthly" },
   ];
 
   const urls = staticPages
@@ -347,7 +350,12 @@ app.get("/settings/alerts", (_req, res) => {
 
   <main class="main-content settings-page">
     <a href="/dashboard" class="back-link">&larr; Dashboard</a>
-    <h1 class="settings-title">Alert Settings</h1>
+    <h1 class="settings-title">Settings</h1>
+
+    <div class="settings-nav" style="display:flex;gap:0.5rem;margin-bottom:1.5rem">
+      <a href="/settings/alerts" style="padding:0.4rem 0.75rem;border-radius:6px;font-size:0.85rem;background:var(--accent);border:1px solid var(--accent);color:#fff;text-decoration:none">Alerts</a>
+      <a href="/settings/api-keys" style="padding:0.4rem 0.75rem;border-radius:6px;font-size:0.85rem;color:var(--text-secondary);border:1px solid var(--border);text-decoration:none">API Keys</a>
+    </div>
 
     <alert-settings></alert-settings>
 
@@ -368,6 +376,100 @@ app.get("/settings/alerts", (_req, res) => {
 
   <!-- Settings app -->
   <script src="/js/settings-app.js"></script>
+</body>
+</html>`);
+});
+
+// API Key Settings page
+app.get("/settings/api-keys", (_req, res) => {
+  const title = "API Key Settings — Wavedge";
+  const description = "Manage your Wavedge API keys. Generate, view, and revoke keys for programmatic access.";
+
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .api-usage-bar { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .usage-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .usage-count { color: var(--text-secondary); }
+    .usage-track { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+    .usage-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+    .usage-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+
+    .api-key-create { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .api-key-create h3 { margin-bottom: 0.75rem; font-size: 1rem; }
+    .create-key-form { display: flex; gap: 0.5rem; }
+    .create-key-form .input { flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem; }
+    .create-key-form .input:focus { outline: none; border-color: var(--accent); }
+
+    .new-key-display { margin-top: 1rem; }
+    .new-key-warning { color: var(--yellow); font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; }
+    .new-key-value { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; }
+    .new-key-value code { flex: 1; font-size: 0.85rem; word-break: break-all; color: var(--green); }
+
+    .api-key-list { margin-bottom: 1.5rem; }
+    .api-key-list h3 { margin-bottom: 0.75rem; font-size: 1rem; }
+
+    .keys-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .keys-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 500; }
+    .keys-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .keys-table code { background: var(--bg-tertiary); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.8rem; }
+    .keys-table-revoked { opacity: 0.6; }
+
+    .revoked-keys { margin-bottom: 1.5rem; }
+    .revoked-keys summary { cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; padding: 0.5rem 0; }
+
+    .api-docs-hint { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+    .api-docs-hint h3 { margin-bottom: 0.75rem; font-size: 1rem; }
+    .api-docs-hint pre { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; overflow-x: auto; margin-bottom: 0.5rem; }
+    .api-docs-hint code { font-size: 0.8rem; color: var(--text-primary); }
+
+    .api-keys-upgrade { text-align: center; padding: 3rem 1rem; }
+    .api-keys-upgrade h3 { margin-bottom: 0.5rem; }
+    .api-keys-upgrade p { color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s; background: var(--bg-tertiary); color: var(--text-primary); text-decoration: none; }
+    .btn:hover { border-color: var(--text-muted); text-decoration: none; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    .btn-copy { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .text-muted { color: var(--text-muted); font-size: 0.85rem; }
+    .text-error { color: var(--red); }
+
+    .settings-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .settings-nav a { padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text-secondary); border: 1px solid var(--border); text-decoration: none; transition: all 0.15s; }
+    .settings-nav a:hover { border-color: var(--text-muted); color: var(--text-primary); }
+    .settings-nav a.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  </style>
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content settings-page">
+    <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+    <h1 class="settings-title">Settings</h1>
+
+    <div class="settings-nav">
+      <a href="/settings/alerts">Alerts</a>
+      <a href="/settings/api-keys" class="active">API Keys</a>
+    </div>
+
+    <api-key-manager></api-key-manager>
+  </main>
+
+  <bottom-nav></bottom-nav>
+
+  <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/api-key-manager.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
 </body>
 </html>`);
 });

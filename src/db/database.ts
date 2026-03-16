@@ -268,6 +268,21 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subs_endpoint ON push_subscriptions(endpoint);
 
+    -- API keys for Pro users
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      key_hash TEXT NOT NULL UNIQUE,
+      key_prefix TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT 'Default',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_used_at TEXT,
+      revoked_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+    CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+
     -- Scheduler error logging
     CREATE TABLE IF NOT EXISTS scheduler_errors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

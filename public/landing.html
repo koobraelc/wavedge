@@ -62,41 +62,66 @@
   </header>
 
   <main>
-    <!-- Hero -->
-    <section class="landing-hero">
-      <div class="landing-container">
+    <!-- Hero with animated background -->
+    <section class="landing-hero hero-animated">
+      <div class="hero-bg-grid"></div>
+      <div class="landing-container" style="position:relative;z-index:1">
         <h1 class="hero-headline">Every crypto news article.<br><span class="accent-text">Quantified price impact.</span></h1>
         <p class="hero-sub">AI-powered intelligence that scores news by historical price impact, detects cross-signal anomalies, and alerts you before the crowd moves.</p>
         <div class="hero-cta">
-          <a href="/login" class="btn-primary btn-lg">Get Started Free</a>
+          <a href="/login" class="btn-gradient btn-lg">Get Started Free</a>
           <a href="#features" class="btn-secondary btn-lg">See How It Works</a>
         </div>
         <p class="hero-note">Free forever. No credit card required.</p>
+
+        <!-- Mini demo preview -->
+        <div class="hero-demo">
+          <div class="demo-card">
+            <div class="demo-header">
+              <span class="demo-badge">Live Impact Scoring</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-category">ETF News</span>
+              <span class="demo-title">SEC approves new Bitcoin ETF application from...</span>
+              <span class="demo-impact positive">BTC avg +0.43% in 24h</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-category">Regulation</span>
+              <span class="demo-title">EU finalizes MiCA framework enforcement timeline...</span>
+              <span class="demo-impact negative">ETH avg -0.28% in 24h</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-category">Partnership</span>
+              <span class="demo-title">Chainlink partners with major bank for CCIP...</span>
+              <span class="demo-impact positive">LINK avg +1.12% in 24h</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Features -->
+    <!-- Features with scroll animation -->
     <section class="landing-features" id="features">
       <div class="landing-container">
-        <h2 class="section-title">Intelligence, not just data</h2>
-        <p class="section-subtitle">We don't just show you the news. We tell you what it means for price.</p>
+        <h2 class="section-title fade-target">Intelligence, not just data</h2>
+        <p class="section-subtitle fade-target">We don't just show you the news. We tell you what it means for price.</p>
         <div class="features-grid">
-          <div class="feature-card">
+          <div class="feature-card fade-target">
             <div class="feature-icon">&#9889;</div>
             <h3>News Impact Scoring</h3>
             <p>Every article is classified by AI and cross-referenced against historical price data. See tags like "ETF News: BTC avg +0.43% in 24h" on every story.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card fade-target">
             <div class="feature-icon">&#128200;</div>
             <h3>Token Intelligence</h3>
             <p>Each token page is an intelligence hub: candlestick charts, impact-scored news, AI weekly summaries, and historical event timelines.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card fade-target">
             <div class="feature-icon">&#128276;</div>
             <h3>Cross-Signal Alerts</h3>
             <p>Get notified when multiple signals fire together: news frequency spikes + price movement + volume surge. Delivered via Telegram, email, or web push.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card fade-target">
             <div class="feature-icon">&#128218;</div>
             <h3>AI Daily Digest</h3>
             <p>A 3-5 minute daily briefing at 8 AM UTC. Data-backed, conversational, in English and Chinese. Delivered to your inbox or Telegram.</p>
@@ -108,20 +133,21 @@
     <!-- Social proof / stats -->
     <section class="landing-stats">
       <div class="landing-container">
+        <h2 class="section-title fade-target" style="margin-bottom: 32px">Trusted by crypto traders</h2>
         <div class="stats-grid-landing">
-          <div class="stat-item">
+          <div class="stat-item fade-target">
             <div class="stat-number" id="stat-tokens">—</div>
             <div class="stat-desc">Tokens tracked</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item fade-target">
             <div class="stat-number" id="stat-articles">—</div>
             <div class="stat-desc">Articles analyzed</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item fade-target">
             <div class="stat-number">6</div>
             <div class="stat-desc">News categories</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item fade-target">
             <div class="stat-number">2min</div>
             <div class="stat-desc">Alert check interval</div>
           </div>
@@ -132,10 +158,20 @@
     <!-- Pricing -->
     <section class="landing-pricing" id="pricing">
       <div class="landing-container">
-        <h2 class="section-title">Simple, transparent pricing</h2>
-        <p class="section-subtitle">Start free. Upgrade when you need more power.</p>
+        <h2 class="section-title fade-target">Simple, transparent pricing</h2>
+        <p class="section-subtitle fade-target">Start free. Upgrade when you need more power.</p>
+
+        <div class="pricing-toggle fade-target">
+          <span class="pricing-toggle-label" id="toggle-monthly">Monthly</span>
+          <label class="toggle-switch pricing-period-switch">
+            <input type="checkbox" id="pricing-annual">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="pricing-toggle-label" id="toggle-annual">Annual <span class="pricing-save-badge">Save 20%</span></span>
+        </div>
+
         <div class="pricing-grid">
-          <div class="pricing-card">
+          <div class="pricing-card fade-target">
             <div class="pricing-tier">Free</div>
             <div class="pricing-price">$0<span>/month</span></div>
             <ul class="pricing-features">
@@ -147,10 +183,10 @@
             </ul>
             <a href="/login" class="btn-secondary btn-full">Get Started</a>
           </div>
-          <div class="pricing-card featured">
+          <div class="pricing-card featured fade-target">
             <div class="pricing-badge">Most Popular</div>
             <div class="pricing-tier">Pro</div>
-            <div class="pricing-price">$19<span>/month</span></div>
+            <div class="pricing-price" id="pro-price">$19<span>/month</span></div>
             <ul class="pricing-features">
               <li>Everything in Free</li>
               <li>Real-time alerts (unlimited)</li>
@@ -159,7 +195,7 @@
               <li>Telegram & email alerts</li>
               <li>API access (100 req/day)</li>
             </ul>
-            <a href="/login?plan=pro" class="btn-primary btn-full">Start Free Trial</a>
+            <a href="/login?plan=pro" class="btn-gradient btn-full">Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -168,9 +204,9 @@
     <!-- CTA -->
     <section class="landing-cta">
       <div class="landing-container">
-        <h2>Stop trading on gut feeling.</h2>
-        <p>Know what the news actually means for price — backed by data.</p>
-        <a href="/login" class="btn-primary btn-lg">Get Started Free</a>
+        <h2 class="fade-target">Stop trading on gut feeling.</h2>
+        <p class="fade-target">Know what the news actually means for price — backed by data.</p>
+        <a href="/login" class="btn-gradient btn-lg fade-target">Get Started Free</a>
       </div>
     </section>
 
@@ -195,6 +231,11 @@
     </footer>
   </main>
 
+  <!-- Mobile fixed CTA bar -->
+  <div class="mobile-cta-bar" id="mobile-cta">
+    <a href="/login" class="btn-gradient btn-mobile-cta">Get Started Free</a>
+  </div>
+
   <script>
     // Fetch live stats
     Promise.all([
@@ -208,6 +249,58 @@
         document.getElementById('stat-articles').textContent = news.total.toLocaleString();
       }
     });
+
+    // Scroll-triggered fade-in animations
+    (function() {
+      var targets = document.querySelectorAll('.fade-target');
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(function(t) { t.classList.add('fade-visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('fade-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      targets.forEach(function(t) { observer.observe(t); });
+    })();
+
+    // Pricing monthly/annual toggle
+    (function() {
+      var toggle = document.getElementById('pricing-annual');
+      var priceEl = document.getElementById('pro-price');
+      var monthlyLabel = document.getElementById('toggle-monthly');
+      var annualLabel = document.getElementById('toggle-annual');
+      if (!toggle || !priceEl) return;
+      toggle.addEventListener('change', function() {
+        if (toggle.checked) {
+          priceEl.innerHTML = '$15<span>/month</span>';
+          annualLabel.classList.add('active-period');
+          monthlyLabel.classList.remove('active-period');
+        } else {
+          priceEl.innerHTML = '$19<span>/month</span>';
+          monthlyLabel.classList.add('active-period');
+          annualLabel.classList.remove('active-period');
+        }
+      });
+      monthlyLabel.classList.add('active-period');
+    })();
+
+    // Mobile fixed CTA: show after scrolling past hero
+    (function() {
+      var bar = document.getElementById('mobile-cta');
+      var hero = document.querySelector('.landing-hero');
+      if (!bar || !hero) return;
+      function check() {
+        var rect = hero.getBoundingClientRect();
+        bar.classList.toggle('cta-bar-visible', rect.bottom < 0);
+      }
+      window.addEventListener('scroll', check, { passive: true });
+      check();
+    })();
   </script>
 </body>
 </html>

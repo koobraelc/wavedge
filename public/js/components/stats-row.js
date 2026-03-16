@@ -46,7 +46,7 @@ class StatsRow extends HTMLElement {
         </div>
       `;
     }
-    const price = this._formatPrice(data.current_price || data.price || 0);
+    const price = this._formatPrice(data.current_price || data.price_usd || data.price || 0);
     const pct = data.price_change_percentage_24h ?? 0;
     const cls = pct >= 0 ? 'change-positive' : 'change-negative';
     const sign = pct >= 0 ? '+' : '';

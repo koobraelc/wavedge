@@ -108,8 +108,9 @@ class SignalHeatmap extends HTMLElement {
 
       // Price display for larger cells
       let priceHtml = '';
-      if ((sizeClass === 'hm-xl' || sizeClass === 'hm-lg') && token.current_price) {
-        priceHtml = `<span class="hm-price">${this._formatPrice(token.current_price)}</span>`;
+      const tokenPrice = token.current_price || token.price_usd;
+      if ((sizeClass === 'hm-xl' || sizeClass === 'hm-lg') && tokenPrice) {
+        priceHtml = `<span class="hm-price">${this._formatPrice(tokenPrice)}</span>`;
       }
 
       return `

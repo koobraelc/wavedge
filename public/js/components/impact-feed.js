@@ -149,7 +149,7 @@ class ImpactFeed extends HTMLElement {
     const firstToken = tags[0] ? tags[0].toLowerCase() : null;
     const priceData = firstToken ? (this._prices[firstToken] || this._prices[firstToken?.toUpperCase()]) : null;
     const pct = priceData ? (priceData.price_change_percentage_24h ?? 0) : null;
-    const priceVal = priceData ? (priceData.current_price || priceData.price || 0) : null;
+    const priceVal = priceData ? (priceData.current_price || priceData.price_usd || priceData.price || 0) : null;
 
     // Inline price display
     let priceInline = '';

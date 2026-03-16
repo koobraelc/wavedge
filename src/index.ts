@@ -2,7 +2,7 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { app } from "./app.js";
-import { startPriceScheduler, startNewsScheduler, startAlertScheduler } from "./scrapers/scheduler.js";
+import { startPriceScheduler, startNewsScheduler, startAlertScheduler, startDigestScheduler } from "./scrapers/scheduler.js";
 
 const port = parseInt(process.env.PORT ?? "3000", 10);
 
@@ -19,4 +19,5 @@ app.listen(port, () => {
   startPriceScheduler();
   startNewsScheduler();
   startAlertScheduler();
+  startDigestScheduler();
 });

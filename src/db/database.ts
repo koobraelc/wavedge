@@ -148,6 +148,35 @@ export function initializeSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_triggered_alerts_user ON triggered_alerts(user_id);
     CREATE INDEX IF NOT EXISTS idx_triggered_alerts_token ON triggered_alerts(token_symbol);
     CREATE INDEX IF NOT EXISTS idx_triggered_alerts_created ON triggered_alerts(created_at);
+
+    -- Daily digest tables
+    CREATE TABLE IF NOT EXISTS digest_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT,
+      telegram_chat_id TEXT,
+      lang TEXT NOT NULL DEFAULT 'en',
+      active INTEGER NOT NULL DEFAULT 1,
+      unsubscribe_token TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_digest_subs_email ON digest_subscribers(email);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_digest_subs_telegram ON digest_subscribers(telegram_chat_id);
+    CREATE INDEX IF NOT EXISTS idx_digest_subs_active ON digest_subscribers(active);
+
+    CREATE TABLE IF NOT EXISTS digest_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lang TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      content_html TEXT NOT NULL,
+      content_telegram TEXT NOT NULL,
+      emails_sent INTEGER NOT NULL DEFAULT 0,
+      telegrams_sent INTEGER NOT NULL DEFAULT 0,
+      generated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_digest_history_generated ON digest_history(generated_at);
   `);
 }
 

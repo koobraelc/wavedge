@@ -6,6 +6,7 @@ import { createNewsRouter } from "./api/news.js";
 import { createTokensRouter } from "./api/tokens.js";
 import { createSearchRouter } from "./api/search.js";
 import { createAlertsRouter } from "./api/alerts.js";
+import { createDigestRouter } from "./api/digest.js";
 import { PriceRepository } from "./db/price-repository.js";
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/api/news", createNewsRouter());
 app.use("/api/tokens", createTokensRouter());
 app.use("/api/search", createSearchRouter());
 app.use("/api/alerts", createAlertsRouter());
+app.use("/api/digest", createDigestRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");

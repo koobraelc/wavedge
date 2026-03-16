@@ -8,10 +8,14 @@ import { ImpactCalculator } from "../services/impact-calculator.js";
 import { AlertEngine } from "../services/alert-engine.js";
 import { AlertRepository } from "../db/alert-repository.js";
 import { PriceRepository } from "../db/price-repository.js";
+import { DigestGenerator } from "../services/digest-generator.js";
+import { DigestDelivery } from "../services/digest-delivery.js";
+import { DigestRepository } from "../db/digest-repository.js";
 
 let priceTask: ScheduledTask | null = null;
 let newsTask: ScheduledTask | null = null;
 let alertTask: ScheduledTask | null = null;
+let digestTask: ScheduledTask | null = null;
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
   if (priceTask) {
@@ -113,5 +117,38 @@ export function stopAlertScheduler(): void {
     alertTask.stop();
     alertTask = null;
     console.log("Alert scheduler stopped");
+  }
+}
+
+/** Daily digest scheduler — runs at 8:00 AM UTC by default */
+export function startDigestScheduler(intervalCron: string = "0 8 * * *"): void {
+  if (digestTask) {
+    console.warn("Digest scheduler already running");
+    return;
+  }
+
+  const delivery = new DigestDelivery(new DigestGenerator(), new DigestRepository());
+
+  const runDigest = async () => {
+    try {
+      const results = await delivery.runDaily();
+      const totalEmails = results.reduce((sum, r) => sum + r.emailsSent, 0);
+      const totalTelegrams = results.reduce((sum, r) => sum + r.telegramsSent, 0);
+      console.log(`Digest sent: ${totalEmails} emails, ${totalTelegrams} telegrams`);
+    } catch (err) {
+      console.error("Digest pipeline failed:", err);
+    }
+  };
+
+  console.log(`Starting digest scheduler with cron: ${intervalCron}`);
+
+  digestTask = cron.schedule(intervalCron, runDigest);
+}
+
+export function stopDigestScheduler(): void {
+  if (digestTask) {
+    digestTask.stop();
+    digestTask = null;
+    console.log("Digest scheduler stopped");
   }
 }

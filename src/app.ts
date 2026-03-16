@@ -10,6 +10,7 @@ import { createDigestRouter } from "./api/digest.js";
 import { createAuthRouter } from "./api/auth.js";
 import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { PriceRepository } from "./db/price-repository.js";
+import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
 
 const app = express();
@@ -83,6 +84,7 @@ app.get("/sitemap.xml", (_req, res) => {
     { loc: "/dashboard", priority: "0.8", changefreq: "hourly" },
     { loc: "/login", priority: "0.3", changefreq: "monthly" },
     { loc: "/billing", priority: "0.3", changefreq: "monthly" },
+    { loc: "/digest/latest", priority: "0.7", changefreq: "daily" },
     { loc: "/settings/alerts", priority: "0.5", changefreq: "monthly" },
   ];
 
@@ -223,6 +225,131 @@ function ga4Snippet(): string {
   return `<script async src="https://www.googletagmanager.com/gtag/js?id=${escapeHtml(gaId)}"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${escapeHtml(gaId)}');</script>`;
 }
+
+// Public digest page
+const digestRepo = new DigestRepository();
+app.get("/digest/latest", (req, res) => {
+  const lang = req.query.lang === "zh" ? "zh" : "en";
+  const digest = digestRepo.getLatestDigest(lang);
+
+  const title = digest
+    ? `${digest.subject} — Wavedge Daily Digest`
+    : "Daily Crypto Digest — Wavedge";
+  const description = "Free daily crypto intelligence digest. AI-analyzed news, top movers, cross-signal alerts, and market outlook.";
+  const digestDate = digest
+    ? new Date(digest.generated_at).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : "";
+
+  const shareText = digest
+    ? encodeURIComponent(`${digest.subject} — Wavedge Daily Digest ${baseUrl}/digest/latest`)
+    : encodeURIComponent(`Wavedge Daily Crypto Digest ${baseUrl}/digest/latest`);
+
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
+  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(`${baseUrl}/digest/latest`)}&text=${shareText}`;
+
+  const digestContent = digest
+    ? digest.content_html
+    : `<div style="text-align:center;padding:3rem 1rem;color:#8b949e">
+         <h2>No digest available yet</h2>
+         <p>Subscribe below to get notified when the next digest is published.</p>
+       </div>`;
+
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}">
+  <link rel="canonical" href="${baseUrl}/digest/latest">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="${baseUrl}/digest/latest">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(description)}">
+  <link rel="stylesheet" href="/css/styles.css">
+  ${ga4Snippet()}
+  <style>
+    .digest-page { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+    .digest-header { margin-bottom: 2rem; }
+    .digest-date { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .digest-title { font-size: 1.5rem; margin-bottom: 1rem; }
+    .digest-share { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .share-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; text-decoration: none; font-weight: 500; border: 1px solid var(--border); transition: background 0.15s, border-color 0.15s; }
+    .share-btn:hover { background: var(--bg-tertiary); border-color: var(--accent); }
+    .share-btn-twitter { color: #1da1f2; }
+    .share-btn-telegram { color: #0088cc; }
+    .share-btn-copy { color: var(--text-secondary); cursor: pointer; background: none; }
+    .digest-body { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; line-height: 1.7; color: var(--text-primary); }
+    .digest-body h1, .digest-body h2, .digest-body h3 { color: var(--text-primary); margin: 1.5rem 0 0.75rem; }
+    .digest-body p { margin-bottom: 0.75rem; }
+    .digest-body a { color: var(--link); }
+    .digest-body ul, .digest-body ol { margin-bottom: 0.75rem; padding-left: 1.5rem; }
+    .digest-subscribe { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; }
+    .digest-subscribe h3 { margin-bottom: 0.5rem; }
+    .digest-subscribe p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; }
+    .subscribe-form { display: flex; gap: 0.5rem; max-width: 400px; margin: 0 auto; }
+    .subscribe-form input { flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem; }
+    .subscribe-form button { padding: 0.5rem 1.25rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+    .subscribe-form button:hover { background: var(--accent-hover); }
+    .subscribe-msg { margin-top: 0.5rem; font-size: 0.85rem; min-height: 1.2em; }
+    .referral-note { color: var(--text-muted); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+    .referral-note a { color: var(--link); }
+    .digest-nav { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .lang-btn { padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; text-decoration: none; border: 1px solid var(--border); color: var(--text-secondary); }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .copy-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: 0.5rem 1.25rem; border-radius: var(--radius-sm); font-size: 0.85rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .copy-toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content digest-page">
+    <div class="digest-header">
+      <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+      <div class="digest-nav">
+        <a href="/digest/latest?lang=en" class="lang-btn ${lang === "en" ? "active" : ""}">English</a>
+        <a href="/digest/latest?lang=zh" class="lang-btn ${lang === "zh" ? "active" : ""}">中文</a>
+      </div>
+      ${digestDate ? `<div class="digest-date">${escapeHtml(digestDate)}</div>` : ""}
+      <h1 class="digest-title">${digest ? escapeHtml(digest.subject) : "Daily Crypto Digest"}</h1>
+
+      <div class="digest-share">
+        <a href="${twitterUrl}" target="_blank" rel="noopener" class="share-btn share-btn-twitter">&#x1D54F; Share on Twitter</a>
+        <a href="${telegramUrl}" target="_blank" rel="noopener" class="share-btn share-btn-telegram">&#x2708; Share on Telegram</a>
+        <button class="share-btn share-btn-copy" onclick="navigator.clipboard.writeText('${baseUrl}/digest/latest').then(function(){var t=document.getElementById('copy-toast');t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2000)})">&#x1F4CB; Copy Link</button>
+      </div>
+    </div>
+
+    <div class="digest-body">${digestContent}</div>
+
+    <div class="digest-subscribe">
+      <h3>Get the daily digest in your inbox</h3>
+      <p>Free. AI-analyzed crypto intelligence, every morning.</p>
+      <form class="subscribe-form" onsubmit="event.preventDefault();var e=this.querySelector('input').value,m=this.querySelector('.subscribe-msg');fetch('/api/digest/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e})}).then(function(r){return r.json()}).then(function(d){m.textContent=d.error||'Subscribed! Check your inbox.';m.style.color=d.error?'var(--red)':'var(--green)'}).catch(function(){m.textContent='Something went wrong.';m.style.color='var(--red)'})">
+        <input type="email" placeholder="you@example.com" required>
+        <button type="submit">Subscribe</button>
+      </form>
+      <div class="subscribe-msg"></div>
+    </div>
+
+    <p class="referral-note">Forwarded to you? <a href="${baseUrl}/digest/latest">Subscribe free at wavedge.io/digest</a></p>
+  </main>
+
+  <div id="copy-toast" class="copy-toast">Link copied!</div>
+
+  <script src="/js/components/nav-bar.js"></script>
+</body>
+</html>`);
+});
+
+// Shortcut: /digest redirects to /digest/latest
+app.get("/digest", (_req, res) => {
+  res.redirect("/digest/latest");
+});
 
 app.get("/tokens/:symbol", (req, res) => {
   const symbol = req.params.symbol.toLowerCase();

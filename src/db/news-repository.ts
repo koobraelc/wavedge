@@ -122,4 +122,33 @@ export class NewsRepository {
       .all() as { source: string }[];
     return rows.map((r) => r.source);
   }
+
+  getAllArticlesForRetag(): { id: number; title: string; summary: string | null }[] {
+    return this.db
+      .prepare("SELECT id, title, summary FROM articles")
+      .all() as { id: number; title: string; summary: string | null }[];
+  }
+
+  updateTokenTags(id: number, tokenTags: string[]): void {
+    this.db
+      .prepare("UPDATE articles SET token_tags = ? WHERE id = ?")
+      .run(JSON.stringify(tokenTags), id);
+  }
+
+  retagAllArticles(tagger: (text: string) => string[]): { total: number; updated: number } {
+    const articles = this.getAllArticlesForRetag();
+    let updated = 0;
+
+    const updateMany = this.db.transaction(() => {
+      for (const article of articles) {
+        const searchText = `${article.title} ${article.summary || ""}`;
+        const newTags = tagger(searchText);
+        this.updateTokenTags(article.id, newTags);
+        updated++;
+      }
+    });
+
+    updateMany();
+    return { total: articles.length, updated };
+  }
 }

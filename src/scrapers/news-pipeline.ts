@@ -1,28 +1,47 @@
 import { RSSClient, type FeedItem } from "./rss-client.js";
 import { NewsRepository, type ArticleInsert } from "../db/news-repository.js";
 
-// Top cryptocurrencies for token tagging
-const TOKEN_KEYWORDS: Record<string, string[]> = {
-  btc: ["bitcoin", "btc"],
-  eth: ["ethereum", "eth", "ether"],
-  sol: ["solana", "sol"],
-  xrp: ["ripple", "xrp"],
-  ada: ["cardano", "ada"],
-  doge: ["dogecoin", "doge"],
-  dot: ["polkadot", "dot"],
-  avax: ["avalanche", "avax"],
-  matic: ["polygon", "matic"],
-  link: ["chainlink", "link"],
-  uni: ["uniswap", "uni"],
-  atom: ["cosmos", "atom"],
-  near: ["near protocol", "near"],
-  apt: ["aptos", "apt"],
-  arb: ["arbitrum", "arb"],
-  op: ["optimism"],
-  bnb: ["binance", "bnb"],
-  trx: ["tron", "trx"],
-  ltc: ["litecoin", "ltc"],
-  shib: ["shiba", "shib"],
+// Token tagging configuration
+// "safe" keywords: always match case-insensitively with word boundaries
+// "uppercaseOnly" keywords: short symbols that collide with English words —
+//   only match when written in UPPERCASE (case-sensitive) to avoid false positives
+interface TokenConfig {
+  safe: string[];        // case-insensitive word-boundary match
+  uppercaseOnly?: string[]; // case-sensitive uppercase-only match
+}
+
+const TOKEN_CONFIG: Record<string, TokenConfig> = {
+  btc: { safe: ["bitcoin", "btc"] },
+  eth: { safe: ["ethereum", "eth", "ether"] },
+  sol: { safe: ["solana"], uppercaseOnly: ["SOL"] },
+  xrp: { safe: ["ripple", "xrp"] },
+  ada: { safe: ["cardano"], uppercaseOnly: ["ADA"] },
+  doge: { safe: ["dogecoin", "doge"] },
+  dot: { safe: ["polkadot"], uppercaseOnly: ["DOT"] },
+  avax: { safe: ["avalanche", "avax"] },
+  matic: { safe: ["polygon", "matic"] },
+  link: { safe: ["chainlink"], uppercaseOnly: ["LINK"] },
+  uni: { safe: ["uniswap"], uppercaseOnly: ["UNI"] },
+  atom: { safe: ["cosmos"], uppercaseOnly: ["ATOM"] },
+  near: { safe: ["near protocol"], uppercaseOnly: ["NEAR"] },
+  apt: { safe: ["aptos", "apt"] },
+  arb: { safe: ["arbitrum", "arb"] },
+  op: { safe: ["optimism"], uppercaseOnly: ["OP"] },
+  bnb: { safe: ["binance", "bnb"] },
+  trx: { safe: ["tron", "trx"] },
+  ltc: { safe: ["litecoin", "ltc"] },
+  shib: { safe: ["shiba", "shib"] },
+  sui: { safe: ["sui"] },
+  pepe: { safe: ["pepe"] },
+  ton: { safe: ["toncoin"], uppercaseOnly: ["TON"] },
+  wld: { safe: ["worldcoin", "wld"] },
+  sei: { safe: ["sei"] },
+  inj: { safe: ["injective", "inj"] },
+  stx: { safe: ["stacks", "stx"] },
+  ondo: { safe: ["ondo"] },
+  render: { safe: ["render", "rndr"] },
+  fet: { safe: ["fetch.ai", "fet"] },
+  wlfi: { safe: ["wlfi", "world liberty financial"] },
 };
 
 // High-signal keywords for relevance scoring
@@ -52,14 +71,33 @@ export function extractTokenTags(text: string): string[] {
   const lower = text.toLowerCase();
   const tags = new Set<string>();
 
-  for (const [symbol, keywords] of Object.entries(TOKEN_KEYWORDS)) {
-    for (const keyword of keywords) {
-      // Word boundary matching to avoid false positives
-      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+  for (const [symbol, config] of Object.entries(TOKEN_CONFIG)) {
+    let matched = false;
+
+    // Safe keywords: case-insensitive word-boundary match
+    for (const keyword of config.safe) {
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
       if (regex.test(lower)) {
-        tags.add(symbol);
+        matched = true;
         break;
       }
+    }
+
+    // Uppercase-only keywords: case-sensitive match on original text
+    if (!matched && config.uppercaseOnly) {
+      for (const keyword of config.uppercaseOnly) {
+        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`\\b${escaped}\\b`);
+        if (regex.test(text)) {
+          matched = true;
+          break;
+        }
+      }
+    }
+
+    if (matched) {
+      tags.add(symbol);
     }
   }
 

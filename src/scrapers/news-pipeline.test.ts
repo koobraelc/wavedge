@@ -50,6 +50,42 @@ describe("extractTokenTags", () => {
     const tags = extractTokenTags("The company is a dotcom startup");
     expect(tags).not.toContain("dot");
   });
+
+  it("should match uppercase-only symbols for ambiguous tokens", () => {
+    const tags = extractTokenTags("SOL price rallied 15% today");
+    expect(tags).toContain("sol");
+  });
+
+  it("should not match lowercase ambiguous symbols in English context", () => {
+    const tags = extractTokenTags("The sol was shining near the dot on the link");
+    expect(tags).not.toContain("sol");
+    expect(tags).not.toContain("near");
+    expect(tags).not.toContain("dot");
+    expect(tags).not.toContain("link");
+  });
+
+  it("should still match full names for ambiguous tokens", () => {
+    const tags = extractTokenTags("Solana ecosystem grows with Chainlink integration on Polkadot");
+    expect(tags).toContain("sol");
+    expect(tags).toContain("link");
+    expect(tags).toContain("dot");
+  });
+
+  it("should tag newer tokens like sui, pepe, wlfi", () => {
+    const tags1 = extractTokenTags("Sui blockchain announces major upgrade");
+    expect(tags1).toContain("sui");
+
+    const tags2 = extractTokenTags("Pepe memecoin rallies 50%");
+    expect(tags2).toContain("pepe");
+
+    const tags3 = extractTokenTags("WLFI token launch details revealed");
+    expect(tags3).toContain("wlfi");
+  });
+
+  it("should match XRP ETF articles", () => {
+    const tags = extractTokenTags("XRP ETF filing submitted to SEC");
+    expect(tags).toContain("xrp");
+  });
 });
 
 describe("computeRelevanceScore", () => {

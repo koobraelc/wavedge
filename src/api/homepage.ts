@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { getDatabase } from "../db/database.js";
+import { SocialRepository } from "../db/social-repository.js";
 import { optionalAuth, type AuthenticatedRequest } from "../services/auth.js";
 
 interface SentimentRow {
@@ -133,6 +134,33 @@ export function createHomepageRouter(db?: Database.Database): Router {
     } catch (err) {
       console.error("[Homepage] Watchlist error:", err);
       res.status(500).json({ error: "Failed to fetch watchlist" });
+    }
+  });
+
+  /**
+   * GET /api/homepage/social-sentiment
+   * Latest social sentiment across all tracked tokens.
+   */
+  router.get("/social-sentiment", (_req, res) => {
+    try {
+      const socialRepo = new SocialRepository(database);
+      const all = socialRepo.getLatestAll();
+
+      res.json({
+        data: {
+          tokens: all.map((s) => ({
+            symbol: s.token_symbol,
+            mentionCount: s.mention_count,
+            sentimentScore: s.sentiment_score,
+            sentimentLabel: s.sentiment_label,
+            source: s.source,
+            fetchedAt: s.fetched_at,
+          })),
+        },
+      });
+    } catch (err) {
+      console.error("[Homepage] Social sentiment error:", err);
+      res.status(500).json({ error: "Failed to fetch social sentiment" });
     }
   });
 

@@ -3,6 +3,7 @@ class SignalHeatmap extends HTMLElement {
     super();
     this._tokens = [];
     this._newsSignals = new Map();
+    this._socialSentiment = new Map();
   }
 
   connectedCallback() {
@@ -20,13 +21,15 @@ class SignalHeatmap extends HTMLElement {
   /**
    * @param {Array} prices - array of price objects with symbol, market_cap, price_change_percentage_24h, current_price
    * @param {Map} newsSignals - Map<symbol, {count, articles}> from getNewsSignals()
+   * @param {Map} socialSentiment - Map<symbol, {mentionCount, sentimentScore, sentimentLabel}> (optional)
    */
-  update(prices, newsSignals) {
+  update(prices, newsSignals, socialSentiment) {
     this._tokens = (prices || [])
       .filter(p => p.market_cap > 0)
       .sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0))
       .slice(0, 30);
     this._newsSignals = newsSignals || new Map();
+    this._socialSentiment = socialSentiment || new Map();
 
     this._render();
   }
@@ -69,6 +72,16 @@ class SignalHeatmap extends HTMLElement {
         badgeHtml = `<span class="hm-signal-badge">${signal.count}${arrow ? '<span class="hm-sentiment">' + arrow + '</span>' : ''}</span>`;
       }
 
+      // Social sentiment badge
+      const social = this._socialSentiment.get(symbol) || this._socialSentiment.get(symbol.toLowerCase());
+      let sentimentBadgeHtml = '';
+      if (social && social.mentionCount > 0) {
+        const label = social.sentimentLabel || 'neutral';
+        const sentClass = label === 'bullish' ? 'hm-sent-bull' : label === 'bearish' ? 'hm-sent-bear' : 'hm-sent-neutral';
+        const icon = label === 'bullish' ? '\u{1F4C8}' : label === 'bearish' ? '\u{1F4C9}' : '\u{1F4CA}';
+        sentimentBadgeHtml = `<span class="hm-sentiment-badge ${sentClass}" title="Social: ${social.mentionCount} mentions, ${label}">${icon}</span>`;
+      }
+
       // Price display for larger cells
       let priceHtml = '';
       if ((sizeClass === 'hm-xl' || sizeClass === 'hm-lg') && token.current_price) {
@@ -76,11 +89,11 @@ class SignalHeatmap extends HTMLElement {
       }
 
       return `
-        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}">
+        <a href="/tokens/${encodeURIComponent(symbol)}" class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${this._esc(symbol)} ${sign}${pct.toFixed(1)}%${signal ? ' | ' + signal.count + ' articles (24h)' : ''}${social ? ' | Sentiment: ' + (social.sentimentLabel || 'neutral') : ''}">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}
-          ${badgeHtml}
+          <span class="hm-badges">${badgeHtml}${sentimentBadgeHtml}</span>
         </a>
       `;
     }).join('');

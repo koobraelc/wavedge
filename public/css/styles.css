@@ -790,6 +790,30 @@ a:hover { text-decoration: underline; }
   font-size: 0.7rem;
 }
 
+.hm-badges {
+  display: flex;
+  gap: 3px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  align-items: center;
+}
+
+.hm-badges .hm-signal-badge {
+  position: static;
+}
+
+.hm-sentiment-badge {
+  font-size: 0.65rem;
+  line-height: 1;
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+
+.hm-sent-bull { background: rgba(16, 185, 129, 0.3); }
+.hm-sent-bear { background: rgba(239, 68, 68, 0.3); }
+.hm-sent-neutral { background: rgba(156, 163, 175, 0.3); }
+
 .hm-hot {
   box-shadow: 0 0 10px rgba(227, 160, 8, 0.4);
   border-color: #e3a008;
@@ -1195,6 +1219,99 @@ watchlist-widget {
 .token-impact-section {
   margin-bottom: 28px;
 }
+
+/* === Social Sentiment Section === */
+.token-sentiment-section {
+  margin-bottom: 28px;
+}
+
+.sentiment-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.sentiment-overview {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+@media (max-width: 600px) {
+  .sentiment-overview { flex-direction: column; gap: 12px; }
+}
+
+.sentiment-score {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.sentiment-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.sentiment-label.positive { color: var(--green); }
+.sentiment-label.negative { color: var(--red); }
+.sentiment-label.neutral { color: var(--text-muted); }
+
+.sentiment-mentions {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.sentiment-change {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.sentiment-change.positive { color: var(--green); }
+.sentiment-change.negative { color: var(--red); }
+.sentiment-change.neutral { color: var(--text-muted); }
+
+.sentiment-breakdown {
+  flex: 1;
+}
+
+.sentiment-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  margin-bottom: 6px;
+}
+
+.sentiment-bar-pos { background: var(--green); }
+.sentiment-bar-neg { background: var(--red); }
+.sentiment-bar-neu { background: var(--text-muted); opacity: 0.4; }
+
+.sentiment-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.sentiment-samples {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.sentiment-sample {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sentiment-sample:last-child { border-bottom: none; }
 
 .impact-grid {
   display: grid;
@@ -4615,4 +4732,74 @@ watchlist-widget {
   }
 
   .picker-vs { text-align: center; }
+}
+
+/* === Theme Switcher === */
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.theme-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 120px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.theme-dropdown.open {
+  display: flex;
+  flex-direction: column;
+}
+
+.theme-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+}
+
+.theme-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.theme-btn.active {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-weight: 600;
 }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { PriceRepository } from "../db/price-repository.js";
 import { NewsRepository } from "../db/news-repository.js";
 import { ImpactRepository } from "../db/impact-repository.js";
+import { SocialRepository } from "../db/social-repository.js";
 import { SummaryService } from "../services/summary-service.js";
 
 export function createTokensRouter(
@@ -136,6 +137,53 @@ export function createTokensRouter(
     });
 
     res.json({ data: { symbol: displaySymbol, name: displayName, faqs } });
+  });
+
+  /** GET /api/tokens/:symbol/sentiment — social sentiment data */
+  router.get("/:symbol/sentiment", (req, res) => {
+    const symbol = req.params.symbol.toLowerCase();
+    const token = prices.getTokenBySymbol(symbol);
+    if (!token) {
+      res.status(404).json({ error: "Token not found" });
+      return;
+    }
+
+    const socialRepo = new SocialRepository();
+    const latest = socialRepo.getLatest(token.symbol.toUpperCase());
+    const history = socialRepo.getHistory(token.symbol.toUpperCase(), 24);
+    const change = socialRepo.getMentionChange(token.symbol.toUpperCase());
+
+    res.json({
+      data: {
+        symbol: token.symbol.toUpperCase(),
+        current: latest
+          ? {
+              mentionCount: latest.mention_count,
+              sentimentScore: latest.sentiment_score,
+              sentimentLabel: latest.sentiment_label,
+              positiveCount: latest.positive_count,
+              negativeCount: latest.negative_count,
+              neutralCount: latest.neutral_count,
+              sampleTexts: JSON.parse(latest.sample_texts),
+              source: latest.source,
+              fetchedAt: latest.fetched_at,
+            }
+          : null,
+        change: change
+          ? {
+              currentMentions: change.current,
+              previousMentions: change.previous,
+              changePercent: change.changePercent,
+            }
+          : null,
+        history: history.map((h) => ({
+          mentionCount: h.mention_count,
+          sentimentScore: h.sentiment_score,
+          sentimentLabel: h.sentiment_label,
+          fetchedAt: h.fetched_at,
+        })),
+      },
+    });
   });
 
   /** GET /api/tokens/:symbol/related — tokens co-mentioned in articles */

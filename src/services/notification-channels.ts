@@ -65,7 +65,7 @@ function formatTelegramMessage(payload: AlertPayload): string {
     "*Signals:*",
   ];
   for (const signal of payload.signals) {
-    const emoji = signal.type === "news_frequency" ? "📰" : signal.type === "price_movement" ? "📈" : "📊";
+    const emoji = signal.type === "news_frequency" ? "📰" : signal.type === "price_movement" ? "📈" : signal.type === "sentiment_shift" ? "💬" : "📊";
     lines.push(`${emoji} ${signal.detail}`);
   }
   lines.push("", `_${new Date().toISOString()}_`);

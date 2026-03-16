@@ -43,6 +43,21 @@
     return map;
   }
 
+  async function loadSocialSentiment() {
+    try {
+      const res = await fetch('/api/homepage/social-sentiment');
+      const json = await res.json();
+      const map = new Map();
+      for (const t of (json.data?.tokens || [])) {
+        map.set(t.symbol, t);
+      }
+      return map;
+    } catch (err) {
+      console.error('Failed to load social sentiment:', err);
+      return new Map();
+    }
+  }
+
   // --- Data loading ---
   async function loadPrices() {
     try {
@@ -105,7 +120,7 @@
 
   // --- Initial load ---
   async function init() {
-    const [prices, news] = await Promise.all([loadPrices(), loadNews()]);
+    const [prices, news, socialSentiment] = await Promise.all([loadPrices(), loadNews(), loadSocialSentiment()]);
     const newsCount = news.length;
     statsRow.update(prices, newsCount);
 
@@ -113,10 +128,10 @@
     const pricesMap = buildPricesMap(prices);
     impactFeed.update(news, pricesMap);
 
-    // Update signal heatmap with prices and hot symbols from feed
+    // Update signal heatmap with prices, news signals, and social sentiment
     if (signalHeatmap) {
       const newsSignals = impactFeed.getNewsSignals();
-      signalHeatmap.update(prices, newsSignals);
+      signalHeatmap.update(prices, newsSignals, socialSentiment);
     }
 
     // Then enrich with impact data (doesn't block initial render)
@@ -127,13 +142,13 @@
 
   // Refresh every 60s
   setInterval(async () => {
-    const [prices, news] = await Promise.all([loadPrices(), loadNews()]);
+    const [prices, news, socialSentiment] = await Promise.all([loadPrices(), loadNews(), loadSocialSentiment()]);
     statsRow.update(prices, news.length);
     const pricesMap = buildPricesMap(prices);
     impactFeed.update(news, pricesMap);
     if (signalHeatmap) {
       const newsSignals = impactFeed.getNewsSignals();
-      signalHeatmap.update(prices, newsSignals);
+      signalHeatmap.update(prices, newsSignals, socialSentiment);
     }
     if (watchlistWidget) watchlistWidget.refresh();
     loadImpacts(news);

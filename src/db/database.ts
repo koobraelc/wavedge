@@ -123,6 +123,7 @@ export function initializeSchema(database: Database.Database): void {
       news_window_minutes INTEGER NOT NULL DEFAULT 60,
       price_change_threshold REAL NOT NULL DEFAULT 5.0,
       volume_change_threshold REAL NOT NULL DEFAULT 100.0,
+      sentiment_change_threshold REAL NOT NULL DEFAULT 30.0,
       min_signals INTEGER NOT NULL DEFAULT 2,
       enabled INTEGER NOT NULL DEFAULT 1,
       telegram_chat_id TEXT,
@@ -282,6 +283,26 @@ export function initializeSchema(database: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
     CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+
+    -- Social sentiment tracking
+    CREATE TABLE IF NOT EXISTS social_mentions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_symbol TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'twitter',
+      mention_count INTEGER NOT NULL DEFAULT 0,
+      sentiment_score REAL NOT NULL DEFAULT 0,
+      sentiment_label TEXT NOT NULL DEFAULT 'neutral',
+      positive_count INTEGER NOT NULL DEFAULT 0,
+      negative_count INTEGER NOT NULL DEFAULT 0,
+      neutral_count INTEGER NOT NULL DEFAULT 0,
+      sample_texts TEXT NOT NULL DEFAULT '[]',
+      fetched_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(token_symbol, source, fetched_at)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_social_mentions_token ON social_mentions(token_symbol);
+    CREATE INDEX IF NOT EXISTS idx_social_mentions_fetched ON social_mentions(fetched_at);
+    CREATE INDEX IF NOT EXISTS idx_social_mentions_token_fetched ON social_mentions(token_symbol, fetched_at);
 
     -- Scheduler error logging
     CREATE TABLE IF NOT EXISTS scheduler_errors (

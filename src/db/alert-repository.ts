@@ -11,6 +11,7 @@ export interface AlertPreferencesRow {
   news_window_minutes: number;
   price_change_threshold: number;
   volume_change_threshold: number;
+  sentiment_change_threshold: number;
   min_signals: number;
   enabled: number;
   telegram_chat_id: string | null;
@@ -28,6 +29,7 @@ export interface AlertPreferencesInsert {
   newsWindowMinutes?: number;
   priceChangeThreshold?: number;
   volumeChangeThreshold?: number;
+  sentimentChangeThreshold?: number;
   minSignals?: number;
   enabled?: boolean;
   telegramChatId?: string | null;
@@ -54,10 +56,10 @@ export interface TriggeredAlertInsert {
   deliveredChannels: string[];
 }
 
-const SENSITIVITY_PRESETS: Record<string, { priceChange: number; volumeChange: number; newsFrequency: number }> = {
-  low: { priceChange: 8.0, volumeChange: 200.0, newsFrequency: 5 },
-  medium: { priceChange: 5.0, volumeChange: 100.0, newsFrequency: 3 },
-  high: { priceChange: 2.0, volumeChange: 50.0, newsFrequency: 2 },
+const SENSITIVITY_PRESETS: Record<string, { priceChange: number; volumeChange: number; newsFrequency: number; sentimentChange: number }> = {
+  low: { priceChange: 8.0, volumeChange: 200.0, newsFrequency: 5, sentimentChange: 50 },
+  medium: { priceChange: 5.0, volumeChange: 100.0, newsFrequency: 3, sentimentChange: 30 },
+  high: { priceChange: 2.0, volumeChange: 50.0, newsFrequency: 2, sentimentChange: 15 },
 };
 
 export class AlertRepository {
@@ -87,11 +89,13 @@ export class AlertRepository {
     let priceThreshold = insert.priceChangeThreshold;
     let volumeThreshold = insert.volumeChangeThreshold;
     let newsThreshold = insert.newsFrequencyThreshold;
+    let sentimentThreshold = insert.sentimentChangeThreshold;
     if (insert.sensitivity && !existing) {
       const preset = SENSITIVITY_PRESETS[insert.sensitivity];
       priceThreshold = priceThreshold ?? preset.priceChange;
       volumeThreshold = volumeThreshold ?? preset.volumeChange;
       newsThreshold = newsThreshold ?? preset.newsFrequency;
+      sentimentThreshold = sentimentThreshold ?? preset.sentimentChange;
     }
 
     if (existing) {
@@ -106,6 +110,7 @@ export class AlertRepository {
             news_window_minutes = ?,
             price_change_threshold = ?,
             volume_change_threshold = ?,
+            sentiment_change_threshold = ?,
             min_signals = ?,
             enabled = ?,
             telegram_chat_id = ?,
@@ -121,6 +126,7 @@ export class AlertRepository {
           insert.newsWindowMinutes ?? existing.news_window_minutes,
           priceThreshold ?? existing.price_change_threshold,
           volumeThreshold ?? existing.volume_change_threshold,
+          sentimentThreshold ?? existing.sentiment_change_threshold,
           insert.minSignals ?? existing.min_signals,
           insert.enabled !== undefined ? (insert.enabled ? 1 : 0) : existing.enabled,
           insert.telegramChatId !== undefined ? insert.telegramChatId : existing.telegram_chat_id,
@@ -133,8 +139,8 @@ export class AlertRepository {
           `INSERT INTO alert_preferences
             (user_id, token_symbols, channels, sensitivity, news_frequency_threshold,
              news_window_minutes, price_change_threshold, volume_change_threshold,
-             min_signals, enabled, telegram_chat_id, email_address)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+             sentiment_change_threshold, min_signals, enabled, telegram_chat_id, email_address)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           userId,
@@ -145,6 +151,7 @@ export class AlertRepository {
           insert.newsWindowMinutes ?? 60,
           priceThreshold ?? 5.0,
           volumeThreshold ?? 100.0,
+          sentimentThreshold ?? 30.0,
           insert.minSignals ?? 2,
           insert.enabled !== undefined ? (insert.enabled ? 1 : 0) : 1,
           insert.telegramChatId ?? null,

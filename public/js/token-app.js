@@ -417,6 +417,81 @@
     }
   }
 
+  // --- Social Sentiment ---
+  async function loadSentiment() {
+    const container = document.getElementById('token-sentiment');
+    if (!container) return;
+    try {
+      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/sentiment`);
+      if (!res.ok) throw new Error('Failed');
+      const { data } = await res.json();
+
+      if (!data.current) {
+        container.innerHTML = `
+          <div class="section-header"><h2>Social Sentiment</h2></div>
+          <p class="loading-state">No social data available yet.</p>`;
+        return;
+      }
+
+      const c = data.current;
+      const labelCls = c.sentimentLabel === 'bullish' ? 'positive' : c.sentimentLabel === 'bearish' ? 'negative' : 'neutral';
+      const labelIcon = c.sentimentLabel === 'bullish' ? '&#9650;' : c.sentimentLabel === 'bearish' ? '&#9660;' : '&#9679;';
+
+      let changeHtml = '';
+      if (data.change) {
+        const ch = data.change.changePercent;
+        const chSign = ch > 0 ? '+' : '';
+        const chCls = ch > 0 ? 'positive' : ch < 0 ? 'negative' : 'neutral';
+        changeHtml = `<span class="sentiment-change ${chCls}">${chSign}${ch.toFixed(1)}% mentions vs prev</span>`;
+      }
+
+      // Sentiment breakdown bar
+      const total = c.positiveCount + c.negativeCount + c.neutralCount || 1;
+      const posPct = (c.positiveCount / total * 100).toFixed(0);
+      const negPct = (c.negativeCount / total * 100).toFixed(0);
+      const neuPct = (c.neutralCount / total * 100).toFixed(0);
+
+      // Sample texts
+      const samplesHtml = c.sampleTexts.length > 0
+        ? c.sampleTexts.map(t => `<div class="sentiment-sample">"${escHtml(t)}"</div>`).join('')
+        : '';
+
+      container.innerHTML = `
+        <div class="section-header">
+          <h2>Social Sentiment</h2>
+          <span class="section-meta">${escHtml(c.source)}</span>
+        </div>
+        <div class="sentiment-card">
+          <div class="sentiment-overview">
+            <div class="sentiment-score">
+              <span class="sentiment-label ${labelCls}">${labelIcon} ${escHtml(c.sentimentLabel)}</span>
+              <span class="sentiment-mentions">${c.mentionCount.toLocaleString()} mentions (24h)</span>
+              ${changeHtml}
+            </div>
+            <div class="sentiment-breakdown">
+              <div class="sentiment-bar">
+                <div class="sentiment-bar-pos" style="width: ${posPct}%" title="Positive ${posPct}%"></div>
+                <div class="sentiment-bar-neg" style="width: ${negPct}%" title="Negative ${negPct}%"></div>
+                <div class="sentiment-bar-neu" style="width: ${neuPct}%" title="Neutral ${neuPct}%"></div>
+              </div>
+              <div class="sentiment-bar-labels">
+                <span class="positive">${posPct}% positive</span>
+                <span class="negative">${negPct}% negative</span>
+                <span class="neutral">${neuPct}% neutral</span>
+              </div>
+            </div>
+          </div>
+          ${samplesHtml ? `<div class="sentiment-samples">${samplesHtml}</div>` : ''}
+        </div>`;
+    } catch {
+      if (container) {
+        container.innerHTML = `
+          <div class="section-header"><h2>Social Sentiment</h2></div>
+          <p class="loading-state">Failed to load sentiment data.</p>`;
+      }
+    }
+  }
+
   // --- Related Tokens ---
   async function loadRelated() {
     const container = document.getElementById('token-related');
@@ -486,6 +561,7 @@
     loadChart(),
     loadSummary(),
     loadImpact(),
+    loadSentiment(),
     loadFaq(),
     loadRelated(),
     loadNews(),

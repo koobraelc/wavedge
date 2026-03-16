@@ -11,12 +11,14 @@ import { PriceRepository } from "../db/price-repository.js";
 import { DigestGenerator } from "../services/digest-generator.js";
 import { DigestDelivery } from "../services/digest-delivery.js";
 import { DigestRepository } from "../db/digest-repository.js";
+import { SocialPipeline } from "./social-pipeline.js";
 import { SchedulerRepository } from "../db/scheduler-repository.js";
 
 let priceTask: ScheduledTask | null = null;
 let newsTask: ScheduledTask | null = null;
 let alertTask: ScheduledTask | null = null;
 let digestTask: ScheduledTask | null = null;
+let sentimentTask: ScheduledTask | null = null;
 
 const schedulerRepo = new SchedulerRepository();
 
@@ -26,6 +28,7 @@ export const schedulerStatus: Record<string, { lastRun: string | null; lastError
   news: { lastRun: null, lastError: null },
   alert: { lastRun: null, lastError: null },
   digest: { lastRun: null, lastError: null },
+  sentiment: { lastRun: null, lastError: null },
 };
 
 export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void {
@@ -187,5 +190,42 @@ export function stopDigestScheduler(): void {
     digestTask.stop();
     digestTask = null;
     console.log("Digest scheduler stopped");
+  }
+}
+
+/** Social sentiment scheduler — runs every 30 minutes */
+export function startSentimentScheduler(intervalCron: string = "*/30 * * * *"): void {
+  if (sentimentTask) {
+    console.warn("Sentiment scheduler already running");
+    return;
+  }
+
+  const pipeline = new SocialPipeline();
+
+  const run = async () => {
+    try {
+      const result = await pipeline.ingest();
+      schedulerStatus.sentiment.lastRun = new Date().toISOString();
+      console.log(`Sentiment pipeline: ${result.tokensProcessed} tokens (${result.source}) in ${result.durationMs}ms`);
+    } catch (err) {
+      console.error("Sentiment pipeline failed:", err);
+      schedulerStatus.sentiment.lastError = new Date().toISOString();
+      schedulerRepo.logError("sentiment", err);
+    }
+  };
+
+  console.log(`Starting sentiment scheduler with cron: ${intervalCron}`);
+
+  // Run immediately on start
+  run();
+
+  sentimentTask = cron.schedule(intervalCron, run);
+}
+
+export function stopSentimentScheduler(): void {
+  if (sentimentTask) {
+    sentimentTask.stop();
+    sentimentTask = null;
+    console.log("Sentiment scheduler stopped");
   }
 }

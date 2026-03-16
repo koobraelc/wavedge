@@ -1033,6 +1033,11 @@ app.get("/tokens/:symbol", (req, res) => {
       <div class="loading-state"><span class="spinner"></span>Loading impact data...</div>
     </div>
 
+    <div class="token-sentiment-section" id="token-sentiment">
+      <div class="section-header"><h2>Social Sentiment</h2></div>
+      <div class="loading-state"><span class="spinner"></span>Loading sentiment data...</div>
+    </div>
+
     <div class="token-faq-section" id="token-faq">
       <div class="section-header"><h2>Frequently Asked Questions</h2></div>
       <div class="loading-state"><span class="spinner"></span>Loading FAQ...</div>

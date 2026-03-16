@@ -6,6 +6,7 @@ import {
   detectNewsFrequency,
   detectPriceMovement,
   detectVolumeChange,
+  detectSentimentShift,
   type Signal,
 } from "./signal-detectors.js";
 import { channelRegistry, type AlertPayload } from "./notification-channels.js";
@@ -119,6 +120,14 @@ export class AlertEngine {
     );
     if (volumeSignal) signals.push(volumeSignal);
 
+    const sentimentThreshold = (pref as any).sentiment_change_threshold ?? 30;
+    const sentimentSignal = detectSentimentShift(
+      tokenSymbol,
+      sentimentThreshold,
+      this.db
+    );
+    if (sentimentSignal) signals.push(sentimentSignal);
+
     return signals;
   }
 
@@ -198,6 +207,9 @@ export class AlertEngine {
       } else if (s.type === "volume_change") {
         const dir = s.value > 0 ? "up" : "down";
         parts.push(`volume ${dir} ${Math.abs(s.value).toFixed(1)}%`);
+      } else if (s.type === "sentiment_shift") {
+        const dir = s.value > 0 ? "up" : "down";
+        parts.push(`social mentions ${dir} ${Math.abs(s.value).toFixed(1)}%`);
       }
     }
     return parts.join(", ");

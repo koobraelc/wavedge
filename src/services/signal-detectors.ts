@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { getDatabase } from "../db/database.js";
 
 export interface Signal {
-  type: "news_frequency" | "price_movement" | "volume_change";
+  type: "news_frequency" | "price_movement" | "volume_change" | "sentiment_shift";
   tokenSymbol: string;
   value: number;
   threshold: number;
@@ -125,6 +125,54 @@ export function detectVolumeChange(
       value: changePercent,
       threshold: thresholdPercent,
       detail: `${tokenSymbol.toUpperCase()} volume ${direction}${changePercent.toFixed(1)}% (threshold: ±${thresholdPercent}%)`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Detect social sentiment shift: compare latest mention count to previous data point.
+ * Fires when mention volume change exceeds threshold (indicating viral social activity).
+ * Also reports sentiment direction (bullish/bearish/neutral).
+ */
+export function detectSentimentShift(
+  tokenSymbol: string,
+  thresholdPercent: number,
+  db?: Database.Database
+): Signal | null {
+  const database = db || getDatabase();
+
+  // Get the two most recent sentiment readings
+  const rows = database
+    .prepare(
+      `SELECT mention_count, sentiment_score, sentiment_label, fetched_at
+       FROM social_mentions
+       WHERE token_symbol = ? AND mention_count > 0
+       ORDER BY fetched_at DESC LIMIT 2`
+    )
+    .all(tokenSymbol.toUpperCase()) as {
+      mention_count: number;
+      sentiment_score: number;
+      sentiment_label: string;
+      fetched_at: string;
+    }[];
+
+  if (rows.length < 2) return null;
+
+  const [current, previous] = rows;
+  if (previous.mention_count === 0) return null;
+
+  const changePercent = ((current.mention_count - previous.mention_count) / previous.mention_count) * 100;
+
+  if (Math.abs(changePercent) >= thresholdPercent) {
+    const direction = changePercent > 0 ? "+" : "";
+    const sentimentEmoji = current.sentiment_label === "bullish" ? "bullish" : current.sentiment_label === "bearish" ? "bearish" : "neutral";
+    return {
+      type: "sentiment_shift",
+      tokenSymbol,
+      value: changePercent,
+      threshold: thresholdPercent,
+      detail: `${tokenSymbol.toUpperCase()} social mentions ${direction}${changePercent.toFixed(1)}%, sentiment: ${sentimentEmoji} (threshold: ±${thresholdPercent}%)`,
     };
   }
   return null;

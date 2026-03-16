@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createTestDatabase } from "../db/database.js";
 import { NewsRepository } from "../db/news-repository.js";
 import { PriceRepository } from "../db/price-repository.js";
-import { detectNewsFrequency, detectPriceMovement, detectVolumeChange } from "./signal-detectors.js";
+import { detectNewsFrequency, detectPriceMovement, detectVolumeChange, detectSentimentShift } from "./signal-detectors.js";
 import type Database from "better-sqlite3";
 
 describe("Signal Detectors", () => {
@@ -145,6 +145,56 @@ describe("Signal Detectors", () => {
       expect(signal).not.toBeNull();
       expect(signal!.type).toBe("volume_change");
       expect(signal!.value).toBeCloseTo(150, 0);
+    });
+  });
+
+  describe("detectSentimentShift", () => {
+    function insertSocialMention(symbol: string, mentionCount: number, sentimentScore: number, sentimentLabel: string, minutesAgo: number) {
+      db.prepare(
+        `INSERT INTO social_mentions (token_symbol, source, mention_count, sentiment_score, sentiment_label, positive_count, negative_count, neutral_count, sample_texts, fetched_at)
+         VALUES (?, 'twitter', ?, ?, ?, 0, 0, 0, '[]', datetime('now', ?))`
+      ).run(symbol, mentionCount, sentimentScore, sentimentLabel, `-${minutesAgo} minutes`);
+    }
+
+    it("returns null with no data", () => {
+      const signal = detectSentimentShift("BTC", 30, db);
+      expect(signal).toBeNull();
+    });
+
+    it("returns null with only one data point", () => {
+      insertSocialMention("BTC", 1000, 0.3, "bullish", 0);
+      const signal = detectSentimentShift("BTC", 30, db);
+      expect(signal).toBeNull();
+    });
+
+    it("returns signal when mention change exceeds threshold", () => {
+      insertSocialMention("BTC", 1000, 0.2, "neutral", 60);
+      insertSocialMention("BTC", 1500, 0.5, "bullish", 0);
+
+      const signal = detectSentimentShift("BTC", 30, db);
+      expect(signal).not.toBeNull();
+      expect(signal!.type).toBe("sentiment_shift");
+      expect(signal!.value).toBe(50);
+      expect(signal!.detail).toContain("social mentions");
+      expect(signal!.detail).toContain("bullish");
+    });
+
+    it("returns null when below threshold", () => {
+      insertSocialMention("BTC", 1000, 0.2, "neutral", 60);
+      insertSocialMention("BTC", 1200, 0.3, "bullish", 0);
+
+      const signal = detectSentimentShift("BTC", 30, db);
+      expect(signal).toBeNull();
+    });
+
+    it("detects negative shift (declining mentions)", () => {
+      insertSocialMention("ETH", 2000, 0.1, "neutral", 60);
+      insertSocialMention("ETH", 800, -0.3, "bearish", 0);
+
+      const signal = detectSentimentShift("ETH", 30, db);
+      expect(signal).not.toBeNull();
+      expect(signal!.value).toBeLessThan(0);
+      expect(signal!.detail).toContain("bearish");
     });
   });
 });

@@ -192,7 +192,7 @@ export class SummaryService {
   private async generateWithLLM(
     symbol: string,
     lang: "en" | "zh",
-    articles: { title: string; category: string; change_24h: number | null }[],
+    articles: { title: string; category: string; change24h: number | null }[],
     sentimentBreakdown: Record<string, { count: number; sentiment: string }>,
     netImpact: string
   ): Promise<string> {
@@ -207,7 +207,7 @@ export class SummaryService {
       .slice(0, 10)
       .map(
         (a) =>
-          `- [${a.category}] ${a.title}${a.change_24h != null ? ` (24h: ${a.change_24h > 0 ? "+" : ""}${a.change_24h.toFixed(2)}%)` : ""}`
+          `- [${a.category}] ${a.title}${a.change24h != null ? ` (24h: ${a.change24h > 0 ? "+" : ""}${a.change24h.toFixed(2)}%)` : ""}`
       )
       .join("\n");
 

@@ -255,13 +255,13 @@ export class ImpactRepository {
     return this.db
       .prepare(
         `SELECT
-           a.id as article_id,
+           a.id as articleId,
            a.title,
            a.summary,
            nc.category,
            nc.confidence,
-           a.published_at,
-           ie.change_24h
+           a.published_at as publishedAt,
+           ie.change_24h as change24h
          FROM articles a
          JOIN news_categories nc ON nc.article_id = a.id
          LEFT JOIN impact_events ie ON ie.article_id = a.id AND ie.token_symbol = ?
@@ -274,13 +274,13 @@ export class ImpactRepository {
         `%"${tokenSymbol.toUpperCase()}"%`,
         `-${days} days`
       ) as {
-      article_id: number;
+      articleId: number;
       title: string;
       summary: string | null;
       category: string;
       confidence: number;
-      published_at: string;
-      change_24h: number | null;
+      publishedAt: string;
+      change24h: number | null;
     }[];
   }
 

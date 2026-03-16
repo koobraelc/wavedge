@@ -17,7 +17,100 @@
 
   let _locale = DEFAULT_LOCALE;
   let _messages = {};
-  let _fallback = {};
+  // Inline English fallback — ensures translations work even if XHR fails
+  let _fallback = {
+    "nav.dashboard": "Dashboard",
+    "nav.market": "Market",
+    "nav.alerts": "Alerts",
+    "nav.billing": "Billing",
+    "nav.login": "Log in",
+    "nav.logout": "Log out",
+    "nav.searchPlaceholder": "Search tokens or news...",
+    "nav.searchLabel": "Search",
+    "nav.settings": "Settings",
+    "nav.alertSettings": "Alert Settings",
+    "nav.watchlist": "Watchlist",
+    "nav.apiKeys": "API Keys",
+    "nav.compare": "Compare",
+    "nav.switchTheme": "Theme",
+    "nav.language": "Language",
+    "welcome.title": "Welcome to Wavedge!",
+    "welcome.description": "Your crypto intelligence dashboard is ready. Here's how to get started:",
+    "welcome.setupWatchlist": "Set up Watchlist",
+    "welcome.learnImpact": "Learn about Impact Scores",
+    "welcome.setupAlerts": "Configure Alerts",
+    "welcome.dismiss": "Dismiss",
+    "heatmap.title": "Signal Heatmap",
+    "heatmap.tip": "Signals = a composite indicator of news volume + social discussion + whale activity. More signals means this token is worth watching.",
+    "heatmap.legendUp": "Up",
+    "heatmap.legendDown": "Down",
+    "heatmap.legendSize": "Larger = higher market cap",
+    "heatmap.legendNews": "News",
+    "heatmap.legendSocial": "Social",
+    "heatmap.legendWhale": "Whales",
+    "heatmap.noData": "No token data",
+    "heatmap.articles24h": "{count} articles (24h)",
+    "heatmap.sentiment": "Sentiment: {label}",
+    "heatmap.whale": "Whale: {count} txs",
+    "feed.noArticles": "No articles yet",
+    "feed.avg": "avg",
+    "feed.historicalTooltip": "Historical avg 24h price change based on {samples} similar event{plural}",
+    "feed.newsTooltip": "{category} news: ",
+    "time.justNow": "just now",
+    "time.mAgo": "{n}m ago",
+    "time.hAgo": "{n}h ago",
+    "time.dAgo": "{n}d ago",
+    "stats.btcPrice": "BTC Price",
+    "stats.ethPrice": "ETH Price",
+    "stats.price": "Price",
+    "stats.sentiment": "Market Sentiment",
+    "stats.marketCap": "Total Market Cap",
+    "stats.neutral": "Neutral",
+    "stats.na": "N/A",
+    "stats.24h": "24h",
+    "chart.selectToken": "Select a token to view chart",
+    "chart.line": "Line",
+    "chart.candlestick": "Candlestick",
+    "chart.clickToLoad": "Click a token row to load its price chart",
+    "chart.loading": "Loading chart...",
+    "chart.noData": "No historical data available",
+    "chart.failed": "Failed to load chart data",
+    "table.rank": "#",
+    "table.token": "Token",
+    "table.price": "Price (USD)",
+    "table.change24h": "24h Change",
+    "table.marketCap": "Market Cap",
+    "table.volume": "Volume (24h)",
+    "table.noData": "No price data yet — updates every 5 minutes",
+    "impact.all": "All",
+    "impact.noArticles": "No articles yet",
+    "impact.emptyTitle": "No articles yet",
+    "impact.emptyAction": "Add tokens to your watchlist to see related news",
+    "impact.setAlert": "Set Alert",
+    "stale.delayed": "Data may be delayed (last update: {age} ago)",
+    "stale.dismiss": "Dismiss",
+    "watchlist.topTokens": "Top Tokens",
+    "watchlist.yourWatchlist": "Your Watchlist",
+    "watchlist.token": "Token",
+    "watchlist.price": "Price",
+    "watchlist.change24h": "24h",
+    "watchlist.signals": "Signals",
+    "watchlist.signalsTip": "The number of news articles and events related to this token in the past 24 hours.",
+    "watchlist.emptyTitle": "No tokens on your watchlist yet",
+    "watchlist.emptyAction": "Add tokens in Settings",
+    "watchlist.loadFailed": "Unable to load watchlist",
+    "bottomNav.dashboard": "Dashboard",
+    "bottomNav.market": "Market",
+    "bottomNav.alerts": "Alerts",
+    "bottomNav.tokens": "Tokens",
+    "bottomNav.settings": "Settings",
+    "missed.upgrade": "Upgrade to Pro",
+    "upgrade.title": "Upgrade to Pro",
+    "upgrade.cta": "Upgrade — $19/mo",
+    "market.noData": "No price data available yet.",
+    "market.loadFailed": "Failed to load market data.",
+    "market.loading": "Loading..."
+  };
   let _ready = false;
 
   /**
@@ -118,8 +211,11 @@
   function init() {
     _locale = detectLocale();
 
-    // Load English as fallback (sync — local file, fast)
-    _fallback = loadLocaleSync('en');
+    // Try to load full English from server (merges on top of inline fallback)
+    var loaded = loadLocaleSync('en');
+    if (loaded && Object.keys(loaded).length > 0) {
+      Object.assign(_fallback, loaded);
+    }
 
     if (_locale !== 'en') {
       // Load target locale sync so t() works immediately

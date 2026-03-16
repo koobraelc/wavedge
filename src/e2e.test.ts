@@ -136,7 +136,7 @@ describe("E2E Integration: Full User Flow", () => {
       expect(verified!.email).toBe("user@test.com");
 
       // Step 3: Find or create user
-      const user = userRepo.findOrCreateByEmail("user@test.com");
+      const { user } = userRepo.findOrCreateByEmail("user@test.com");
       expect(user.email).toBe("user@test.com");
       expect(user.tier).toBe("free");
       expect(user.id).toBeTruthy();
@@ -355,7 +355,7 @@ describe("E2E Integration: Full User Flow", () => {
   describe("Flow 5: Pro upgrade — tier change via simulated Stripe events", () => {
     it("upgrades user from free to pro after checkout", () => {
       // Create user
-      const user = userRepo.findOrCreateByEmail("pro@test.com");
+      const { user } = userRepo.findOrCreateByEmail("pro@test.com");
       expect(user.tier).toBe("free");
 
       // Simulate Stripe checkout.session.completed
@@ -379,7 +379,7 @@ describe("E2E Integration: Full User Flow", () => {
     });
 
     it("downgrades user when subscription is deleted", () => {
-      const user = userRepo.findOrCreateByEmail("downgrade@test.com");
+      const { user } = userRepo.findOrCreateByEmail("downgrade@test.com");
       userRepo.updateTier(user.id, "pro");
       userRepo.upsertSubscription({
         id: "sub-002",
@@ -405,7 +405,7 @@ describe("E2E Integration: Full User Flow", () => {
     });
 
     it("tracks Stripe customer ID for billing portal", () => {
-      const user = userRepo.findOrCreateByEmail("billing@test.com");
+      const { user } = userRepo.findOrCreateByEmail("billing@test.com");
       userRepo.updateStripeCustomerId(user.id, "cus_stripe_789");
 
       const found = userRepo.findByStripeCustomerId("cus_stripe_789");
@@ -508,7 +508,7 @@ describe("E2E Integration: Full User Flow", () => {
   // ────────────────────────────────────────────────────
   describe("Flow 7: API rate limiting — free tier limited, pro unlimited", () => {
     it("free tier cannot access API endpoints", () => {
-      const user = userRepo.findOrCreateByEmail("free@test.com");
+      const { user } = userRepo.findOrCreateByEmail("free@test.com");
       expect(user.tier).toBe("free");
 
       // Free users have apiAccessEnabled = false
@@ -517,7 +517,7 @@ describe("E2E Integration: Full User Flow", () => {
     });
 
     it("tracks API usage per user per day", () => {
-      const user = userRepo.findOrCreateByEmail("pro-api@test.com");
+      const { user } = userRepo.findOrCreateByEmail("pro-api@test.com");
       userRepo.updateTier(user.id, "pro");
 
       const today = new Date().toISOString().split("T")[0];
@@ -531,7 +531,7 @@ describe("E2E Integration: Full User Flow", () => {
     });
 
     it("free tier alert count is limited to 3/day", () => {
-      const user = userRepo.findOrCreateByEmail("limited@test.com");
+      const { user } = userRepo.findOrCreateByEmail("limited@test.com");
 
       // Record 3 alerts
       for (let i = 0; i < 3; i++) {
@@ -551,7 +551,7 @@ describe("E2E Integration: Full User Flow", () => {
     });
 
     it("pro tier can receive unlimited alerts", () => {
-      const user = userRepo.findOrCreateByEmail("pro-alerts@test.com");
+      const { user } = userRepo.findOrCreateByEmail("pro-alerts@test.com");
       userRepo.updateTier(user.id, "pro");
       expect(user.tier === "free"); // initially
       const updated = userRepo.findById(user.id);
@@ -619,7 +619,7 @@ describe("E2E Integration: Full User Flow", () => {
       const magicLink = userRepo.createMagicLink("journey@test.com");
       const verified = userRepo.verifyMagicLink(magicLink.token);
       expect(verified).not.toBeNull();
-      const user = userRepo.findOrCreateByEmail("journey@test.com");
+      const { user } = userRepo.findOrCreateByEmail("journey@test.com");
       const jwt = signToken(user.id);
 
       // 2. User browses dashboard

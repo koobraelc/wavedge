@@ -83,13 +83,14 @@ export function createAuthRouter(): Router {
       return;
     }
 
-    const user = userRepo.findOrCreateByEmail(magicLink.email);
+    const { user, isNew } = userRepo.findOrCreateByEmail(magicLink.email);
     const jwt = signToken(user.id);
 
     // If accessed from browser, redirect with token
     const accept = req.headers.accept || "";
     if (accept.includes("text/html")) {
-      res.redirect(`${APP_URL}/auth/callback?token=${jwt}`);
+      const callbackUrl = `${APP_URL}/auth/callback?token=${jwt}${isNew ? "&new=1" : ""}`;
+      res.redirect(callbackUrl);
       return;
     }
 
@@ -100,6 +101,7 @@ export function createAuthRouter(): Router {
         email: user.email,
         tier: user.tier,
       },
+      isNew,
     });
   });
 

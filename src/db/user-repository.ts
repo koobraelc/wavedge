@@ -67,11 +67,11 @@ export class UserRepository {
     return this.findById(id)!;
   }
 
-  findOrCreateByEmail(email: string): User {
+  findOrCreateByEmail(email: string): { user: User; isNew: boolean } {
     const normalized = email.toLowerCase();
     const existing = this.findByEmail(normalized);
-    if (existing) return existing;
-    return this.createUser(normalized);
+    if (existing) return { user: existing, isNew: false };
+    return { user: this.createUser(normalized), isNew: true };
   }
 
   updateTier(userId: string, tier: "free" | "pro"): void {

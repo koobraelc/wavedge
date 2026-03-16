@@ -40,7 +40,9 @@ describe("UserRepository", () => {
     it("findOrCreateByEmail returns existing user", () => {
       const first = repo.findOrCreateByEmail("dup@test.com");
       const second = repo.findOrCreateByEmail("dup@test.com");
-      expect(first.id).toBe(second.id);
+      expect(first.user.id).toBe(second.user.id);
+      expect(first.isNew).toBe(true);
+      expect(second.isNew).toBe(false);
     });
 
     it("updates tier", () => {

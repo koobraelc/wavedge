@@ -116,6 +116,7 @@ app.get("/robots.txt", (_req, res) => {
 Allow: /
 
 Disallow: /auth/callback
+Disallow: /onboarding
 Disallow: /api/auth/
 Disallow: /api/webhooks/
 Disallow: /api/billing/
@@ -146,11 +147,18 @@ app.get("/auth/callback", (_req, res) => {
 <html><head><title>Signing in...</title></head>
 <body>
 <script>
-  var t = new URLSearchParams(window.location.search).get('token');
-  if (t) { localStorage.setItem('wavedge_token', t); window.location.href = '/dashboard'; }
+  var p = new URLSearchParams(window.location.search);
+  var t = p.get('token');
+  var isNew = p.get('new') === '1';
+  if (t) { localStorage.setItem('wavedge_token', t); window.location.href = isNew ? '/onboarding' : '/dashboard'; }
   else { document.body.textContent = 'Invalid login link.'; }
 </script>
 </body></html>`);
+});
+
+// Onboarding wizard for new users
+app.get("/onboarding", (_req, res) => {
+  res.sendFile(path.join(publicDir, "onboarding.html"));
 });
 
 // Billing page

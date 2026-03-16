@@ -314,7 +314,7 @@ app.get("/sitemap.xml", (_req, res) => {
   // Generate URLs for all locales (en default + supported locales)
   const allPaths = [
     ...staticPages.map((p) => ({ path: p.loc, priority: p.priority, changefreq: p.changefreq })),
-    ...tokens.map((t) => ({ path: `/tokens/${t.symbol}`, priority: "0.8", changefreq: "hourly" as const })),
+    ...tokens.map((t) => ({ path: `/tokens/${t.symbol.toUpperCase()}`, priority: "0.8", changefreq: "hourly" as const })),
   ];
 
   const urls: string[] = [];

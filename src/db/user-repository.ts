@@ -111,9 +111,12 @@ export class UserRepository {
   }
 
   cleanExpiredLinks(): void {
+    // expires_at is stored as ISO 8601 (e.g. "2024-01-15T10:30:45.000Z")
+    // so compare against strftime which also produces a sortable format
+    const nowIso = new Date().toISOString();
     this.db
-      .prepare("DELETE FROM magic_links WHERE expires_at < datetime('now') OR used = 1")
-      .run();
+      .prepare("DELETE FROM magic_links WHERE expires_at < ? OR used = 1")
+      .run(nowIso);
   }
 
   // --- Subscriptions ---

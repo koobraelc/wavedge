@@ -370,8 +370,10 @@ export class ImpactRepository {
   }
 
   /**
-   * Get classified articles that are old enough (24h+) for full impact computation
+   * Get classified articles that are old enough for impact computation
    * and don't already have impact events computed.
+   * Uses 1h minimum age so partial data (1h impact) is available quickly;
+   * 4h and 24h fields will be null until enough time passes.
    */
   getArticlesReadyForImpact(limit: number = 100): {
     articleId: number;
@@ -388,7 +390,7 @@ export class ImpactRepository {
          LEFT JOIN impact_events ie ON ie.article_id = a.id
          WHERE ie.id IS NULL
            AND a.token_tags != '[]'
-           AND a.published_at <= datetime('now', '-24 hours')
+           AND a.published_at <= datetime('now', '-1 hours')
          ORDER BY a.published_at DESC
          LIMIT ?`
       )

@@ -66,6 +66,7 @@ a:hover { text-decoration: underline; }
 
 .header-nav {
   display: flex;
+  align-items: center;
   gap: 16px;
   font-size: 0.875rem;
 }
@@ -93,7 +94,7 @@ a:hover { text-decoration: underline; }
 
 .search-box input {
   width: 100%;
-  padding: 8px 14px;
+  padding: 8px 14px 8px 36px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-secondary);

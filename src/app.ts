@@ -609,6 +609,7 @@ app.get("/market", (req, res) => {
   <nav-bar></nav-bar>
 
   <main class="main-content market-page">
+    <breadcrumb-nav></breadcrumb-nav>
     <div class="market-header">
       <div>
         <h1>Market Overview</h1>
@@ -651,10 +652,13 @@ app.get("/market", (req, res) => {
 
   <bottom-nav></bottom-nav>
 
+  <script src="/js/i18n.js"></script>
+  <script>window.i18n.init();</script>
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
+  <script src="/js/components/breadcrumb-nav.js"></script>
   <script src="/js/market-app.js"></script>
 </body>
 </html>`);
@@ -1005,8 +1009,8 @@ app.get("/compare", (req, res) => {
   <nav-bar></nav-bar>
 
   <main class="main-content compare-page">
+    <breadcrumb-nav></breadcrumb-nav>
     <div class="compare-header">
-      <a href="/dashboard" class="back-link">&larr; Dashboard</a>
       <h1>Compare Tokens</h1>
       <p class="compare-subtitle">Select 2–3 tokens to compare price trends and news impact side by side.</p>
     </div>
@@ -1059,10 +1063,13 @@ app.get("/compare", (req, res) => {
 
   <div id="copy-toast" class="copy-toast">Link copied!</div>
 
+  <script src="/js/i18n.js"></script>
+  <script>window.i18n.init();</script>
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
+  <script src="/js/components/breadcrumb-nav.js"></script>
 
   <script>
     var s = document.createElement('script');

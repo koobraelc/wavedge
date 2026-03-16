@@ -190,12 +190,14 @@ describe("GET /api/tokens/:symbol/summary", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns null data when no articles exist", async () => {
+  it("returns structured fallback when no articles exist", async () => {
     const { app, priceRepo } = createApp();
     seedToken(priceRepo);
     const res = await request(app).get("/api/tokens/btc/summary");
     expect(res.status).toBe(200);
-    expect(res.body.data).toBeNull();
+    expect(res.body.status).toBe("no_data");
+    expect(res.body.data.summary).toBeNull();
+    expect(res.body.data.articleCount).toBe(0);
     expect(res.body.message).toBeDefined();
   });
 
@@ -264,5 +266,42 @@ describe("GET /api/tokens/:symbol/summary", () => {
     const res2 = await request(app).get("/api/tokens/btc/summary");
     expect(res2.status).toBe(200);
     expect(res2.body.data.generatedAt).toBe(generatedAt1);
+  });
+});
+
+describe("GET /api/tokens/:symbol/batch", () => {
+  it("returns 404 for unknown token", async () => {
+    const { app } = createApp();
+    const res = await request(app).get("/api/tokens/xyz/batch");
+    expect(res.status).toBe(404);
+  });
+
+  it("returns all sections in one response", async () => {
+    const { app, priceRepo } = createApp();
+    seedToken(priceRepo);
+    const res = await request(app).get("/api/tokens/btc/batch");
+    expect(res.status).toBe(200);
+    const { data } = res.body;
+
+    // Overview
+    expect(data.overview.token.symbol).toBe("btc");
+    expect(data.overview.price).toBeDefined();
+    expect(data.overview.recentNews).toBeDefined();
+
+    // Impact
+    expect(data.impact.symbol).toBe("BTC");
+    expect(data.impact.categories).toEqual([]);
+
+    // Sentiment
+    expect(data.sentiment.symbol).toBe("BTC");
+    expect(data.sentiment.current).toBeNull();
+
+    // Related
+    expect(data.related.symbol).toBe("BTC");
+    expect(data.related.related).toEqual([]);
+
+    // FAQ
+    expect(data.faq.symbol).toBe("BTC");
+    expect(data.faq.faqs.length).toBeGreaterThan(0);
   });
 });

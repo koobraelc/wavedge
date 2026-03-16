@@ -191,39 +191,74 @@
     }
   }
 
-  // --- AI Summary ---
+  // --- AI Summary with loading state, retry, and timeout ---
+  let summaryRetries = 0;
+  const MAX_SUMMARY_RETRIES = 2;
+
   async function loadSummary() {
     const container = document.getElementById('token-summary');
-    try {
-      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/summary?lang=en`);
-      if (!res.ok) throw new Error('Failed');
-      const { data, message } = await res.json();
 
-      if (!data) {
-        container.innerHTML = `
-          <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
-          <div class="summary-card summary-card-ai"><p class="summary-empty">${escHtml(message || 'No summary data available yet.')}</p></div>`;
+    // Show loading state
+    container.innerHTML = `
+      <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+      <div class="summary-card summary-card-ai">
+        <div class="summary-loading">
+          <div class="summary-spinner"></div>
+          <span>Generating summary&hellip;</span>
+        </div>
+      </div>`;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/summary?lang=en`, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) throw new Error('Failed');
+      const json = await res.json();
+
+      if (json.status === 'error' || (!json.data && json.status !== 'no_data')) {
+        renderSummaryRetry(container, json.message || 'Summary temporarily unavailable.');
         return;
       }
 
-      // Simple markdown-like rendering: **bold**, bullet points
-      const rendered = renderMarkdown(data.summary);
+      if (json.status === 'no_data' || !json.data?.summary) {
+        container.innerHTML = `
+          <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+          <div class="summary-card summary-card-ai"><p class="summary-empty">${escHtml(json.message || 'No summary data available yet. Summary will appear when news articles are collected.')}</p></div>`;
+        return;
+      }
 
+      const rendered = renderMarkdown(json.data.summary);
       container.innerHTML = `
         <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
         <div class="summary-card summary-card-ai">
           <div class="summary-text">${rendered}</div>
           <div class="summary-meta">
-            <span>Generated ${relativeTime(data.generatedAt)}</span>
+            <span>Generated ${relativeTime(json.data.generatedAt)}</span>
             <span>&middot;</span>
-            <span>${data.articleCount} articles analyzed</span>
+            <span>${json.data.articleCount} articles analyzed</span>
           </div>
         </div>`;
-    } catch {
-      container.innerHTML = `
-        <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
-        <div class="summary-card summary-card-ai"><p class="summary-empty">Summary unavailable.</p></div>`;
+    } catch (err) {
+      if (summaryRetries < MAX_SUMMARY_RETRIES) {
+        summaryRetries++;
+        setTimeout(loadSummary, 5000);
+        return;
+      }
+      renderSummaryRetry(container, 'Summary unavailable. Tap to retry.');
     }
+  }
+
+  function renderSummaryRetry(container, message) {
+    container.innerHTML = `
+      <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+      <div class="summary-card summary-card-ai summary-retry-card">
+        <p class="summary-empty">${escHtml(message)}</p>
+        <button class="summary-retry-btn">Retry</button>
+      </div>`;
+    const btn = container.querySelector('.summary-retry-btn');
+    if (btn) btn.addEventListener('click', () => { summaryRetries = 0; loadSummary(); });
   }
 
   function renderMarkdown(text) {
@@ -555,15 +590,227 @@
     return d.innerHTML;
   }
 
-  // --- Init ---
+  // --- Batch load: impact, sentiment, related, faq, news in a single API call ---
+  async function loadBatchData() {
+    try {
+      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/batch`);
+      if (!res.ok) {
+        // Fallback to individual calls if batch fails
+        await Promise.all([loadImpact(), loadSentiment(), loadFaq(), loadRelated(), loadNews()]);
+        return;
+      }
+      const { data } = await res.json();
+
+      // Render impact
+      renderImpactFromData(data.impact);
+      // Render sentiment
+      renderSentimentFromData(data.sentiment);
+      // Render related
+      renderRelatedFromData(data.related);
+      // Render FAQ
+      renderFaqFromData(data.faq);
+      // Render news from overview data
+      renderNewsFromData(data.overview);
+    } catch {
+      // Fallback to individual calls
+      await Promise.all([loadImpact(), loadSentiment(), loadFaq(), loadRelated(), loadNews()]);
+    }
+  }
+
+  function renderImpactFromData(data) {
+    const container = document.getElementById('token-impact');
+    if (!data || !data.categories || data.categories.length === 0) {
+      container.innerHTML = `
+        <div class="section-header"><h2>Impact Statistics</h2></div>
+        <p class="loading-state">No impact data recorded yet.</p>`;
+      return;
+    }
+    const maxAbs = Math.max(...data.categories.map(c => Math.abs(c.avgChange24h ?? 0)), 1);
+    const bars = data.categories.map(cat => {
+      const avg24h = cat.avgChange24h ?? 0;
+      const cls = avg24h > 0.1 ? 'positive' : avg24h < -0.1 ? 'negative' : 'neutral';
+      const sign = avg24h > 0 ? '+' : '';
+      const barWidth = Math.min(Math.abs(avg24h) / maxAbs * 100, 100);
+      const barColor = avg24h > 0.1 ? 'var(--green)' : avg24h < -0.1 ? 'var(--red)' : 'var(--text-muted)';
+      return `
+        <div class="impact-bar-row">
+          <div class="impact-bar-label">
+            <span class="impact-bar-category">${escHtml(cat.category)}</span>
+            <span class="impact-bar-meta">${cat.sampleSize} events</span>
+          </div>
+          <div class="impact-bar-track">
+            <div class="impact-bar-fill" style="width: ${barWidth}%; background: ${barColor}"></div>
+          </div>
+          <span class="impact-bar-value ${cls}">${sign}${avg24h.toFixed(2)}%</span>
+        </div>`;
+    }).join('');
+    container.innerHTML = `
+      <div class="section-header">
+        <h2>Impact Statistics</h2>
+        <span class="section-meta">${data.totalEvents} total events</span>
+      </div>
+      <div class="impact-bar-chart">${bars}</div>`;
+  }
+
+  function renderSentimentFromData(data) {
+    const container = document.getElementById('token-sentiment');
+    if (!container) return;
+    if (!data || !data.current) {
+      container.innerHTML = `
+        <div class="section-header"><h2>Social Sentiment</h2></div>
+        <div class="empty-state empty-state-inline"><div class="empty-state-icon">&#128172;</div><div class="empty-state-title">No social data yet</div><div class="empty-state-desc">Social sentiment is gathered from community discussions.</div></div>`;
+      return;
+    }
+    const c = data.current;
+    const labelCls = c.sentimentLabel === 'bullish' ? 'positive' : c.sentimentLabel === 'bearish' ? 'negative' : 'neutral';
+    const labelIcon = c.sentimentLabel === 'bullish' ? '&#9650;' : c.sentimentLabel === 'bearish' ? '&#9660;' : '&#9679;';
+    let changeHtml = '';
+    if (data.change) {
+      const ch = data.change.changePercent;
+      const chSign = ch > 0 ? '+' : '';
+      const chCls = ch > 0 ? 'positive' : ch < 0 ? 'negative' : 'neutral';
+      changeHtml = `<span class="sentiment-change ${chCls}">${chSign}${ch.toFixed(1)}% mentions vs prev</span>`;
+    }
+    const total = c.positiveCount + c.negativeCount + c.neutralCount || 1;
+    const posPct = (c.positiveCount / total * 100).toFixed(0);
+    const negPct = (c.negativeCount / total * 100).toFixed(0);
+    const neuPct = (c.neutralCount / total * 100).toFixed(0);
+    const samplesHtml = c.sampleTexts && c.sampleTexts.length > 0
+      ? c.sampleTexts.map(t => `<div class="sentiment-sample">"${escHtml(t)}"</div>`).join('')
+      : '';
+    container.innerHTML = `
+      <div class="section-header">
+        <h2>Social Sentiment</h2>
+        <span class="section-meta">${escHtml(c.source)}</span>
+      </div>
+      <div class="sentiment-card">
+        <div class="sentiment-overview">
+          <div class="sentiment-score">
+            <span class="sentiment-label ${labelCls}">${labelIcon} ${escHtml(c.sentimentLabel)}</span>
+            <span class="sentiment-mentions">${c.mentionCount.toLocaleString()} mentions (24h)</span>
+            ${changeHtml}
+          </div>
+          <div class="sentiment-breakdown">
+            <div class="sentiment-bar">
+              <div class="sentiment-bar-pos" style="width: ${posPct}%" title="Positive ${posPct}%"></div>
+              <div class="sentiment-bar-neg" style="width: ${negPct}%" title="Negative ${negPct}%"></div>
+              <div class="sentiment-bar-neu" style="width: ${neuPct}%" title="Neutral ${neuPct}%"></div>
+            </div>
+            <div class="sentiment-bar-labels">
+              <span class="positive">${posPct}% positive</span>
+              <span class="negative">${negPct}% negative</span>
+              <span class="neutral">${neuPct}% neutral</span>
+            </div>
+          </div>
+        </div>
+        ${samplesHtml ? `<div class="sentiment-samples">${samplesHtml}</div>` : ''}
+      </div>`;
+  }
+
+  function renderRelatedFromData(data) {
+    const container = document.getElementById('token-related');
+    if (!data || !data.related || data.related.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    const chips = data.related.map(t => `
+      <a href="/tokens/${encodeURIComponent(t.symbol)}" class="related-token-chip">
+        <span class="related-token-symbol">${escHtml(t.symbol)}</span>
+        <span class="related-token-name">${escHtml(t.name)}</span>
+        <span class="related-token-count">${t.coMentions} shared articles</span>
+      </a>`).join('');
+    container.innerHTML = `
+      <div class="section-header">
+        <h2>Related Tokens</h2>
+        <span class="section-meta">Co-mentioned in recent news</span>
+      </div>
+      <div class="related-tokens-grid">${chips}</div>`;
+  }
+
+  function renderFaqFromData(data) {
+    const container = document.getElementById('token-faq');
+    if (!data || !data.faqs || data.faqs.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    const faqItems = data.faqs.map((faq, i) => `
+      <div class="faq-item${i === 0 ? ' faq-item-open' : ''}">
+        <button class="faq-question" aria-expanded="${i === 0 ? 'true' : 'false'}">
+          <span>${escHtml(faq.question)}</span>
+          <span class="faq-toggle">${i === 0 ? '−' : '+'}</span>
+        </button>
+        <div class="faq-answer"${i === 0 ? '' : ' style="display:none"'}>
+          <p>${escHtml(faq.answer)}</p>
+        </div>
+      </div>`).join('');
+    container.innerHTML = `
+      <div class="section-header"><h2>Frequently Asked Questions</h2></div>
+      <div class="faq-list">${faqItems}</div>`;
+    container.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const answer = item.querySelector('.faq-answer');
+        const toggle = btn.querySelector('.faq-toggle');
+        const isOpen = item.classList.contains('faq-item-open');
+        item.classList.toggle('faq-item-open');
+        answer.style.display = isOpen ? 'none' : 'block';
+        toggle.textContent = isOpen ? '+' : '−';
+        btn.setAttribute('aria-expanded', !isOpen);
+      });
+    });
+    // FAQ structured data for SEO
+    const faqLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'mainEntity': data.faqs.map(faq => ({
+        '@type': 'Question',
+        'name': faq.question,
+        'acceptedAnswer': { '@type': 'Answer', 'text': faq.answer }
+      }))
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(faqLd);
+    document.head.appendChild(script);
+  }
+
+  function renderNewsFromData(overview) {
+    const newsFeed = document.querySelector('news-feed');
+    const timelineContainer = document.getElementById('news-timeline');
+    const articles = overview?.recentNews || [];
+    if (articles.length > 0) {
+      newsFeed.update(articles);
+      // Enrich with impact data (non-blocking)
+      enrichNewsImpacts(articles, newsFeed, timelineContainer);
+    }
+  }
+
+  async function enrichNewsImpacts(articles, newsFeed, timelineContainer) {
+    const ids = articles.slice(0, 5).map(a => a.id);
+    if (ids.length === 0) return;
+    try {
+      const res = await fetch('/api/news/batch-impact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+      if (!res.ok) return;
+      const { data: impactMap } = await res.json();
+      if (!impactMap) return;
+      for (const [idStr, impact] of Object.entries(impactMap)) {
+        const idx = articles.findIndex(a => a.id === Number(idStr));
+        if (idx !== -1) articles[idx] = { ...articles[idx], _impact: impact };
+      }
+      newsFeed.update(articles);
+      if (timelineContainer && articles.length > 0) renderNewsTimeline(timelineContainer, articles);
+    } catch { /* non-critical */ }
+  }
+
+  // --- Init: batch load + parallel independent calls ---
   Promise.all([
     loadHeroPrice(),
     loadChart(),
     loadSummary(),
-    loadImpact(),
-    loadSentiment(),
-    loadFaq(),
-    loadRelated(),
-    loadNews(),
+    loadBatchData(),
   ]);
 })();

@@ -709,9 +709,9 @@ a:hover { text-decoration: underline; }
 }
 
 .signal-heatmap-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
 }
 
 .signal-heatmap-empty {
@@ -740,42 +740,59 @@ a:hover { text-decoration: underline; }
   z-index: 1;
 }
 
-.hm-xl { width: 110px; height: 72px; }
-.hm-lg { width: 90px; height: 60px; }
-.hm-md { width: 72px; height: 52px; }
-.hm-sm { width: 58px; height: 44px; }
+.hm-xl { min-height: 88px; grid-column: span 2; }
+.hm-lg { min-height: 76px; grid-column: span 2; }
+.hm-md { min-height: 64px; }
+.hm-sm { min-height: 56px; }
 
 .hm-symbol {
   font-weight: 700;
-  font-size: 0.78rem;
-  color: var(--text-primary);
+  font-size: 0.9rem;
+  color: #fff;
 }
 
-.hm-sm .hm-symbol { font-size: 0.65rem; }
+.hm-sm .hm-symbol { font-size: 0.78rem; }
 
 .hm-pct {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-primary);
-  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.hm-sm .hm-pct { font-size: 0.58rem; }
+.hm-sm .hm-pct { font-size: 0.7rem; }
 
-.hm-hot {
-  box-shadow: 0 0 8px rgba(210, 153, 34, 0.35);
-  border-color: var(--yellow);
+.hm-price {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 1px;
 }
 
-.hm-pulse {
+.hm-signal-badge {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--yellow);
-  animation: pulse 2s ease-in-out infinite;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #e3a008;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 0 6px rgba(227, 160, 8, 0.5);
+  gap: 2px;
+}
+
+.hm-sentiment {
+  font-size: 0.7rem;
+}
+
+.hm-hot {
+  box-shadow: 0 0 10px rgba(227, 160, 8, 0.4);
+  border-color: #e3a008;
 }
 
 /* === Enhanced Feed Card Additions === */

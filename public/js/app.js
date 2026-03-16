@@ -115,8 +115,8 @@
 
     // Update signal heatmap with prices and hot symbols from feed
     if (signalHeatmap) {
-      const hotSymbols = impactFeed.getHotSymbols();
-      signalHeatmap.update(prices, hotSymbols);
+      const newsSignals = impactFeed.getNewsSignals();
+      signalHeatmap.update(prices, newsSignals);
     }
 
     // Then enrich with impact data (doesn't block initial render)
@@ -132,8 +132,8 @@
     const pricesMap = buildPricesMap(prices);
     impactFeed.update(news, pricesMap);
     if (signalHeatmap) {
-      const hotSymbols = impactFeed.getHotSymbols();
-      signalHeatmap.update(prices, hotSymbols);
+      const newsSignals = impactFeed.getNewsSignals();
+      signalHeatmap.update(prices, newsSignals);
     }
     if (watchlistWidget) watchlistWidget.refresh();
     loadImpacts(news);

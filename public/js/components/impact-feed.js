@@ -29,9 +29,10 @@ class ImpactFeed extends HTMLElement {
   }
 
   /**
-   * Returns a Set of symbols that have 2+ articles in last 6 hours (used by signal-heatmap)
+   * Returns a Map<symbol, {count, articles}> of symbols with recent articles in last 6 hours.
+   * Symbols with 2+ articles are considered "hot".
    */
-  getHotSymbols() {
+  getNewsSignals() {
     const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
     const recentByToken = {};
 
@@ -40,18 +41,17 @@ class ImpactFeed extends HTMLElement {
       if (pubTime < sixHoursAgo) continue;
       const tags = this._parseTags(a.token_tags);
       for (const tag of tags) {
-        if (!recentByToken[tag]) recentByToken[tag] = [];
-        recentByToken[tag].push(a);
+        const key = tag.toUpperCase();
+        if (!recentByToken[key]) recentByToken[key] = [];
+        recentByToken[key].push(a);
       }
     }
 
-    const hot = new Set();
+    const signals = new Map();
     for (const [symbol, articles] of Object.entries(recentByToken)) {
-      if (articles.length >= 2) {
-        hot.add(symbol.toUpperCase());
-      }
+      signals.set(symbol, { count: articles.length, articles });
     }
-    return hot;
+    return signals;
   }
 
   _renderFilterTabs() {

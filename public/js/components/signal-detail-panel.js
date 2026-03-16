@@ -64,27 +64,30 @@ class SignalDetailPanel extends HTMLElement {
   _renderLoading() {
     const content = this.querySelector('#sdp-content');
     if (!content) return;
-    const t = this._t();
-    const priceData = this._data.price || {};
-    const pct = priceData.price_change_percentage_24h ?? 0;
-    const sign = pct >= 0 ? '+' : '';
-    const pctClass = pct >= 0 ? 'sdp-green' : 'sdp-red';
-    const price = priceData.current_price || priceData.price_usd;
 
     content.innerHTML = `
-      <div class="sdp-header">
-        <div class="sdp-header-left">
+      <div class="sdp-drag-handle"><span class="sdp-drag-bar"></span></div>
+      <div class="sdp-header sdp-header--mobile">
+        <div class="sdp-header-row1">
           <span class="sdp-symbol">${this._esc(this._symbol)}</span>
-          ${price ? `<span class="sdp-price">${this._formatPrice(price)}</span>` : ''}
-          <span class="sdp-pct ${pctClass}">${sign}${pct.toFixed(2)}%</span>
+          <span class="sdp-skeleton sdp-skeleton-price"></span>
         </div>
-        <div class="sdp-header-right">
-          <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-link">${t('Full Analysis')} &rarr;</a>
-          <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
+        <div class="sdp-header-row2">
+          <span class="sdp-skeleton sdp-skeleton-pct"></span>
+          <span class="sdp-skeleton sdp-skeleton-link"></span>
         </div>
+        <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="sdp-skeleton-bar">
+        <span class="sdp-skeleton sdp-skeleton-pill"></span>
+        <span class="sdp-skeleton sdp-skeleton-pill"></span>
+        <span class="sdp-skeleton sdp-skeleton-pill"></span>
+        <span class="sdp-skeleton sdp-skeleton-pill"></span>
       </div>
       <div class="sdp-body">
-        <div class="sdp-loading">Loading signal data&hellip;</div>
+        <div class="sdp-skeleton sdp-skeleton-section"></div>
+        <div class="sdp-skeleton sdp-skeleton-section"></div>
+        <div class="sdp-skeleton sdp-skeleton-section"></div>
       </div>
     `;
     this.querySelector('#sdp-close').addEventListener('click', () => this.close());
@@ -99,18 +102,20 @@ class SignalDetailPanel extends HTMLElement {
     const sign = pct >= 0 ? '+' : '';
     const pctClass = pct >= 0 ? 'sdp-green' : 'sdp-red';
     const price = priceData.current_price || priceData.price_usd;
+    const isMobile = window.innerWidth <= 768;
 
     content.innerHTML = `
-      <div class="sdp-header">
-        <div class="sdp-header-left">
+      <div class="sdp-drag-handle"><span class="sdp-drag-bar"></span></div>
+      <div class="sdp-header sdp-header--mobile">
+        <div class="sdp-header-row1">
           <span class="sdp-symbol">${this._esc(this._symbol)}</span>
           ${price ? `<span class="sdp-price">${this._formatPrice(price)}</span>` : ''}
+        </div>
+        <div class="sdp-header-row2">
           <span class="sdp-pct ${pctClass}">${sign}${pct.toFixed(2)}%</span>
-        </div>
-        <div class="sdp-header-right">
           <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-link">${t('Full Analysis')} &rarr;</a>
-          <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
         </div>
+        <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
       </div>
       ${this._renderSignalSummary()}
       <div class="sdp-body">
@@ -126,13 +131,52 @@ class SignalDetailPanel extends HTMLElement {
     `;
     this.querySelector('#sdp-close').addEventListener('click', () => this.close());
 
-    // Collapsible sections
+    // Collapsible sections — on mobile, collapse all by default
+    content.querySelectorAll('.sdp-section').forEach(section => {
+      if (isMobile && !section.classList.contains('sdp-collapsed')) {
+        section.classList.add('sdp-collapsed');
+      }
+    });
     content.querySelectorAll('.sdp-section-header').forEach(header => {
       header.addEventListener('click', () => {
         const section = header.parentElement;
         section.classList.toggle('sdp-collapsed');
       });
     });
+
+    // Drag handle for mobile bottom sheet
+    this._initDragHandle();
+  }
+
+  _initDragHandle() {
+    const panel = this.querySelector('#sdp-panel');
+    const handle = this.querySelector('.sdp-drag-handle');
+    if (!panel || !handle || window.innerWidth > 768) return;
+
+    let startY = 0;
+    let startHeight = 0;
+
+    const onTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+      startHeight = panel.getBoundingClientRect().height;
+      panel.style.transition = 'none';
+    };
+    const onTouchMove = (e) => {
+      const delta = startY - e.touches[0].clientY;
+      const newHeight = Math.min(Math.max(startHeight + delta, 200), window.innerHeight * 0.9);
+      panel.style.height = newHeight + 'px';
+    };
+    const onTouchEnd = () => {
+      panel.style.transition = '';
+      const h = panel.getBoundingClientRect().height;
+      if (h < 150) {
+        this.close();
+      }
+    };
+
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    handle.addEventListener('touchmove', onTouchMove, { passive: true });
+    handle.addEventListener('touchend', onTouchEnd);
   }
 
   _renderSignalSummary() {

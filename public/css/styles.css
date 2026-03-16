@@ -627,6 +627,214 @@ a:hover { text-decoration: underline; }
   border-radius: 4px;
 }
 
+/* === Market Pulse (Stats Row enhancements) === */
+.market-pulse-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.market-pulse-change {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.market-pulse-change .change-period {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.change-positive { color: var(--green); }
+.change-negative { color: var(--red); }
+
+.sentiment-pill {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.sentiment-bullish {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--green);
+}
+
+.sentiment-bearish {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--red);
+}
+
+.sentiment-neutral {
+  background: rgba(139, 148, 158, 0.12);
+  color: var(--text-secondary);
+}
+
+.sentiment-bar {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.sentiment-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* === Signal Heatmap === */
+.signal-heatmap {
+  margin-bottom: 24px;
+}
+
+.signal-heatmap-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.signal-heatmap-title {
+  color: var(--text-secondary);
+}
+
+.signal-heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.signal-heatmap-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 16px;
+}
+
+.hm-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.hm-cell:hover {
+  border-color: var(--accent);
+  transform: scale(1.03);
+  text-decoration: none;
+  z-index: 1;
+}
+
+.hm-xl { width: 110px; height: 72px; }
+.hm-lg { width: 90px; height: 60px; }
+.hm-md { width: 72px; height: 52px; }
+.hm-sm { width: 58px; height: 44px; }
+
+.hm-symbol {
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.hm-sm .hm-symbol { font-size: 0.65rem; }
+
+.hm-pct {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  opacity: 0.85;
+}
+
+.hm-sm .hm-pct { font-size: 0.58rem; }
+
+.hm-hot {
+  box-shadow: 0 0 8px rgba(210, 153, 34, 0.35);
+  border-color: var(--yellow);
+}
+
+.hm-pulse {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* === Enhanced Feed Card Additions === */
+.feed-summary {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.feed-inline-price {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.feed-price-val {
+  color: var(--text-primary);
+}
+
+.feed-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.feed-card-actions .feed-impact {
+  margin-top: 0;
+}
+
+.feed-card-actions .impact-badge {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 14px;
+}
+
+.feed-alert-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.feed-alert-link:hover {
+  border-color: var(--accent);
+  background: rgba(31, 111, 235, 0.08);
+  text-decoration: none;
+}
+
+/* === Watchlist Widget Placeholder === */
+watchlist-widget {
+  display: block;
+  margin-bottom: 24px;
+}
+
 /* === Token Page === */
 .token-page .back-link {
   color: var(--text-secondary);

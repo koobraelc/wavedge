@@ -12,50 +12,133 @@ class StatsRow extends HTMLElement {
 
   update(prices, newsCount) {
     const row = this.querySelector('.stats-row');
+
+    const btc = prices.find(p => p.symbol.toLowerCase() === 'btc');
+    const eth = prices.find(p => p.symbol.toLowerCase() === 'eth');
+
+    const totalMcap = prices.reduce((sum, p) => sum + (p.market_cap || 0), 0);
+    const totalMcapPrev = prices.reduce((sum, p) => {
+      const pct = p.price_change_percentage_24h || 0;
+      const mc = p.market_cap || 0;
+      return sum + (pct !== 0 ? mc / (1 + pct / 100) : mc);
+    }, 0);
+    const mcapChange = totalMcapPrev > 0 ? ((totalMcap - totalMcapPrev) / totalMcapPrev) * 100 : 0;
+
     row.innerHTML = `
-      <div class="stat-card"><div class="label">Tokens Tracked</div><div class="value" id="stat-tokens">0</div></div>
-      <div class="stat-card"><div class="label">Latest News</div><div class="value" id="stat-news">0</div></div>
-      <div class="stat-card"><div class="label">Top Gainer (24h)</div><div class="value" id="stat-gainer">—</div></div>
-      <div class="stat-card"><div class="label">Top Loser (24h)</div><div class="value" id="stat-loser">—</div></div>
+      ${this._priceCard('BTC', btc)}
+      ${this._priceCard('ETH', eth)}
+      ${this._mcapCard(totalMcap, mcapChange)}
+      <div class="stat-card stat-card-sentiment" id="sentiment-card">
+        <div class="label">Market Sentiment</div>
+        <div class="value" style="color: var(--text-muted)">...</div>
+      </div>
     `;
 
-    this._countUp('stat-tokens', prices.length);
-    this._countUp('stat-news', newsCount);
+    this._loadSentiment();
+  }
 
-    if (prices.length > 0) {
-      const sorted = [...prices].sort((a, b) =>
-        (b.price_change_percentage_24h ?? 0) - (a.price_change_percentage_24h ?? 0)
-      );
-      const best = sorted[0];
-      const worst = sorted[sorted.length - 1];
+  _priceCard(symbol, data) {
+    if (!data) {
+      return `
+        <div class="stat-card">
+          <div class="label">${symbol} Price</div>
+          <div class="value">--</div>
+        </div>
+      `;
+    }
+    const price = this._formatPrice(data.current_price || data.price || 0);
+    const pct = data.price_change_percentage_24h ?? 0;
+    const cls = pct >= 0 ? 'change-positive' : 'change-negative';
+    const sign = pct >= 0 ? '+' : '';
 
-      const gainerEl = this.querySelector('#stat-gainer');
-      const bestPct = (best.price_change_percentage_24h ?? 0).toFixed(1);
-      gainerEl.textContent = `${best.symbol.toUpperCase()} +${bestPct}%`;
-      gainerEl.style.color = 'var(--green)';
+    return `
+      <div class="stat-card">
+        <div class="label">${this._esc(symbol)} Price</div>
+        <div class="value market-pulse-price">${price}</div>
+        <div class="market-pulse-change ${cls}">${sign}${pct.toFixed(2)}% <span class="change-period">24h</span></div>
+      </div>
+    `;
+  }
 
-      const loserEl = this.querySelector('#stat-loser');
-      const worstPct = (worst.price_change_percentage_24h ?? 0).toFixed(1);
-      loserEl.textContent = `${worst.symbol.toUpperCase()} ${worstPct}%`;
-      loserEl.style.color = 'var(--red)';
+  _mcapCard(totalMcap, mcapChange) {
+    const cls = mcapChange >= 0 ? 'change-positive' : 'change-negative';
+    const sign = mcapChange >= 0 ? '+' : '';
+
+    return `
+      <div class="stat-card">
+        <div class="label">Total Market Cap</div>
+        <div class="value market-pulse-price">${this._formatMcap(totalMcap)}</div>
+        <div class="market-pulse-change ${cls}">${sign}${mcapChange.toFixed(2)}% <span class="change-period">24h</span></div>
+      </div>
+    `;
+  }
+
+  async _loadSentiment() {
+    const card = this.querySelector('#sentiment-card');
+    if (!card) return;
+
+    try {
+      const res = await fetch('/api/homepage/sentiment');
+      if (!res.ok) {
+        this._renderSentimentFallback(card);
+        return;
+      }
+      const { data } = await res.json();
+      if (!data) {
+        this._renderSentimentFallback(card);
+        return;
+      }
+
+      const label = data.label || 'Neutral';
+      const score = data.score ?? 50;
+      let color = 'var(--text-secondary)';
+      let pillCls = 'sentiment-neutral';
+
+      if (data.bullish > data.bearish) {
+        color = 'var(--green)';
+        pillCls = 'sentiment-bullish';
+      } else if (data.bearish > data.bullish) {
+        color = 'var(--red)';
+        pillCls = 'sentiment-bearish';
+      }
+
+      card.innerHTML = `
+        <div class="label">Market Sentiment</div>
+        <div class="value"><span class="sentiment-pill ${pillCls}">${this._esc(label)}</span></div>
+        <div class="sentiment-bar">
+          <div class="sentiment-bar-fill" style="width: ${Math.max(0, Math.min(100, score))}%; background: ${color}"></div>
+        </div>
+      `;
+    } catch {
+      this._renderSentimentFallback(card);
     }
   }
 
-  _countUp(id, target) {
-    const el = this.querySelector(`#${id}`);
-    if (!el || target <= 0) { el.textContent = target; return; }
+  _renderSentimentFallback(card) {
+    card.innerHTML = `
+      <div class="label">Market Sentiment</div>
+      <div class="value"><span class="sentiment-pill sentiment-neutral">N/A</span></div>
+    `;
+  }
 
-    const duration = 600;
-    const start = performance.now();
+  _formatPrice(n) {
+    if (n >= 1000) return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    if (n >= 1) return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+  }
 
-    function step(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      el.textContent = Math.round(eased * target);
-      if (progress < 1) requestAnimationFrame(step);
-    }
+  _formatMcap(n) {
+    if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    return '$' + n.toLocaleString();
+  }
 
-    requestAnimationFrame(step);
+  _esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
   }
 }
 

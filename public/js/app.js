@@ -9,6 +9,7 @@
   // --- DOM refs ---
   const statsRow = document.querySelector('stats-row');
   const impactFeed = document.querySelector('impact-feed');
+  const signalHeatmap = document.querySelector('signal-heatmap');
 
   // --- Search ---
   document.addEventListener('nav-search', async (e) => {
@@ -111,6 +112,12 @@
     const pricesMap = buildPricesMap(prices);
     impactFeed.update(news, pricesMap);
 
+    // Update signal heatmap with prices and hot symbols from feed
+    if (signalHeatmap) {
+      const hotSymbols = impactFeed.getHotSymbols();
+      signalHeatmap.update(prices, hotSymbols);
+    }
+
     // Then enrich with impact data (doesn't block initial render)
     loadImpacts(news);
   }
@@ -123,6 +130,10 @@
     statsRow.update(prices, news.length);
     const pricesMap = buildPricesMap(prices);
     impactFeed.update(news, pricesMap);
+    if (signalHeatmap) {
+      const hotSymbols = impactFeed.getHotSymbols();
+      signalHeatmap.update(prices, hotSymbols);
+    }
     loadImpacts(news);
   }, 60000);
 })();

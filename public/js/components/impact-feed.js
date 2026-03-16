@@ -9,7 +9,6 @@ class ImpactFeed extends HTMLElement {
     this._activeFilter = 'all';
     this.innerHTML = `
       <div class="impact-feed">
-        <div id="right-now-banner" class="right-now-banner" style="display:none"></div>
         <div class="feed-filter-tabs" id="feed-filters"></div>
         <div id="feed-list" class="feed-list">
           ${this._skeletonCards(6)}
@@ -26,8 +25,33 @@ class ImpactFeed extends HTMLElement {
     this._prices = pricesMap || {};
 
     this._renderFilterTabs();
-    this._renderRightNow();
     this._renderFeed();
+  }
+
+  /**
+   * Returns a Set of symbols that have 2+ articles in last 6 hours (used by signal-heatmap)
+   */
+  getHotSymbols() {
+    const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+    const recentByToken = {};
+
+    for (const a of this._articles) {
+      const pubTime = new Date(a.published_at).getTime();
+      if (pubTime < sixHoursAgo) continue;
+      const tags = this._parseTags(a.token_tags);
+      for (const tag of tags) {
+        if (!recentByToken[tag]) recentByToken[tag] = [];
+        recentByToken[tag].push(a);
+      }
+    }
+
+    const hot = new Set();
+    for (const [symbol, articles] of Object.entries(recentByToken)) {
+      if (articles.length >= 2) {
+        hot.add(symbol.toUpperCase());
+      }
+    }
+    return hot;
   }
 
   _renderFilterTabs() {
@@ -60,63 +84,6 @@ class ImpactFeed extends HTMLElement {
         this._renderFeed();
       });
     });
-  }
-
-  _renderRightNow() {
-    const banner = this.querySelector('#right-now-banner');
-    if (!banner) return;
-
-    // Group recent articles by token (last 6 hours)
-    const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
-    const recentByToken = {};
-
-    for (const a of this._articles) {
-      const pubTime = new Date(a.published_at).getTime();
-      if (pubTime < sixHoursAgo) continue;
-
-      const tags = this._parseTags(a.token_tags);
-      for (const tag of tags) {
-        if (!recentByToken[tag]) recentByToken[tag] = [];
-        recentByToken[tag].push(a);
-      }
-    }
-
-    // Find tokens with 2+ signals
-    const hotTokens = Object.entries(recentByToken)
-      .filter(([, articles]) => articles.length >= 2)
-      .map(([symbol, articles]) => {
-        const price = this._prices[symbol.toLowerCase()] || this._prices[symbol.toUpperCase()];
-        const pct = price ? (price.price_change_percentage_24h ?? 0) : 0;
-        return { symbol: symbol.toUpperCase(), count: articles.length, pct };
-      })
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    if (hotTokens.length === 0) {
-      banner.style.display = 'none';
-      return;
-    }
-
-    banner.style.display = 'block';
-    banner.innerHTML = `
-      <div class="right-now-label">
-        <span class="pulse-dot"></span>
-        Right now
-      </div>
-      <div class="right-now-tokens">
-        ${hotTokens.map(t => {
-          const cls = t.pct >= 0 ? 'change-positive' : 'change-negative';
-          const sign = t.pct >= 0 ? '+' : '';
-          return `
-            <a href="/tokens/${encodeURIComponent(t.symbol)}" class="hot-token">
-              <span class="hot-token-symbol">${this._esc(t.symbol)}</span>
-              <span class="hot-token-signals">${t.count} signals</span>
-              <span class="hot-token-price ${cls}">${sign}${t.pct.toFixed(1)}%</span>
-            </a>
-          `;
-        }).join('')}
-      </div>
-    `;
   }
 
   _renderFeed() {
@@ -173,10 +140,30 @@ class ImpactFeed extends HTMLElement {
     const magnitude = this._getImpactMagnitude(article);
     const hasHighImpact = magnitude > 1;
 
-    // Get first token's price data for sparkline
+    // Summary excerpt (truncate to 120 chars)
+    const summary = article.summary
+      ? (article.summary.length > 120 ? article.summary.slice(0, 120) + '...' : article.summary)
+      : '';
+
+    // Get first token's price data for sparkline + inline price
     const firstToken = tags[0] ? tags[0].toLowerCase() : null;
     const priceData = firstToken ? (this._prices[firstToken] || this._prices[firstToken?.toUpperCase()]) : null;
     const pct = priceData ? (priceData.price_change_percentage_24h ?? 0) : null;
+    const priceVal = priceData ? (priceData.current_price || priceData.price || 0) : null;
+
+    // Inline price display
+    let priceInline = '';
+    if (priceData && priceVal !== null && pct !== null) {
+      const priceFmt = this._formatPrice(priceVal);
+      const cls = pct >= 0 ? 'change-positive' : 'change-negative';
+      const sign = pct >= 0 ? '+' : '';
+      priceInline = `<span class="feed-inline-price"><span class="feed-price-val">${priceFmt}</span> <span class="${cls}">${sign}${pct.toFixed(1)}%</span></span>`;
+    }
+
+    // Set Alert link for first token
+    const alertLink = firstToken
+      ? `<a href="/alerts?token=${encodeURIComponent(firstToken.toUpperCase())}" class="feed-alert-link">Set Alert</a>`
+      : '';
 
     return `
       <article class="feed-card${hasHighImpact ? ' feed-card-hot' : ''}">
@@ -191,13 +178,18 @@ class ImpactFeed extends HTMLElement {
           <div class="feed-headline">
             <a href="${this._esc(article.url)}" target="_blank" rel="noopener">${this._esc(article.title)}</a>
           </div>
+          ${summary ? `<div class="feed-summary">${this._esc(summary)}</div>` : ''}
           <div class="feed-meta">
             <span class="source">${this._esc(article.source)}</span>
             <span class="feed-dot">&middot;</span>
             <span class="time-relative">${time}<span class="time-tooltip">${this._esc(fullTime)}</span></span>
             ${tags.length ? '<span class="feed-dot">&middot;</span>' + tags.map(t => `<a href="/tokens/${encodeURIComponent(t.toUpperCase())}" class="token-tag">${this._esc(t.toUpperCase())}</a>`).join(' ') : ''}
+            ${priceInline ? '<span class="feed-dot">&middot;</span>' + priceInline : ''}
           </div>
-          ${impactTag}
+          <div class="feed-card-actions">
+            ${impactTag}
+            ${alertLink}
+          </div>
         </div>
         <div class="feed-card-right">
           ${priceData && pct !== null ? `
@@ -206,6 +198,12 @@ class ImpactFeed extends HTMLElement {
         </div>
       </article>
     `;
+  }
+
+  _formatPrice(n) {
+    if (n >= 1000) return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    if (n >= 1) return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
   }
 
   _buildImpactTag(article) {

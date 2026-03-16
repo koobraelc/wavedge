@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import path from "path";
 import rateLimit from "express-rate-limit";
 import { createPricesRouter } from "./api/prices.js";
@@ -19,6 +20,60 @@ import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
 import { schedulerStatus } from "./scrapers/scheduler.js";
 import { SchedulerRepository } from "./db/scheduler-repository.js";
+
+// i18n: locale support
+declare global {
+  namespace Express {
+    interface Request {
+      locale?: string;
+    }
+  }
+}
+
+const SUPPORTED_LOCALES = ["zh-tw", "ja", "ko"] as const;
+const LOCALE_PATTERN = /^\/(zh-tw|ja|ko)(\/|$)/;
+
+/** Map URL locale slug to BCP-47 lang tag */
+function toLangTag(locale: string): string {
+  if (locale === "zh-tw") return "zh-TW";
+  return locale; // ja, ko, en are already valid
+}
+
+/** Generate <link rel="alternate" hreflang> tags for a given path */
+function hreflangTags(pagePath: string): string {
+  const base = process.env.BASE_URL || "https://wavedge.io";
+  const canonical = pagePath === "/" ? "" : pagePath;
+  const lines = [
+    `<link rel="alternate" hreflang="en" href="${base}${canonical}">`,
+    `<link rel="alternate" hreflang="x-default" href="${base}${canonical}">`,
+    ...SUPPORTED_LOCALES.map(
+      (l) => `<link rel="alternate" hreflang="${toLangTag(l)}" href="${base}/${l}${canonical}">`
+    ),
+  ];
+  return lines.join("\n  ");
+}
+
+/** Read an HTML file, inject lang attribute and hreflang tags, then send */
+function sendLocalizedFile(
+  req: express.Request,
+  res: express.Response,
+  filePath: string,
+  pagePath: string
+): void {
+  let html = fs.readFileSync(filePath, "utf-8");
+  const lang = toLangTag(req.locale || "en");
+
+  // Inject lang attribute on <html> tag
+  html = html.replace(/<html(\s|>)/, `<html lang="${lang}"$1`);
+  // If <html lang="en"> already exists, replace it
+  html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`);
+
+  // Inject hreflang tags before </head>
+  const tags = hreflangTags(pagePath);
+  html = html.replace("</head>", `  ${tags}\n</head>`);
+
+  res.type("html").send(html);
+}
 
 const app = express();
 const startedAt = Date.now();
@@ -153,6 +208,21 @@ app.use("/api/homepage", createHomepageRouter());
 app.use("/api/admin", createAdminRouter());
 app.use("/api/whales", createWhalesRouter());
 
+// i18n: Locale URL rewrite middleware
+// Strips /:locale prefix, sets req.locale, so all downstream routes work unchanged.
+// API routes are mounted above and never have locale prefixes.
+app.use((req, _res, next) => {
+  const match = req.path.match(LOCALE_PATTERN);
+  if (match) {
+    req.locale = match[1];
+    // Rewrite URL: /zh-tw/dashboard → /dashboard, /zh-tw → /
+    req.url = req.url.replace(`/${match[1]}`, "") || "/";
+  } else {
+    req.locale = "en";
+  }
+  next();
+});
+
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
@@ -176,17 +246,21 @@ app.get("/sitemap.xml", (_req, res) => {
     { loc: "/settings/api-keys", priority: "0.5", changefreq: "monthly" },
   ];
 
-  const urls = staticPages
-    .map(
-      (p) =>
-        `  <url><loc>${baseUrl}${p.loc}</loc><lastmod>${today}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`
-    )
-    .concat(
-      tokens.map(
-        (t) =>
-          `  <url><loc>${baseUrl}/tokens/${t.symbol}</loc><lastmod>${today}</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>`
-      )
-    );
+  // Generate URLs for all locales (en default + supported locales)
+  const allPaths = [
+    ...staticPages.map((p) => ({ path: p.loc, priority: p.priority, changefreq: p.changefreq })),
+    ...tokens.map((t) => ({ path: `/tokens/${t.symbol}`, priority: "0.8", changefreq: "hourly" as const })),
+  ];
+
+  const urls: string[] = [];
+  for (const p of allPaths) {
+    // Default (en) URL
+    urls.push(`  <url><loc>${baseUrl}${p.path}</loc><lastmod>${today}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
+    // Locale-prefixed URLs
+    for (const locale of SUPPORTED_LOCALES) {
+      urls.push(`  <url><loc>${baseUrl}/${locale}${p.path}</loc><lastmod>${today}</lastmod><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`);
+    }
+  }
 
   res.type("application/xml").send(
     `<?xml version="1.0" encoding="UTF-8"?>
@@ -217,18 +291,18 @@ Sitemap: ${baseUrl}/sitemap.xml`
 });
 
 // Landing page (root)
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(publicDir, "landing.html"));
+app.get("/", (req, res) => {
+  sendLocalizedFile(req, res, path.join(publicDir, "landing.html"), "/");
 });
 
 // Dashboard
-app.get("/dashboard", (_req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+app.get("/dashboard", (req, res) => {
+  sendLocalizedFile(req, res, path.join(publicDir, "index.html"), "/dashboard");
 });
 
 // Auth pages
-app.get("/login", (_req, res) => {
-  res.sendFile(path.join(publicDir, "login.html"));
+app.get("/login", (req, res) => {
+  sendLocalizedFile(req, res, path.join(publicDir, "login.html"), "/login");
 });
 
 // Handle magic link callback — store token client-side and redirect
@@ -247,19 +321,20 @@ app.get("/auth/callback", (_req, res) => {
 });
 
 // Onboarding wizard for new users
-app.get("/onboarding", (_req, res) => {
-  res.sendFile(path.join(publicDir, "onboarding.html"));
+app.get("/onboarding", (req, res) => {
+  sendLocalizedFile(req, res, path.join(publicDir, "onboarding.html"), "/onboarding");
 });
 
 // Billing page
-app.get("/billing", (_req, res) => {
-  res.sendFile(path.join(publicDir, "billing.html"));
+app.get("/billing", (req, res) => {
+  sendLocalizedFile(req, res, path.join(publicDir, "billing.html"), "/billing");
 });
 
 // Admin Dashboard (internal, requires auth)
-app.get("/admin", (_req, res) => {
+app.get("/admin", (req, res) => {
+  const lang = toLangTag(req.locale || "en");
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -441,12 +516,13 @@ app.get("/admin", (_req, res) => {
 });
 
 // Market Overview page
-app.get("/market", (_req, res) => {
+app.get("/market", (req, res) => {
+  const lang = toLangTag(req.locale || "en");
   const title = "Market Overview — Crypto Heatmap & Sector Performance | Wavedge";
   const description = "Live crypto market heatmap, sector performance breakdown, and top movers. See which tokens are surging and which sectors are leading.";
 
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -460,6 +536,7 @@ app.get("/market", (_req, res) => {
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <link rel="canonical" href="${baseUrl}/market">
+  ${hreflangTags("/market")}
   <link rel="stylesheet" href="/css/styles.css">
   ${ga4Snippet()}
 </head>
@@ -516,12 +593,13 @@ app.get("/market", (_req, res) => {
 });
 
 // Alert settings page
-app.get("/settings/alerts", (_req, res) => {
+app.get("/settings/alerts", (req, res) => {
+  const lang = toLangTag(req.locale || "en");
   const title = "Alert Settings — Wavedge";
   const description = "Configure your crypto alert preferences. Choose tokens to watch, notification channels, and sensitivity levels.";
 
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -535,6 +613,7 @@ app.get("/settings/alerts", (_req, res) => {
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${description}">
   <link rel="canonical" href="${baseUrl}/settings/alerts">
+  ${hreflangTags("/settings/alerts")}
   <link rel="stylesheet" href="/css/styles.css">
   ${ga4Snippet()}
 </head>
@@ -576,17 +655,19 @@ app.get("/settings/alerts", (_req, res) => {
 });
 
 // API Key Settings page
-app.get("/settings/api-keys", (_req, res) => {
+app.get("/settings/api-keys", (req, res) => {
+  const lang = toLangTag(req.locale || "en");
   const title = "API Key Settings — Wavedge";
   const description = "Manage your Wavedge API keys. Generate, view, and revoke keys for programmatic access.";
 
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <meta name="description" content="${description}">
+  ${hreflangTags("/settings/api-keys")}
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     .api-usage-bar { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
@@ -692,8 +773,9 @@ function ga4Snippet(): string {
 // Public digest page
 const digestRepo = new DigestRepository();
 app.get("/digest/latest", (req, res) => {
-  const lang = req.query.lang === "zh" ? "zh" : "en";
-  const digest = digestRepo.getLatestDigest(lang);
+  const digestLang = req.query.lang === "zh" ? "zh" : "en";
+  const htmlLang = toLangTag(req.locale || "en");
+  const digest = digestRepo.getLatestDigest(digestLang);
 
   const title = digest
     ? `${digest.subject} — Wavedge Daily Digest`
@@ -718,13 +800,14 @@ app.get("/digest/latest", (req, res) => {
        </div>`;
 
   res.type("html").send(`<!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${htmlLang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
   <link rel="canonical" href="${baseUrl}/digest/latest">
+  ${hreflangTags("/digest/latest")}
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:type" content="article">
@@ -774,8 +857,8 @@ app.get("/digest/latest", (req, res) => {
     <div class="digest-header">
       <a href="/dashboard" class="back-link">&larr; Dashboard</a>
       <div class="digest-nav">
-        <a href="/digest/latest?lang=en" class="lang-btn ${lang === "en" ? "active" : ""}">English</a>
-        <a href="/digest/latest?lang=zh" class="lang-btn ${lang === "zh" ? "active" : ""}">中文</a>
+        <a href="/digest/latest?lang=en" class="lang-btn ${digestLang === "en" ? "active" : ""}">English</a>
+        <a href="/digest/latest?lang=zh" class="lang-btn ${digestLang === "zh" ? "active" : ""}">中文</a>
       </div>
       ${digestDate ? `<div class="digest-date">${escapeHtml(digestDate)}</div>` : ""}
       <h1 class="digest-title">${digest ? escapeHtml(digest.subject) : "Daily Crypto Digest"}</h1>
@@ -819,12 +902,13 @@ app.get("/digest", (_req, res) => {
 });
 
 // Token Comparison page
-app.get("/compare", (_req, res) => {
+app.get("/compare", (req, res) => {
+  const lang = toLangTag(req.locale || "en");
   const title = "Compare Tokens — Side-by-Side Price & News Impact | Wavedge";
   const description = "Compare 2-3 crypto tokens side by side. Price charts, news impact scores, and alert history in one view. Shareable comparison links.";
 
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -838,6 +922,7 @@ app.get("/compare", (_req, res) => {
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <link rel="canonical" href="${baseUrl}/compare">
+  ${hreflangTags("/compare")}
   <link rel="stylesheet" href="/css/styles.css">
   ${ga4Snippet()}
 </head>
@@ -971,18 +1056,22 @@ app.get("/tokens/:symbol", (req, res) => {
     });
   }
 
+  const tokenLang = toLangTag(req.locale || "en");
+  const tokenPath = `/tokens/${escapeHtml(displaySymbol)}`;
+
   res.type("html").send(`<!DOCTYPE html>
-<html lang="en">
+<html lang="${tokenLang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
-  <link rel="canonical" href="${baseUrl}/tokens/${escapeHtml(displaySymbol)}">
+  <link rel="canonical" href="${baseUrl}${tokenPath}">
+  ${hreflangTags(tokenPath)}
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="${baseUrl}/tokens/${escapeHtml(displaySymbol)}">
+  <meta property="og:url" content="${baseUrl}${tokenPath}">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">

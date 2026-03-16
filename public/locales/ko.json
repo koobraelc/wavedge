@@ -1,0 +1,8 @@
+{
+  "nav.dashboard": "대시보드",
+  "nav.market": "시장",
+  "nav.alerts": "알림",
+  "nav.billing": "결제",
+  "nav.login": "로그인",
+  "nav.logout": "로그아웃"
+}

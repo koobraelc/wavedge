@@ -9,8 +9,23 @@
   <meta property="og:description" content="Every crypto news article comes with a quantified price impact score. Real-time alerts, AI analysis, and cross-signal intelligence.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://wavedge.io">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Wavedge — AI Crypto Intelligence">
+  <meta name="twitter:description" content="Every crypto news article comes with a quantified price impact score. Real-time alerts, AI analysis, and cross-signal intelligence.">
   <link rel="canonical" href="https://wavedge.io">
   <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    // GA4: load analytics when configured via /api/config
+    fetch('/api/config').then(r=>r.json()).then(c=>{
+      if(!c.gaId)return;
+      var s=document.createElement('script');
+      s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+c.gaId;
+      document.head.appendChild(s);
+      window.dataLayer=window.dataLayer||[];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js',new Date());gtag('config',c.gaId);
+    }).catch(function(){});
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",

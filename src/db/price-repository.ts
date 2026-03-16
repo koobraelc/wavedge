@@ -118,6 +118,12 @@ export class PriceRepository {
       .get(symbol.toLowerCase()) as TokenRow | undefined;
   }
 
+  getAllTokens(): TokenRow[] {
+    return this.db
+      .prepare(`SELECT id, symbol, name FROM tokens ORDER BY symbol ASC`)
+      .all() as TokenRow[];
+  }
+
   getTokenCount(): number {
     const row = this.db.prepare(`SELECT COUNT(*) as count FROM tokens`).get() as { count: number };
     return row.count;

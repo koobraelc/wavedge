@@ -207,12 +207,28 @@ a:hover { text-decoration: underline; }
   padding: 24px;
 }
 
+/* Custom elements must be block-level for proper layout */
+nav-bar,
+welcome-banner,
+post-onboarding,
+stats-row,
+signal-heatmap,
+signal-detail-panel,
+stale-data-banner,
+missed-alerts-banner,
+watchlist-widget,
+ad-slot,
+impact-feed,
+bottom-nav {
+  display: block;
+}
+
 /* === Stats Row === */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
@@ -1041,7 +1057,6 @@ a:hover { text-decoration: underline; }
 
 /* === Watchlist Widget Placeholder === */
 watchlist-widget {
-  display: block;
   margin-bottom: 24px;
 }
 
@@ -1078,7 +1093,7 @@ watchlist-widget {
 }
 
 .wl-table thead th {
-  padding: 8px 14px;
+  padding: 10px 14px;
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-muted);
@@ -2160,7 +2175,7 @@ watchlist-widget {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--card-padding);
-  margin-bottom: var(--card-gap);
+  margin-bottom: 24px;
 }
 
 .post-onboarding-dismiss {
@@ -4009,7 +4024,7 @@ watchlist-widget {
   background: rgba(210, 153, 34, 0.1);
   border: 1px solid rgba(210, 153, 34, 0.3);
   border-radius: var(--radius);
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
   color: var(--yellow, #d29922);
   font-size: 0.85rem;
 }
@@ -4099,7 +4114,7 @@ watchlist-widget {
   background: linear-gradient(135deg, rgba(248, 81, 73, 0.08), rgba(210, 153, 34, 0.08));
   border: 1px solid rgba(248, 81, 73, 0.25);
   border-radius: var(--radius);
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
   overflow: hidden;
 }
 
@@ -4581,7 +4596,7 @@ watchlist-widget {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 1rem 0;
+  margin: 24px 0;
   overflow: hidden;
   border-radius: var(--radius);
 }
@@ -5674,9 +5689,11 @@ info-tip {
 /* === Signal Detail Inline Card === */
 .sdp-card {
   display: none;
-  margin-top: var(--spacing-md);
 }
-.sdp-card.sdp-visible { display: block; }
+.sdp-card.sdp-visible {
+  display: block;
+  margin-bottom: 24px;
+}
 
 .sdp-card-inner {
   background: var(--bg-secondary);
@@ -5740,7 +5757,6 @@ info-tip {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
 }
 .sdp-pill {
   display: inline-flex;
@@ -5760,9 +5776,9 @@ info-tip {
 
 /* News headlines */
 .sdp-card-news {
-  margin-bottom: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
-  padding-top: 10px;
 }
 .sdp-card-news-item {
   margin-bottom: 8px;
@@ -5778,6 +5794,7 @@ info-tip {
 }
 .sdp-card-news-item a:hover { text-decoration: underline; }
 .sdp-card-news-meta {
+  display: block;
   font-size: 0.7rem;
   color: var(--text-muted);
   margin-top: 2px;
@@ -5787,6 +5804,9 @@ info-tip {
 .sdp-card-actions {
   display: flex;
   gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 .sdp-card-btn {
   flex: 1;

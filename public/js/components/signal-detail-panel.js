@@ -11,7 +11,7 @@ class SignalDetailPanel extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
       <div class="sdp-backdrop" id="sdp-backdrop"></div>
-      <div class="sdp-panel" id="sdp-panel">
+      <div class="sdp-panel" id="sdp-panel" role="dialog" aria-modal="true" aria-label="Signal details">
         <div class="sdp-content" id="sdp-content"></div>
       </div>
     `;
@@ -80,7 +80,7 @@ class SignalDetailPanel extends HTMLElement {
         </div>
         <div class="sdp-header-right">
           <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-link">${t('Full Analysis')} &rarr;</a>
-          <button class="sdp-close" id="sdp-close">&times;</button>
+          <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
         </div>
       </div>
       <div class="sdp-body">
@@ -109,7 +109,7 @@ class SignalDetailPanel extends HTMLElement {
         </div>
         <div class="sdp-header-right">
           <a href="/tokens/${encodeURIComponent(this._symbol)}" class="sdp-link">${t('Full Analysis')} &rarr;</a>
-          <button class="sdp-close" id="sdp-close">&times;</button>
+          <button class="sdp-close" id="sdp-close" aria-label="Close">&times;</button>
         </div>
       </div>
       ${this._renderSignalSummary()}

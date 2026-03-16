@@ -606,9 +606,10 @@ app.get("/market", (req, res) => {
   ${ga4Snippet()}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav-bar></nav-bar>
 
-  <main class="main-content market-page">
+  <main class="main-content market-page" id="main-content">
     <breadcrumb-nav></breadcrumb-nav>
     <div class="market-header">
       <div>
@@ -695,10 +696,11 @@ app.get("/settings/alerts", (req, res) => {
   ${ga4Snippet()}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav-bar></nav-bar>
   <breadcrumb-nav></breadcrumb-nav>
 
-  <main class="main-content settings-page">
+  <main class="main-content settings-page" id="main-content">
     <h1 class="settings-title">Settings</h1>
 
     <div class="settings-nav" style="display:flex;gap:0.5rem;margin-bottom:1.5rem">
@@ -805,10 +807,11 @@ app.get("/settings/api-keys", (req, res) => {
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav-bar></nav-bar>
   <breadcrumb-nav></breadcrumb-nav>
 
-  <main class="main-content settings-page">
+  <main class="main-content settings-page" id="main-content">
     <h1 class="settings-title">Settings</h1>
 
     <div class="settings-nav">
@@ -1006,9 +1009,10 @@ app.get("/compare", (req, res) => {
   ${ga4Snippet()}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav-bar></nav-bar>
 
-  <main class="main-content compare-page">
+  <main class="main-content compare-page" id="main-content">
     <breadcrumb-nav></breadcrumb-nav>
     <div class="compare-header">
       <h1>Compare Tokens</h1>
@@ -1167,10 +1171,11 @@ app.get("/tokens/:symbol", (req, res) => {
   ${ga4Snippet()}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <nav-bar></nav-bar>
   <breadcrumb-nav></breadcrumb-nav>
 
-  <main class="main-content token-page" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(displayName)}">
+  <main class="main-content token-page" id="main-content" data-symbol="${escapeHtml(symbol)}" data-name="${escapeHtml(displayName)}">
     <div class="token-hero">
       <div class="token-hero-info">
         <h1 class="token-hero-title">${escapeHtml(displayName)} <span class="token-hero-symbol">${escapeHtml(displaySymbol)}</span></h1>

@@ -11,6 +11,7 @@
   "nav.alertSettings": "알림 설정",
   "nav.watchlist": "관심 목록",
   "nav.apiKeys": "API 키",
+  "nav.compare": "비교",
   "nav.switchTheme": "테마",
   "nav.language": "언어",
 
@@ -254,5 +255,18 @@
   "signal.samples": "샘플 수",
 
   "impact.impactExplanation": "{samples}개의 과거 이벤트를 기반으로, {category} 뉴스는 {symbol}을(를) 24시간 내에 평균 {change} 변동시켰습니다.",
-  "impact.similarNews": "유사"
+  "impact.similarNews": "유사",
+
+  "market.sectorL1": "레이어 1",
+  "market.sectorL2": "레이어 2",
+  "market.sectorStable": "스테이블코인",
+  "market.sectorInfra": "인프라",
+  "market.sectorOther": "기타",
+  "market.tokens": "토큰",
+  "market.noData": "아직 가격 데이터가 없습니다.",
+  "market.loadFailed": "시장 데이터를 불러오지 못했습니다.",
+  "market.lastUpdated": "마지막 업데이트: {time}",
+  "market.loadingMarket": "시장 데이터 로딩 중...",
+  "market.loadingSectors": "섹터 로딩 중...",
+  "market.loading": "로딩 중..."
 }

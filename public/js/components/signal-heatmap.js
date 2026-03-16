@@ -27,7 +27,7 @@ class SignalHeatmap extends HTMLElement {
           <span class="hm-legend-item">💬 ${t('heatmap.legendSocial')} <info-tip text="${t('heatmap.legendSocialTip')}"></info-tip></span>
           <span class="hm-legend-item">🐋 ${t('heatmap.legendWhale')} <info-tip text="${t('heatmap.legendWhaleTip')}"></info-tip></span>
         </div>
-        <div class="signal-heatmap-grid" id="heatmap-grid"></div>
+        <div class="signal-heatmap-grid" id="heatmap-grid" role="grid" aria-label="${t('heatmap.title')}"></div>
       </div>
     `;
   }
@@ -125,7 +125,7 @@ class SignalHeatmap extends HTMLElement {
 
       return `
         <div class="hm-cell ${sizeClass}${isHot ? ' hm-hot' : ''}" style="background: ${bg}" title="${tooltip}"
-             data-symbol="${this._esc(symbol)}" data-href="/tokens/${encodeURIComponent(symbol)}" role="button" tabindex="0">
+             data-symbol="${this._esc(symbol)}" data-href="/tokens/${encodeURIComponent(symbol)}" role="button" tabindex="0" aria-label="${tooltip}">
           <span class="hm-symbol">${this._esc(symbol)}</span>
           <span class="hm-pct">${sign}${pct.toFixed(1)}%</span>
           ${priceHtml}
@@ -154,7 +154,10 @@ class SignalHeatmap extends HTMLElement {
         }));
       });
       cell.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') cell.click();
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          cell.click();
+        }
       });
     });
   }

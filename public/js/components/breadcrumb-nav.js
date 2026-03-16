@@ -60,6 +60,12 @@ class BreadcrumbNav extends HTMLElement {
       return crumbs;
     }
 
+    // /compare
+    if (path === '/compare') {
+      crumbs.push({ label: t('nav.compare') || 'Compare', href: path });
+      return crumbs;
+    }
+
     return crumbs;
   }
 }

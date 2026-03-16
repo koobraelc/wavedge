@@ -3941,6 +3941,63 @@ watchlist-widget {
   opacity: 1;
 }
 
+.stale-data-critical {
+  background: rgba(248, 81, 73, 0.1);
+  border-color: rgba(248, 81, 73, 0.3);
+  color: var(--red, #f85149);
+}
+
+.stale-data-critical .stale-data-dismiss {
+  color: var(--red, #f85149);
+}
+
+/* Loading spinner for async sections */
+.summary-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.summary-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent, #1f6feb);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Retry button for failed sections */
+.retry-btn,
+.summary-retry-btn {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius);
+  color: var(--accent, #1f6feb);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.retry-btn:hover,
+.summary-retry-btn:hover {
+  border-color: var(--accent, #1f6feb);
+}
+
+.summary-retry-card {
+  text-align: center;
+}
+
 .missed-alerts-banner {
   background: linear-gradient(135deg, rgba(248, 81, 73, 0.08), rgba(210, 153, 34, 0.08));
   border: 1px solid rgba(248, 81, 73, 0.25);
@@ -5868,4 +5925,55 @@ info-tip {
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border);
   margin-top: var(--spacing-md);
+}
+
+/* === Accessibility: Colorblind-safe indicators === */
+/* Add directional arrows so color is not the sole indicator */
+.change-positive::before { content: "\25B2 "; font-size: 0.7em; }
+.change-negative::before { content: "\25BC "; font-size: 0.7em; }
+
+/* Sentiment labels: use shape + color */
+.sentiment-bar-pos { border-left: 3px solid #3fb950; }
+.sentiment-bar-neg { border-left: 3px solid #f85149; }
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .change-positive { color: LinkText; }
+  .change-negative { color: VisitedText; }
+  .hm-cell { border: 1px solid ButtonText; }
+}
+
+/* === Mobile CSS: gap fallbacks + responsive improvements === */
+@supports not (gap: 1px) {
+  .stats-row > * + * { margin-top: 14px; }
+  .header-nav > * + * { margin-left: 16px; }
+  .tabs > * + * { margin-left: 4px; }
+  .breadcrumb ol > li + li { margin-left: 4px; }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 480px) {
+  .hm-cell { min-height: 44px; min-width: 44px; }
+  .breadcrumb a,
+  .breadcrumb-current { min-height: 44px; display: inline-flex; align-items: center; }
+  .faq-question { min-height: 48px; }
+  .range-btn { min-height: 44px; min-width: 44px; }
+  .picker-input { min-height: 44px; }
+}
+
+/* Skip-to-content link (screen readers + keyboard) */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 8px;
 }

@@ -11,6 +11,7 @@
   "nav.alertSettings": "アラート設定",
   "nav.watchlist": "ウォッチリスト",
   "nav.apiKeys": "APIキー",
+  "nav.compare": "比較",
   "nav.switchTheme": "テーマ",
   "nav.language": "言語",
 
@@ -254,5 +255,18 @@
   "signal.samples": "サンプル数",
 
   "impact.impactExplanation": "{samples} 件の過去のイベントに基づき、{category} ニュースは {symbol} を24時間以内に平均 {change} 変動させました。",
-  "impact.similarNews": "類似"
+  "impact.similarNews": "類似",
+
+  "market.sectorL1": "レイヤー1",
+  "market.sectorL2": "レイヤー2",
+  "market.sectorStable": "ステーブルコイン",
+  "market.sectorInfra": "インフラ",
+  "market.sectorOther": "その他",
+  "market.tokens": "トークン",
+  "market.noData": "価格データはまだありません。",
+  "market.loadFailed": "マーケットデータの読み込みに失敗しました。",
+  "market.lastUpdated": "最終更新：{time}",
+  "market.loadingMarket": "マーケットデータを読み込み中...",
+  "market.loadingSectors": "セクターを読み込み中...",
+  "market.loading": "読み込み中..."
 }

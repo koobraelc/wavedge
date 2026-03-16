@@ -31,16 +31,18 @@
     axs: 'Gaming', sand: 'Gaming', mana: 'Gaming', gala: 'Gaming', enj: 'Gaming',
   };
 
+  var t = window.i18n ? window.i18n.t : function(k) { return k; };
+
   var SECTOR_LABELS = {
-    L1: 'Layer 1',
-    L2: 'Layer 2',
+    L1: t('market.sectorL1') || 'Layer 1',
+    L2: t('market.sectorL2') || 'Layer 2',
     DeFi: 'DeFi',
     Meme: 'Meme',
-    Stable: 'Stablecoin',
+    Stable: t('market.sectorStable') || 'Stablecoin',
     Exchange: 'Exchange',
-    Infra: 'Infrastructure',
+    Infra: t('market.sectorInfra') || 'Infrastructure',
     Gaming: 'Gaming',
-    Other: 'Other'
+    Other: t('market.sectorOther') || 'Other'
   };
 
   var SECTOR_COLORS = {
@@ -163,7 +165,7 @@
       html += '<div class="sector-header">';
       html += '<span class="sector-dot" style="background:' + color + '"></span>';
       html += '<span class="sector-name">' + label + '</span>';
-      html += '<span class="sector-count">' + sec.tokens.length + ' tokens</span>';
+      html += '<span class="sector-count">' + sec.tokens.length + ' ' + (t('market.tokens') || 'tokens') + '</span>';
       html += '</div>';
       html += '<div class="sector-stats">';
       html += '<div class="sector-mcap">' + formatMarketCap(sec.totalMcap) + '</div>';
@@ -241,7 +243,7 @@
       .then(function (result) {
         var tokens = result.data || [];
         if (!tokens.length) {
-          document.getElementById('heatmap').innerHTML = '<div class="market-empty">No price data available yet.</div>';
+          document.getElementById('heatmap').innerHTML = '<div class="market-empty">' + (t('market.noData') || 'No price data available yet.') + '</div>';
           return;
         }
 
@@ -252,7 +254,7 @@
       })
       .catch(function (err) {
         console.error('Failed to load market data:', err);
-        document.getElementById('heatmap').innerHTML = '<div class="market-empty">Failed to load market data.</div>';
+        document.getElementById('heatmap').innerHTML = '<div class="market-empty">' + (t('market.loadFailed') || 'Failed to load market data.') + '</div>';
       });
   }
 

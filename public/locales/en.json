@@ -11,6 +11,7 @@
   "nav.alertSettings": "Alert Settings",
   "nav.watchlist": "Watchlist",
   "nav.apiKeys": "API Keys",
+  "nav.compare": "Compare",
   "nav.switchTheme": "Theme",
   "nav.language": "Language",
 
@@ -254,5 +255,18 @@
   "signal.samples": "Samples",
 
   "impact.impactExplanation": "Based on {samples} historical events, {category} news has moved {symbol} an average of {change} within 24 hours.",
-  "impact.similarNews": "similar"
+  "impact.similarNews": "similar",
+
+  "market.sectorL1": "Layer 1",
+  "market.sectorL2": "Layer 2",
+  "market.sectorStable": "Stablecoin",
+  "market.sectorInfra": "Infrastructure",
+  "market.sectorOther": "Other",
+  "market.tokens": "tokens",
+  "market.noData": "No price data available yet.",
+  "market.loadFailed": "Failed to load market data.",
+  "market.lastUpdated": "Last updated: {time}",
+  "market.loadingMarket": "Loading market data...",
+  "market.loadingSectors": "Loading sectors...",
+  "market.loading": "Loading..."
 }

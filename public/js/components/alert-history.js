@@ -40,8 +40,8 @@ class AlertHistory extends HTMLElement {
         </div>
         <span class="history-count">${alerts.length} alert${alerts.length !== 1 ? 's' : ''}</span>
       </div>
-      <div class="history-list">
-        ${alerts.map(a => this._renderAlert(a)).join('')}
+      <div class="history-timeline">
+        ${alerts.map((a, i) => this._renderAlert(a, i === alerts.length - 1)).join('')}
       </div>
     `;
 
@@ -53,23 +53,44 @@ class AlertHistory extends HTMLElement {
     });
   }
 
-  _renderAlert(alert) {
+  _renderAlert(alert, isLast) {
     const time = this._formatTime(alert.createdAt);
+    const fullTime = alert.createdAt ? new Date(alert.createdAt).toLocaleString() : '';
     const signals = alert.signals || {};
     const channels = alert.deliveredChannels || [];
 
+    // Build mini price indicator
+    let priceIndicator = '';
+    if (signals.priceMovement) {
+      const pct = signals.priceMovement.changePercent;
+      const cls = pct >= 0 ? 'positive' : 'negative';
+      const sign = pct >= 0 ? '+' : '';
+      priceIndicator = `
+        <div class="alert-price-indicator ${cls}">
+          <span class="alert-price-arrow">${pct >= 0 ? '&#9650;' : '&#9660;'}</span>
+          <span>${sign}${pct.toFixed(2)}%</span>
+        </div>`;
+    }
+
     return `
-      <div class="history-card">
-        <div class="history-card-header">
-          <span class="token-tag">${this._esc(alert.tokenSymbol)}</span>
-          <span class="history-signals">${alert.signalCount} signal${alert.signalCount !== 1 ? 's' : ''}</span>
-          <span class="history-time">${time}</span>
+      <div class="history-timeline-item ${isLast ? 'last' : ''}">
+        <div class="timeline-rail">
+          <div class="timeline-node ${alert.signalCount >= 3 ? 'node-critical' : alert.signalCount >= 2 ? 'node-warning' : ''}"></div>
+          ${!isLast ? '<div class="timeline-line"></div>' : ''}
         </div>
-        <p class="history-summary">${this._esc(alert.summary)}</p>
-        <div class="history-details">
-          ${this._renderSignals(signals)}
-          <div class="history-channels">
-            ${channels.map(ch => `<span class="channel-badge">${this._esc(ch)}</span>`).join('')}
+        <div class="history-card">
+          <div class="history-card-header">
+            <span class="token-tag">${this._esc(alert.tokenSymbol)}</span>
+            <span class="history-signals">${alert.signalCount} signal${alert.signalCount !== 1 ? 's' : ''}</span>
+            ${priceIndicator}
+            <span class="history-time" title="${fullTime}">${time}</span>
+          </div>
+          <p class="history-summary">${this._esc(alert.summary)}</p>
+          <div class="history-details">
+            ${this._renderSignals(signals)}
+            <div class="history-channels">
+              ${channels.map(ch => `<span class="channel-badge">${this._esc(ch)}</span>`).join('')}
+            </div>
           </div>
         </div>
       </div>

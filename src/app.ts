@@ -321,7 +321,18 @@ app.get("/tokens/:symbol", (req, res) => {
         </div>
       </div>
       <div class="chart-container" id="token-chart">
-        <div class="placeholder"><span class="spinner"></span>Loading chart...</div>
+        <div class="chart-skeleton">
+          <div class="chart-skeleton-bars">
+            <div class="chart-skel-bar" style="height:40%"></div>
+            <div class="chart-skel-bar" style="height:65%"></div>
+            <div class="chart-skel-bar" style="height:50%"></div>
+            <div class="chart-skel-bar" style="height:80%"></div>
+            <div class="chart-skel-bar" style="height:55%"></div>
+            <div class="chart-skel-bar" style="height:70%"></div>
+            <div class="chart-skel-bar" style="height:45%"></div>
+            <div class="chart-skel-bar" style="height:60%"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -337,6 +348,7 @@ app.get("/tokens/:symbol", (req, res) => {
 
     <div class="token-news-section">
       <div class="section-header"><h2>Related News</h2></div>
+      <div class="news-timeline" id="news-timeline"></div>
       <news-feed></news-feed>
     </div>
   </main>

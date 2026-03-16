@@ -9,6 +9,7 @@
   // --- Chart ---
   let chart = null;
   let series = null;
+  let volumeSeries = null;
   let allPriceData = [];
 
   const RANGE_LIMITS = { '1d': 24, '1w': 168, '1m': 720, '3m': 2160 };
@@ -69,6 +70,22 @@
         wickUpColor: '#3fb950',
       });
       series.setData(candles);
+
+      // Volume overlay
+      volumeSeries = chart.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: { type: 'volume' },
+        priceScaleId: '',
+      });
+      chart.priceScale('').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+      });
+      const volumeData = candles.map(c => ({
+        time: c.time,
+        value: c._volume || 0,
+        color: c.close >= c.open ? 'rgba(63, 185, 80, 0.3)' : 'rgba(248, 81, 73, 0.3)',
+      }));
+      volumeSeries.setData(volumeData);
     } else {
       series = chart.addLineSeries({
         color: '#1f6feb',
@@ -94,22 +111,27 @@
       const ts = Math.floor(new Date(d.fetched_at).getTime() / 1000);
       const bucket = Math.floor(ts / intervalSec) * intervalSec;
       if (!buckets.has(bucket)) {
-        buckets.set(bucket, { time: bucket, open: d.price_usd, high: d.price_usd, low: d.price_usd, close: d.price_usd });
+        buckets.set(bucket, { time: bucket, open: d.price_usd, high: d.price_usd, low: d.price_usd, close: d.price_usd, _volume: d.total_volume || 0 });
       } else {
         const c = buckets.get(bucket);
         c.high = Math.max(c.high, d.price_usd);
         c.low = Math.min(c.low, d.price_usd);
         c.close = d.price_usd;
+        c._volume = Math.max(c._volume, d.total_volume || 0);
       }
     }
     return Array.from(buckets.values()).sort((a, b) => a.time - b.time);
   }
 
-  // Time range selector
+  // Time range selector with active state animation
   document.querySelectorAll('.range-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.range-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.remove('range-btn-pop');
+      });
       btn.classList.add('active');
+      btn.classList.add('range-btn-pop');
       const range = btn.dataset.range;
       const limit = RANGE_LIMITS[range] || 720;
       const filtered = allPriceData.slice(0, limit);
@@ -119,7 +141,9 @@
     });
   });
 
-  // --- Hero price ---
+  // --- Hero price with animation ---
+  let lastHeroPrice = null;
+
   async function loadHeroPrice() {
     try {
       const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}`);
@@ -131,12 +155,34 @@
         const pct = data.price.price_change_percentage_24h ?? 0;
         const sign = pct >= 0 ? '+' : '';
         const cls = pct >= 0 ? 'change-positive' : 'change-negative';
-        el.innerHTML = `<span class="hero-price-value">$${fmtPrice(p)}</span> <span class="${cls}">${sign}${pct.toFixed(2)}%</span>`;
+        const arrowIcon = pct >= 0 ? '&#9650;' : '&#9660;';
+
+        // Determine flash class
+        let flashClass = '';
+        if (lastHeroPrice !== null && p !== lastHeroPrice) {
+          flashClass = p > lastHeroPrice ? 'hero-price-flash-up' : 'hero-price-flash-down';
+        }
+        lastHeroPrice = p;
+
+        el.innerHTML = `
+          <span class="hero-price-value ${flashClass}">$${fmtPrice(p)}</span>
+          <span class="hero-change ${cls}">
+            <span class="hero-arrow ${cls}">${arrowIcon}</span>
+            ${sign}${pct.toFixed(2)}%
+          </span>`;
         if (data.price.market_cap) {
           el.innerHTML += ` <span class="hero-meta">Mkt Cap: $${fmtLargeNum(data.price.market_cap)}</span>`;
         }
         if (data.price.total_volume) {
           el.innerHTML += ` <span class="hero-meta">Vol: $${fmtLargeNum(data.price.total_volume)}</span>`;
+        }
+
+        // Remove flash class after animation
+        if (flashClass) {
+          setTimeout(() => {
+            const val = el.querySelector('.hero-price-value');
+            if (val) val.classList.remove(flashClass);
+          }, 800);
         }
       }
     } catch (err) {
@@ -154,29 +200,47 @@
 
       if (!data) {
         container.innerHTML = `
-          <div class="section-header"><h2>AI Weekly Summary</h2></div>
-          <div class="summary-card"><p class="summary-empty">${escHtml(message || 'No summary data available yet.')}</p></div>`;
+          <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+          <div class="summary-card summary-card-ai"><p class="summary-empty">${escHtml(message || 'No summary data available yet.')}</p></div>`;
         return;
       }
 
+      // Simple markdown-like rendering: **bold**, bullet points
+      const rendered = renderMarkdown(data.summary);
+
       container.innerHTML = `
-        <div class="section-header"><h2>AI Weekly Summary</h2></div>
-        <div class="summary-card">
-          <p class="summary-text">${escHtml(data.summary)}</p>
+        <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+        <div class="summary-card summary-card-ai">
+          <div class="summary-text">${rendered}</div>
           <div class="summary-meta">
             <span>Generated ${relativeTime(data.generatedAt)}</span>
-            <span>·</span>
+            <span>&middot;</span>
             <span>${data.articleCount} articles analyzed</span>
           </div>
         </div>`;
     } catch {
       container.innerHTML = `
-        <div class="section-header"><h2>AI Weekly Summary</h2></div>
-        <div class="summary-card"><p class="summary-empty">Summary unavailable.</p></div>`;
+        <div class="section-header"><h2>AI Weekly Summary</h2><span class="ai-label">AI Generated</span></div>
+        <div class="summary-card summary-card-ai"><p class="summary-empty">Summary unavailable.</p></div>`;
     }
   }
 
-  // --- Impact Statistics ---
+  function renderMarkdown(text) {
+    if (!text) return '';
+    // Escape HTML first
+    let safe = escHtml(text);
+    // **bold**
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Bullet points (lines starting with - or *)
+    safe = safe.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+    safe = safe.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    // Paragraphs
+    safe = safe.replace(/\n\n/g, '</p><p>');
+    safe = '<p>' + safe + '</p>';
+    return safe;
+  }
+
+  // --- Impact Statistics with horizontal bar charts ---
   async function loadImpact() {
     const container = document.getElementById('token-impact');
     try {
@@ -191,16 +255,26 @@
         return;
       }
 
-      const cards = data.categories.map(cat => {
+      // Find max absolute value for scaling bars
+      const maxAbs = Math.max(...data.categories.map(c => Math.abs(c.avgChange24h ?? 0)), 1);
+
+      const bars = data.categories.map(cat => {
         const avg24h = cat.avgChange24h ?? 0;
         const cls = avg24h > 0.1 ? 'positive' : avg24h < -0.1 ? 'negative' : 'neutral';
         const sign = avg24h > 0 ? '+' : '';
+        const barWidth = Math.min(Math.abs(avg24h) / maxAbs * 100, 100);
+        const barColor = avg24h > 0.1 ? 'var(--green)' : avg24h < -0.1 ? 'var(--red)' : 'var(--text-muted)';
+
         return `
-          <div class="impact-stat-card">
-            <div class="impact-stat-category">${escHtml(cat.category)}</div>
-            <div class="impact-stat-change ${cls}">${sign}${avg24h.toFixed(2)}%</div>
-            <div class="impact-stat-label">avg 24h change</div>
-            <div class="impact-stat-meta">${cat.sampleSize} events</div>
+          <div class="impact-bar-row">
+            <div class="impact-bar-label">
+              <span class="impact-bar-category">${escHtml(cat.category)}</span>
+              <span class="impact-bar-meta">${cat.sampleSize} events</span>
+            </div>
+            <div class="impact-bar-track">
+              <div class="impact-bar-fill" style="width: ${barWidth}%; background: ${barColor}"></div>
+            </div>
+            <span class="impact-bar-value ${cls}">${sign}${avg24h.toFixed(2)}%</span>
           </div>`;
       }).join('');
 
@@ -209,7 +283,7 @@
           <h2>Impact Statistics</h2>
           <span class="section-meta">${data.totalEvents} total events</span>
         </div>
-        <div class="impact-grid">${cards}</div>`;
+        <div class="impact-bar-chart">${bars}</div>`;
     } catch {
       container.innerHTML = `
         <div class="section-header"><h2>Impact Statistics</h2></div>
@@ -217,9 +291,10 @@
     }
   }
 
-  // --- Related News ---
+  // --- Related News with timeline ---
   async function loadNews() {
     const newsFeed = document.querySelector('news-feed');
+    const timelineContainer = document.getElementById('news-timeline');
     try {
       const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}`);
       if (!res.ok) throw new Error('Failed');
@@ -239,9 +314,45 @@
         } catch { /* skip */ }
       }
       newsFeed.update(articles);
+
+      // Render timeline if we have articles with impacts
+      if (timelineContainer && articles.length > 0) {
+        renderNewsTimeline(timelineContainer, articles);
+      }
     } catch {
       // Non-critical
     }
+  }
+
+  function renderNewsTimeline(container, articles) {
+    const items = articles.slice(0, 8).map(a => {
+      const time = relativeTime(a.published_at || a.fetched_at);
+      const impact = a._impact;
+      let impactHtml = '';
+      if (impact && impact.priceChange24h != null) {
+        const pct = impact.priceChange24h;
+        const cls = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+        const sign = pct > 0 ? '+' : '';
+        impactHtml = `<span class="timeline-impact ${cls}">${sign}${pct.toFixed(2)}%</span>`;
+      }
+      const category = a.category ? `<span class="timeline-category">${escHtml(a.category)}</span>` : '';
+
+      return `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-time">${time}</span>
+              ${category}
+              ${impactHtml}
+            </div>
+            <a href="${escHtml(a.url || '#')}" target="_blank" rel="noopener" class="timeline-title">${escHtml(a.title)}</a>
+            <span class="timeline-source">${escHtml(a.source || '')}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = items || '<p class="loading-state">No recent events.</p>';
   }
 
   // --- Utilities ---

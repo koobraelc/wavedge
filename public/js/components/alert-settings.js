@@ -38,7 +38,10 @@ class AlertSettings extends HTMLElement {
       <form class="settings-form" id="alert-form">
         <div class="settings-card">
           <div class="settings-card-header">
-            <h3>Alert Status</h3>
+            <div class="settings-step-header">
+              <span class="step-number">1</span>
+              <h3>Alert Status</h3>
+            </div>
             <label class="toggle-switch">
               <input type="checkbox" id="alerts-enabled" ${enabled ? 'checked' : ''}>
               <span class="toggle-slider"></span>
@@ -47,20 +50,30 @@ class AlertSettings extends HTMLElement {
           </div>
         </div>
 
+        <div class="settings-divider"></div>
+
         <div class="settings-card">
-          <h3>Token Watchlist</h3>
+          <div class="settings-step-header">
+            <span class="step-number">2</span>
+            <h3>Token Watchlist</h3>
+          </div>
           <p class="settings-hint">Select tokens you want to receive alerts for.</p>
           <div class="watchlist-search">
             <input type="search" id="token-search" placeholder="Search tokens..." aria-label="Search tokens">
           </div>
           <div class="watchlist-selected" id="watchlist-selected">
-            ${watchlist.map(s => `<span class="watchlist-tag" data-symbol="${this._esc(s)}">${this._esc(s)} <button type="button" class="tag-remove" aria-label="Remove ${this._esc(s)}">&times;</button></span>`).join('')}
+            ${watchlist.map(s => this._renderChip(s)).join('')}
           </div>
           <div class="watchlist-dropdown" id="watchlist-dropdown" hidden></div>
         </div>
 
+        <div class="settings-divider"></div>
+
         <div class="settings-card">
-          <h3>Notification Channels</h3>
+          <div class="settings-step-header">
+            <span class="step-number">3</span>
+            <h3>Notification Channels</h3>
+          </div>
           <p class="settings-hint">Choose how you want to receive alerts.</p>
           <div class="channel-options">
             <label class="channel-option">
@@ -96,8 +109,13 @@ class AlertSettings extends HTMLElement {
           </div>
         </div>
 
+        <div class="settings-divider"></div>
+
         <div class="settings-card">
-          <h3>Sensitivity</h3>
+          <div class="settings-step-header">
+            <span class="step-number">4</span>
+            <h3>Sensitivity</h3>
+          </div>
           <p class="settings-hint">Controls how easily alerts are triggered. Higher sensitivity = more alerts.</p>
           <div class="sensitivity-selector">
             <button type="button" class="sensitivity-btn ${sensitivity === 'low' ? 'active' : ''}" data-level="low">
@@ -118,8 +136,13 @@ class AlertSettings extends HTMLElement {
           </div>
         </div>
 
+        <div class="settings-divider"></div>
+
         <div class="settings-card">
-          <h3>Signal Requirements</h3>
+          <div class="settings-step-header">
+            <span class="step-number">5</span>
+            <h3>Signal Requirements</h3>
+          </div>
           <p class="settings-hint">How many signals must fire simultaneously to trigger an alert.</p>
           <div class="signal-selector">
             ${[1, 2, 3].map(n => `
@@ -134,12 +157,20 @@ class AlertSettings extends HTMLElement {
 
         <div class="settings-actions">
           <button type="submit" class="btn-primary" id="save-btn">Save Settings</button>
-          <span class="save-status" id="save-status"></span>
         </div>
       </form>
     `;
 
     this._bind();
+  }
+
+  _renderChip(symbol) {
+    const initial = symbol.charAt(0);
+    return `<span class="token-chip" data-symbol="${this._esc(symbol)}">
+      <span class="token-chip-icon">${initial}</span>
+      <span class="token-chip-label">${this._esc(symbol)}</span>
+      <button type="button" class="chip-remove" aria-label="Remove ${this._esc(symbol)}">&times;</button>
+    </span>`;
   }
 
   _bind() {
@@ -167,11 +198,13 @@ class AlertSettings extends HTMLElement {
       if (!this.contains(e.target)) dropdown.hidden = true;
     });
 
-    // Remove tags
+    // Remove chips
     selectedContainer.addEventListener('click', (e) => {
-      const btn = e.target.closest('.tag-remove');
+      const btn = e.target.closest('.chip-remove');
       if (btn) {
-        btn.closest('.watchlist-tag').remove();
+        const chip = btn.closest('.token-chip');
+        chip.classList.add('chip-removing');
+        setTimeout(() => chip.remove(), 200);
       }
     });
 
@@ -228,6 +261,7 @@ class AlertSettings extends HTMLElement {
     matches = matches.slice(0, 10);
     dropdown.innerHTML = matches.map(t => `
       <button type="button" class="dropdown-item" data-symbol="${this._esc(t.symbol)}">
+        <span class="dropdown-chip-icon">${t.symbol.charAt(0)}</span>
         <span class="token-symbol">${this._esc(t.symbol)}</span>
         <span class="token-name">${this._esc(t.name)}</span>
       </button>
@@ -248,15 +282,20 @@ class AlertSettings extends HTMLElement {
     const container = this.querySelector('#watchlist-selected');
     if (this._getSelectedSymbols().includes(symbol)) return;
 
-    const tag = document.createElement('span');
-    tag.className = 'watchlist-tag';
-    tag.dataset.symbol = symbol;
-    tag.innerHTML = `${this._esc(symbol)} <button type="button" class="tag-remove" aria-label="Remove ${this._esc(symbol)}">&times;</button>`;
-    container.appendChild(tag);
+    const chip = document.createElement('span');
+    chip.className = 'token-chip chip-adding';
+    chip.dataset.symbol = symbol;
+    chip.innerHTML = `
+      <span class="token-chip-icon">${symbol.charAt(0)}</span>
+      <span class="token-chip-label">${this._esc(symbol)}</span>
+      <button type="button" class="chip-remove" aria-label="Remove ${this._esc(symbol)}">&times;</button>`;
+    container.appendChild(chip);
+    // Trigger entrance animation
+    requestAnimationFrame(() => chip.classList.remove('chip-adding'));
   }
 
   _getSelectedSymbols() {
-    return Array.from(this.querySelectorAll('.watchlist-tag')).map(t => t.dataset.symbol);
+    return Array.from(this.querySelectorAll('.token-chip')).map(t => t.dataset.symbol);
   }
 
   async _save() {
@@ -264,10 +303,8 @@ class AlertSettings extends HTMLElement {
     this._saving = true;
 
     const btn = this.querySelector('#save-btn');
-    const status = this.querySelector('#save-status');
     btn.disabled = true;
     btn.textContent = 'Saving...';
-    status.textContent = '';
 
     const tokenSymbols = this._getSelectedSymbols();
     const channels = Array.from(this.querySelectorAll('input[name="channel"]:checked')).map(cb => cb.value);
@@ -303,20 +340,36 @@ class AlertSettings extends HTMLElement {
 
       const json = await res.json();
       this._prefs = json.data;
-      status.textContent = 'Settings saved';
-      status.className = 'save-status success';
-
-      // Dispatch event so alert-history can refresh
+      AlertSettings._showToast('Settings saved successfully', 'success');
       this.dispatchEvent(new CustomEvent('settings-saved', { bubbles: true }));
     } catch (err) {
-      status.textContent = err.message;
-      status.className = 'save-status error';
+      AlertSettings._showToast(err.message || 'Failed to save settings', 'error');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Save Settings';
       this._saving = false;
-      setTimeout(() => { status.textContent = ''; }, 3000);
     }
+  }
+
+  static _showToast(message, type) {
+    // Remove existing toasts
+    document.querySelectorAll('.toast-notification').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+      <span class="toast-icon">${type === 'success' ? '&#10003;' : '&#10007;'}</span>
+      <span class="toast-message">${message}</span>`;
+    document.body.appendChild(toast);
+
+    // Trigger entrance
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+
+    // Auto-remove
+    setTimeout(() => {
+      toast.classList.remove('toast-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 
   _esc(s) {

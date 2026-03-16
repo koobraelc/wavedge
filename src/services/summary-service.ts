@@ -10,6 +10,7 @@ export interface TokenSummary {
   sentimentBreakdown: Record<string, { count: number; sentiment: string }>;
   netImpact: string;
   keyEvents: string[];
+  articleCount: number;
   generatedAt: string;
 }
 
@@ -142,6 +143,7 @@ export class SummaryService {
       sentimentBreakdown,
       netImpact,
       keyEvents,
+      articleCount: articles.length,
       generatedAt: new Date().toISOString(),
     };
 

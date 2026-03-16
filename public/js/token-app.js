@@ -18,7 +18,7 @@
     const container = document.getElementById('token-chart');
 
     try {
-      const res = await fetch(`/api/prices/${encodeURIComponent(symbol)}/history?limit=2200`);
+      const res = await fetchWithTimeout(`/api/prices/${encodeURIComponent(symbol)}/history?limit=2200`);
       if (!res.ok) throw new Error('Failed to load history');
       const { data } = await res.json();
 
@@ -31,7 +31,7 @@
       renderChart(container, data);
     } catch (err) {
       console.error('[token-app] Failed to load chart data:', err);
-      container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;</div><div class="empty-state-title">Chart unavailable</div><div class="empty-state-desc">We couldn\'t load price data right now. Please try refreshing the page.</div></div>';
+      renderRetryState(container, 'Price Chart', loadChart);
     }
   }
 
@@ -559,6 +559,27 @@
   }
 
   // --- Utilities ---
+  /** Fetch with AbortController timeout (default 10s) */
+  function fetchWithTimeout(url, opts = {}, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(id));
+  }
+
+  /** Show a "Something went wrong" state with retry button */
+  function renderRetryState(container, title, retryFn) {
+    container.innerHTML = `
+      <div class="section-header"><h2>${escHtml(title)}</h2></div>
+      <div class="empty-state empty-state-inline">
+        <div class="empty-state-icon">&#9888;</div>
+        <div class="empty-state-title">Something went wrong</div>
+        <div class="empty-state-desc">Tap to retry</div>
+        <button class="retry-btn">Retry</button>
+      </div>`;
+    const btn = container.querySelector('.retry-btn');
+    if (btn) btn.addEventListener('click', retryFn);
+  }
+
   function fmtPrice(n) {
     if (n == null) return '—';
     if (n >= 1) return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -593,7 +614,7 @@
   // --- Batch load: impact, sentiment, related, faq, news in a single API call ---
   async function loadBatchData() {
     try {
-      const res = await fetch(`/api/tokens/${encodeURIComponent(symbol)}/batch`);
+      const res = await fetchWithTimeout(`/api/tokens/${encodeURIComponent(symbol)}/batch`);
       if (!res.ok) {
         // Fallback to individual calls if batch fails
         await Promise.all([loadImpact(), loadSentiment(), loadFaq(), loadRelated(), loadNews()]);

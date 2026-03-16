@@ -58,7 +58,7 @@
 
   async function loadSocialSentiment() {
     try {
-      const res = await fetch('/api/homepage/social-sentiment');
+      const res = await fetchWithTimeout('/api/homepage/social-sentiment');
       const json = await res.json();
       const map = new Map();
       for (const t of (json.data?.tokens || [])) {
@@ -73,7 +73,7 @@
 
   async function loadWhaleActivity() {
     try {
-      const res = await fetch('/api/whales/summary/all');
+      const res = await fetchWithTimeout('/api/whales/summary/all');
       const json = await res.json();
       const map = new Map();
       for (const w of (json.data || [])) {
@@ -86,10 +86,17 @@
     }
   }
 
+  // --- Fetch with timeout (10s default) ---
+  function fetchWithTimeout(url, opts = {}, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(id));
+  }
+
   // --- Data loading ---
   async function loadPrices() {
     try {
-      const res = await fetch('/api/prices');
+      const res = await fetchWithTimeout('/api/prices');
       const json = await res.json();
       pricesData = json.data || [];
       return pricesData;
@@ -101,7 +108,7 @@
 
   async function loadNews() {
     try {
-      const res = await fetch('/api/news?limit=50');
+      const res = await fetchWithTimeout('/api/news?limit=50');
       const json = await res.json();
       newsData = json.data || [];
       return newsData;
@@ -116,7 +123,7 @@
     if (batch.length === 0) return;
 
     try {
-      const res = await fetch('/api/news/batch-impact', {
+      const res = await fetchWithTimeout('/api/news/batch-impact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: batch.map(a => a.id) })

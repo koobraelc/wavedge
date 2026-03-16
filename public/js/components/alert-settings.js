@@ -24,6 +24,27 @@ class AlertSettings extends HTMLElement {
     }));
     this._pushSubscribed = pushStatusJson.data?.subscribed || false;
 
+    // Load alert usage for progressive warnings
+    this._alertUsage = null;
+    try {
+      const token = localStorage.getItem('wavedge_token');
+      if (token) {
+        const userRes = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData.tier !== 'pro') {
+            const missedRes = await fetch('/api/alerts/missed?userId=' + encodeURIComponent(userData.id));
+            if (missedRes.ok) {
+              const missedJson = await missedRes.json();
+              this._alertUsage = missedJson.data;
+            }
+          }
+        }
+      }
+    } catch { /* non-critical */ }
+
     this._render();
     this._applyTokenParam();
   }
@@ -52,8 +73,32 @@ class AlertSettings extends HTMLElement {
     const telegramChatId = p.telegramChatId || '';
     const emailAddress = p.emailAddress || '';
 
+    // Progressive alert usage warning
+    let usageBanner = '';
+    if (this._alertUsage) {
+      const used = this._alertUsage.dailyLimit - (this._alertUsage.missedToday > 0 ? 0 : 0);
+      const total = this._alertUsage.dailyLimit || 3;
+      const sent = total - Math.max(0, this._alertUsage.missedToday || 0);
+      const remaining = Math.max(0, total - sent);
+      const pct = Math.round((sent / total) * 100);
+      const urgency = remaining === 0 ? 'alert-usage-full' : remaining === 1 ? 'alert-usage-warning' : 'alert-usage-ok';
+
+      usageBanner = `
+        <div class="alert-usage-banner ${urgency}">
+          <div class="alert-usage-header">
+            <span class="alert-usage-label">${sent} of ${total} alerts used today</span>
+            ${remaining === 0 ? '<a href="/billing" class="alert-usage-upgrade">Upgrade for unlimited</a>' : ''}
+          </div>
+          <div class="alert-usage-bar">
+            <div class="alert-usage-fill" style="width: ${pct}%"></div>
+          </div>
+          ${remaining <= 1 && remaining > 0 ? '<span class="alert-usage-hint">Only 1 alert remaining today. <a href="/billing">Upgrade for unlimited.</a></span>' : ''}
+        </div>`;
+    }
+
     this.innerHTML = `
       <form class="settings-form" id="alert-form">
+        ${usageBanner}
         <div class="settings-card">
           <div class="settings-card-header">
             <div class="settings-section-header">
@@ -110,8 +155,11 @@ class AlertSettings extends HTMLElement {
             </label>
             <div class="channel-detail ${channels.includes('telegram') ? '' : 'hidden'}" id="telegram-detail">
               <label for="telegram-chat-id">Telegram Chat ID</label>
-              <input type="text" id="telegram-chat-id" placeholder="e.g. 123456789" value="${this._esc(telegramChatId)}">
-              <span class="field-hint">Send /start to @WavedgeBot to get your chat ID</span>
+              <div class="telegram-input-row">
+                <input type="text" id="telegram-chat-id" placeholder="e.g. 123456789" value="${this._esc(telegramChatId)}" inputmode="numeric" pattern="[0-9]*">
+                <a href="https://t.me/WavedgeBot?start=connect" target="_blank" rel="noopener" class="btn-secondary btn-sm telegram-connect-btn">Connect via Telegram</a>
+              </div>
+              <span class="field-hint">Click "Connect via Telegram" to auto-link your account, or paste your Chat ID manually.</span>
             </div>
             <label class="channel-option">
               <input type="checkbox" name="channel" value="email" ${channels.includes('email') ? 'checked' : ''}>
@@ -429,6 +477,37 @@ class AlertSettings extends HTMLElement {
     const enabled = this.querySelector('#alerts-enabled').checked;
     const telegramChatId = this.querySelector('#telegram-chat-id').value.trim() || null;
     const emailAddress = this.querySelector('#email-address').value.trim() || null;
+
+    // Client-side email validation
+    if (emailAddress && channels.includes('email')) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(emailAddress)) {
+        AlertSettings._showToast('Please enter a valid email address', 'error');
+        const emailInput = this.querySelector('#email-address');
+        emailInput.focus();
+        emailInput.classList.add('input-error');
+        setTimeout(() => emailInput.classList.remove('input-error'), 3000);
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+        this._saving = false;
+        return;
+      }
+    }
+
+    // Telegram Chat ID validation
+    if (telegramChatId && channels.includes('telegram')) {
+      if (!/^\d+$/.test(telegramChatId)) {
+        AlertSettings._showToast('Telegram Chat ID must be a number', 'error');
+        const tgInput = this.querySelector('#telegram-chat-id');
+        tgInput.focus();
+        tgInput.classList.add('input-error');
+        setTimeout(() => tgInput.classList.remove('input-error'), 3000);
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+        this._saving = false;
+        return;
+      }
+    }
 
     const body = {
       userId: 'default',

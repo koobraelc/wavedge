@@ -2025,6 +2025,169 @@ watchlist-widget {
   to { transform: rotate(360deg); }
 }
 
+/* === Empty States === */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+}
+
+.empty-state-inline {
+  padding: 32px 20px;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.empty-state-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 360px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* === Post-Onboarding Guidance === */
+.post-onboarding {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--card-padding);
+  margin-bottom: var(--card-gap);
+}
+
+.post-onboarding-dismiss {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s;
+}
+
+.post-onboarding-dismiss:hover {
+  color: var(--text-primary);
+}
+
+.post-onboarding-header {
+  margin-bottom: 16px;
+}
+
+.post-onboarding-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.post-onboarding-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.post-onboarding-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.post-onboarding-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-onboarding-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.post-onboarding-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.post-onboarding-card strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.post-onboarding-card p {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.post-onboarding-token-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.post-onboarding-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.post-onboarding-chip:hover {
+  opacity: 0.85;
+  text-decoration: none;
+}
+
+.post-onboarding-chip-up {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--green);
+}
+
+.post-onboarding-chip-down {
+  background: rgba(248, 81, 73, 0.12);
+  color: var(--red);
+}
+
+.post-onboarding-chip-change {
+  font-weight: 500;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 600px) {
+  .post-onboarding-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* === Skeleton Loading === */
 @keyframes shimmer {
   0% { background-position: -400px 0; }

@@ -20,6 +20,7 @@ import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
 import { schedulerStatus } from "./scrapers/scheduler.js";
 import { SchedulerRepository } from "./db/scheduler-repository.js";
+import { cacheMiddleware } from "./services/response-cache.js";
 
 // i18n: locale support
 declare global {
@@ -31,6 +32,54 @@ declare global {
 }
 
 const SUPPORTED_LOCALES = ["zh-tw", "ja", "ko"] as const;
+
+/** Generate a branded error page HTML string */
+function renderErrorPage(statusCode: number, title: string, message: string, suggestion?: string): string {
+  const suggestions: Record<number, string> = {
+    404: suggestion || "The page you're looking for doesn't exist or may have been moved.",
+    500: suggestion || "Something went wrong on our end. Please try again in a moment.",
+  };
+  const desc = suggestions[statusCode] || suggestion || "An unexpected error occurred.";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} | Wavedge</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .error-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; padding: 2rem; }
+    .error-code { font-size: 6rem; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 0.5rem; letter-spacing: -2px; }
+    .error-title { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem; }
+    .error-message { color: var(--text-secondary); max-width: 440px; margin-bottom: 2rem; line-height: 1.6; }
+    .error-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .error-actions a { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; transition: all 0.15s; text-decoration: none; }
+    .error-btn-primary { background: var(--accent); color: #fff; }
+    .error-btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+    .error-btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
+    .error-btn-secondary:hover { color: var(--text-primary); border-color: var(--text-muted); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav-bar></nav-bar>
+  <main class="error-page">
+    <div class="error-code">${statusCode}</div>
+    <h1 class="error-title">${title}</h1>
+    <p class="error-message">${desc}</p>
+    <div class="error-actions">
+      <a href="/dashboard" class="error-btn-primary">&#8592; Back to Dashboard</a>
+      <a href="/market" class="error-btn-secondary">Explore Market</a>
+    </div>
+  </main>
+  <script src="/js/i18n.js"></script>
+  <script>window.i18n.init();</script>
+  <script src="/js/theme-switcher.js"></script>
+  <script src="/js/components/info-tip.js"></script>
+  <script src="/js/components/nav-bar.js"></script>
+</body>
+</html>`;
+}
 const LOCALE_PATTERN = /^\/(zh-tw|ja|ko)(\/|$)/;
 
 /** Map URL locale slug to BCP-47 lang tag */
@@ -156,23 +205,39 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Stale data check for dashboard banner (price data >10min old)
+// Stale data check for dashboard banner with tiered thresholds.
+// Prices update every 5 min. "slightly behind" (<15 min) is normal and should not alarm users.
+// "stale" (15-30 min) shows a subtle notice. "very stale" (>30 min) shows a warning banner.
 app.get("/api/health/freshness", (_req, res) => {
   try {
     const db = getDatabase();
     const latestPrice = db.prepare("SELECT MAX(fetched_at) AS ts FROM prices").get() as { ts: string | null };
     const ts = latestPrice.ts;
-    let stale = false;
     let ageMinutes = 0;
+    let level: "fresh" | "slight" | "stale" | "critical" = "fresh";
+
     if (ts) {
       ageMinutes = Math.floor((Date.now() - new Date(ts + "Z").getTime()) / 60000);
-      stale = ageMinutes > 10;
+      if (ageMinutes > 30) {
+        level = "critical"; // Something is likely broken
+      } else if (ageMinutes > 15) {
+        level = "stale"; // Noticeable delay, show subtle notice
+      } else if (ageMinutes > 10) {
+        level = "slight"; // Slightly behind, hide banner
+      }
+      // <= 10 min: fresh, no banner
     } else {
-      stale = true;
+      level = "critical";
     }
-    res.json({ stale, lastPriceFetch: ts, ageMinutes });
+
+    res.json({
+      stale: level === "stale" || level === "critical", // backward compat
+      level,
+      lastPriceFetch: ts,
+      ageMinutes,
+    });
   } catch {
-    res.json({ stale: true, lastPriceFetch: null, ageMinutes: null });
+    res.json({ stale: true, level: "critical", lastPriceFetch: null, ageMinutes: null });
   }
 });
 
@@ -193,10 +258,10 @@ app.get("/api/config/ads", (_req, res) => {
 });
 
 app.use("/api", apiLimiter);
-app.use("/api/prices", createPricesRouter());
-app.use("/api/news", createNewsRouter());
-app.use("/api/tokens", createTokensRouter());
-app.use("/api/search", createSearchRouter());
+app.use("/api/prices", cacheMiddleware(30), createPricesRouter());
+app.use("/api/news", cacheMiddleware(60), createNewsRouter());
+app.use("/api/tokens", cacheMiddleware(30), createTokensRouter());
+app.use("/api/search", cacheMiddleware(30), createSearchRouter());
 app.use("/api/alerts", createAlertsRouter());
 app.use("/api/digest", createDigestRouter());
 app.use("/api/auth", createAuthRouter());
@@ -204,9 +269,9 @@ app.use("/api/billing", createBillingRouter());
 app.use("/api/webhooks", createWebhookRouter());
 app.use("/api/affiliate", createAffiliateRouter());
 app.use("/api/api-keys", createApiKeysRouter());
-app.use("/api/homepage", createHomepageRouter());
+app.use("/api/homepage", cacheMiddleware(30), createHomepageRouter());
 app.use("/api/admin", createAdminRouter());
-app.use("/api/whales", createWhalesRouter());
+app.use("/api/whales", cacheMiddleware(60), createWhalesRouter());
 
 // i18n: Locale URL rewrite middleware
 // Strips /:locale prefix, sets req.locale, so all downstream routes work unchanged.
@@ -1016,7 +1081,12 @@ app.get("/tokens/:symbol", (req, res) => {
   const token = priceRepo.getTokenBySymbol(symbol);
 
   if (!token) {
-    res.status(404).send("Token not found");
+    const sym = req.params.symbol.toUpperCase();
+    res.status(404).type("html").send(renderErrorPage(
+      404,
+      "Token Not Found",
+      `We couldn't find a token with symbol "${sym}". It may not be tracked yet, or the symbol might be incorrect.`,
+    ));
     return;
   }
 
@@ -1186,6 +1256,25 @@ app.get("/tokens/:symbol", (req, res) => {
   </script>
 </body>
 </html>`);
+});
+
+// --- Catch-all 404 for unmatched routes ---
+app.use((_req, res) => {
+  res.status(404).type("html").send(renderErrorPage(
+    404,
+    "Page Not Found",
+    "The page you're looking for doesn't exist or may have been moved.",
+  ));
+});
+
+// --- Global error handler (500) ---
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("[500]", err);
+  res.status(500).type("html").send(renderErrorPage(
+    500,
+    "Something Went Wrong",
+    "We hit an unexpected error. Our team has been notified. Please try again shortly.",
+  ));
 });
 
 export { app };

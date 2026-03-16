@@ -23,7 +23,7 @@
       const { data } = await res.json();
 
       if (!data || data.length === 0) {
-        container.innerHTML = '<div class="placeholder">No historical data available</div>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128200;</div><div class="empty-state-title">No chart data yet</div><div class="empty-state-desc">We just started tracking this token. Price history will appear after the first data points are collected.</div></div>';
         return;
       }
 
@@ -31,7 +31,7 @@
       renderChart(container, data);
     } catch (err) {
       console.error('[token-app] Failed to load chart data:', err);
-      container.innerHTML = '<div class="placeholder">Failed to load chart data</div>';
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;</div><div class="empty-state-title">Chart unavailable</div><div class="empty-state-desc">We couldn\'t load price data right now. Please try refreshing the page.</div></div>';
     }
   }
 
@@ -252,7 +252,7 @@
       if (!data.categories || data.categories.length === 0) {
         container.innerHTML = `
           <div class="section-header"><h2>Impact Statistics</h2></div>
-          <p class="loading-state">No impact data recorded yet.</p>`;
+          <div class="empty-state empty-state-inline"><div class="empty-state-icon">&#128202;</div><div class="empty-state-title">Not enough data yet</div><div class="empty-state-desc">Impact scores are calculated from news events and price movements. Data will appear once enough events have been recorded for this token.</div></div>`;
         return;
       }
 
@@ -288,7 +288,7 @@
     } catch {
       container.innerHTML = `
         <div class="section-header"><h2>Impact Statistics</h2></div>
-        <p class="loading-state">Failed to load impact data.</p>`;
+        <div class="empty-state empty-state-inline"><div class="empty-state-icon">&#9888;</div><div class="empty-state-title">Unable to load impact data</div><div class="empty-state-desc">Please try refreshing the page.</div></div>`;
     }
   }
 
@@ -353,7 +353,7 @@
         </div>`;
     }).join('');
 
-    container.innerHTML = items || '<p class="loading-state">No recent events.</p>';
+    container.innerHTML = items || '<div class="empty-state empty-state-inline"><div class="empty-state-icon">&#128240;</div><div class="empty-state-title">No recent events</div><div class="empty-state-desc">No news articles have been recorded for this token recently. Check back soon.</div></div>';
   }
 
   // --- FAQ Section ---
@@ -429,7 +429,7 @@
       if (!data.current) {
         container.innerHTML = `
           <div class="section-header"><h2>Social Sentiment</h2></div>
-          <p class="loading-state">No social data available yet.</p>`;
+          <div class="empty-state empty-state-inline"><div class="empty-state-icon">&#128172;</div><div class="empty-state-title">No social data yet</div><div class="empty-state-desc">Social sentiment is gathered from community discussions. This token may not have enough social mentions to generate a sentiment score.</div></div>`;
         return;
       }
 
@@ -487,7 +487,7 @@
       if (container) {
         container.innerHTML = `
           <div class="section-header"><h2>Social Sentiment</h2></div>
-          <p class="loading-state">Failed to load sentiment data.</p>`;
+          <div class="empty-state empty-state-inline"><div class="empty-state-icon">&#9888;</div><div class="empty-state-title">Unable to load sentiment</div><div class="empty-state-desc">Please try refreshing the page.</div></div>`;
       }
     }
   }

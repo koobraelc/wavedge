@@ -12,6 +12,7 @@ import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { createAffiliateRouter } from "./api/affiliate.js";
 import { createApiKeysRouter } from "./api/api-keys.js";
 import { createHomepageRouter } from "./api/homepage.js";
+import { createAdminRouter } from "./api/admin.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
@@ -148,6 +149,7 @@ app.use("/api/webhooks", createWebhookRouter());
 app.use("/api/affiliate", createAffiliateRouter());
 app.use("/api/api-keys", createApiKeysRouter());
 app.use("/api/homepage", createHomepageRouter());
+app.use("/api/admin", createAdminRouter());
 
 // Serve static files from public directory
 const publicDir = path.join(__dirname, "..", "public");
@@ -204,6 +206,8 @@ Disallow: /onboarding
 Disallow: /api/auth/
 Disallow: /api/webhooks/
 Disallow: /api/billing/
+Disallow: /admin
+Disallow: /api/admin/
 Disallow: /api/alerts/
 
 Sitemap: ${baseUrl}/sitemap.xml`
@@ -248,6 +252,189 @@ app.get("/onboarding", (_req, res) => {
 // Billing page
 app.get("/billing", (_req, res) => {
   res.sendFile(path.join(publicDir, "billing.html"));
+});
+
+// Admin Dashboard (internal, requires auth)
+app.get("/admin", (_req, res) => {
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Wavedge</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .admin-page { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .admin-header h1 { font-size: 1.5rem; }
+    .admin-badge { font-size: 0.75rem; background: var(--accent); color: #fff; padding: 0.2rem 0.6rem; border-radius: 10px; font-weight: 600; }
+    .admin-updated { font-size: 0.8rem; color: var(--text-muted); }
+
+    .admin-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .hero-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+    .hero-card .hero-value { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+    .hero-card .hero-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    .hero-card .hero-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .hero-card.hero-green .hero-value { color: var(--green); }
+    .hero-card.hero-yellow .hero-value { color: var(--yellow); }
+    .hero-card.hero-red .hero-value { color: var(--red); }
+
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .admin-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; opacity: 0.6; transition: opacity 0.3s; }
+    .admin-panel h3 { font-size: 0.95rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .panel-icon { font-size: 1.1rem; }
+
+    .sparkline-container { height: 44px; margin-bottom: 0.75rem; }
+
+    .breakdown-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.82rem; }
+    .breakdown-label { min-width: 90px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .breakdown-bar-track { flex: 1; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+    .breakdown-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .breakdown-value { min-width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    .health-table { width: 100%; font-size: 0.82rem; border-collapse: collapse; }
+    .health-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+    .health-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.5rem; }
+    .health-healthy { background: var(--green); }
+    .health-warning { background: var(--yellow); }
+    .health-error { background: var(--red); }
+
+    .subs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .sub-stat { text-align: center; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-sm); }
+    .sub-stat .sub-value { font-size: 1.5rem; font-weight: 700; }
+    .sub-stat .sub-label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem; }
+
+    .error-row { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .error-row:last-child { border-bottom: none; }
+    .error-meta { font-size: 0.8rem; margin-bottom: 0.25rem; }
+    .error-task { font-weight: 600; color: var(--yellow); }
+    .error-msg { font-size: 0.8rem; color: var(--text-secondary); word-break: break-word; white-space: pre-wrap; max-height: 3em; overflow: hidden; }
+
+    .admin-denied { text-align: center; padding: 4rem 1rem; }
+    .admin-denied h2 { margin-bottom: 0.5rem; }
+    .admin-denied p { color: var(--text-secondary); margin-bottom: 1.5rem; }
+
+    .admin-loading { text-align: center; padding: 2rem; color: var(--text-muted); }
+
+    .text-muted { color: var(--text-muted); }
+    .btn-primary { display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); text-decoration: none; font-weight: 500; }
+
+    @media (max-width: 600px) {
+      .admin-hero { grid-template-columns: repeat(2, 1fr); }
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content admin-page">
+    <div class="admin-header">
+      <div>
+        <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+        <h1>Admin Dashboard <span class="admin-badge">Internal</span></h1>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div class="admin-loading">Loading admin data...</div>
+
+      <div class="admin-hero">
+        <div class="hero-card">
+          <div class="hero-value" id="stat-total-users">—</div>
+          <div class="hero-label">Total Users</div>
+          <div class="hero-sub"><span id="stat-signups-today"></span> · <span id="stat-signups-week"></span></div>
+        </div>
+        <div class="hero-card hero-green">
+          <div class="hero-value" id="stat-pro-users">—</div>
+          <div class="hero-label">Pro Users</div>
+          <div class="hero-sub"><span id="stat-free-users"></span> · <span id="stat-active-subs"></span></div>
+        </div>
+        <div class="hero-card hero-green">
+          <div class="hero-value" id="stat-mrr">—</div>
+          <div class="hero-label">MRR</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-value" id="stat-articles-today">—</div>
+          <div class="hero-label">Articles Today</div>
+          <div class="hero-sub" id="stat-articles-week"></div>
+        </div>
+        <div class="hero-card hero-yellow">
+          <div class="hero-value" id="stat-alerts-today">—</div>
+          <div class="hero-label">Alerts Today</div>
+          <div class="hero-sub"><span id="stat-alerts-week"></span> · <span id="stat-missed-today"></span></div>
+        </div>
+        <div class="hero-card hero-red">
+          <div class="hero-value" id="stat-errors-today">—</div>
+          <div class="hero-label">Errors Today</div>
+          <div class="hero-sub" id="stat-errors-week"></div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-panel">
+          <h3>User Signups (14 days)</h3>
+          <div class="sparkline-container" id="spark-signups"></div>
+        </div>
+        <div class="admin-panel">
+          <h3>News Ingestion (14 days)</h3>
+          <div class="sparkline-container" id="spark-articles"></div>
+        </div>
+        <div class="admin-panel">
+          <h3>Alerts Triggered (14 days)</h3>
+          <div class="sparkline-container" id="spark-alerts"></div>
+        </div>
+
+        <div class="admin-panel">
+          <h3>News Categories (7 days)</h3>
+          <div id="category-breakdown"></div>
+        </div>
+        <div class="admin-panel">
+          <h3>News Sources (7 days)</h3>
+          <div id="source-breakdown"></div>
+        </div>
+        <div class="admin-panel">
+          <h3>Alert Channels (7 days)</h3>
+          <div id="channel-breakdown"></div>
+        </div>
+
+        <div class="admin-panel">
+          <h3>System Health</h3>
+          <table class="health-table">
+            <tbody id="health-table"></tbody>
+          </table>
+        </div>
+
+        <div class="admin-panel">
+          <h3>Subscribers</h3>
+          <div class="subs-grid">
+            <div class="sub-stat">
+              <div class="sub-value" id="stat-digest-subs">—</div>
+              <div class="sub-label">Digest Email</div>
+            </div>
+            <div class="sub-stat">
+              <div class="sub-value" id="stat-push-subs">—</div>
+              <div class="sub-label">Web Push</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-panel" style="opacity:0.6">
+        <h3>Recent Errors</h3>
+        <div id="errors-list" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </main>
+
+  <bottom-nav></bottom-nav>
+
+  <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
+  <script src="/js/admin-app.js"></script>
+</body>
+</html>`);
 });
 
 // Market Overview page

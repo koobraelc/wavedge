@@ -40,7 +40,7 @@ class SignalHeatmap extends HTMLElement {
     this._tokens = (prices || [])
       .filter(p => p.market_cap > 0)
       .sort((a, b) => (b.market_cap || 0) - (a.market_cap || 0))
-      .slice(0, 30);
+      .slice(0, 50);
     this._newsSignals = newsSignals || new Map();
     this._socialSentiment = socialSentiment || new Map();
     this._whaleActivity = whaleActivity || new Map();

@@ -159,6 +159,7 @@ app.get("/sitemap.xml", (_req, res) => {
   const staticPages = [
     { loc: "/", priority: "1.0", changefreq: "daily" },
     { loc: "/dashboard", priority: "0.8", changefreq: "hourly" },
+    { loc: "/market", priority: "0.8", changefreq: "hourly" },
     { loc: "/login", priority: "0.3", changefreq: "monthly" },
     { loc: "/billing", priority: "0.3", changefreq: "monthly" },
     { loc: "/digest/latest", priority: "0.7", changefreq: "daily" },
@@ -241,6 +242,80 @@ app.get("/onboarding", (_req, res) => {
 // Billing page
 app.get("/billing", (_req, res) => {
   res.sendFile(path.join(publicDir, "billing.html"));
+});
+
+// Market Overview page
+app.get("/market", (_req, res) => {
+  const title = "Market Overview — Crypto Heatmap & Sector Performance | Wavedge";
+  const description = "Live crypto market heatmap, sector performance breakdown, and top movers. See which tokens are surging and which sectors are leading.";
+
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${baseUrl}/market">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(description)}">
+  <link rel="canonical" href="${baseUrl}/market">
+  <link rel="stylesheet" href="/css/styles.css">
+  ${ga4Snippet()}
+</head>
+<body>
+  <nav-bar></nav-bar>
+
+  <main class="main-content market-page">
+    <div class="market-header">
+      <h1>Market Overview</h1>
+      <span class="market-updated" id="last-updated"></span>
+    </div>
+
+    <section class="market-section">
+      <div class="section-header"><h2>Heatmap</h2></div>
+      <div id="heatmap">
+        <div class="loading-state"><span class="spinner"></span>Loading market data...</div>
+      </div>
+    </section>
+
+    <section class="market-section">
+      <div class="section-header"><h2>Sector Performance</h2></div>
+      <div id="sectors">
+        <div class="loading-state"><span class="spinner"></span>Loading sectors...</div>
+      </div>
+    </section>
+
+    <div class="market-movers-grid">
+      <section class="market-section">
+        <div class="section-header"><h2>Top Gainers</h2></div>
+        <div id="top-movers">
+          <div class="loading-state"><span class="spinner"></span>Loading...</div>
+        </div>
+      </section>
+      <section class="market-section">
+        <div class="section-header"><h2>Top Losers</h2></div>
+        <div id="top-losers">
+          <div class="loading-state"><span class="spinner"></span>Loading...</div>
+        </div>
+      </section>
+    </div>
+
+    <ad-slot variant="banner"></ad-slot>
+  </main>
+
+  <bottom-nav></bottom-nav>
+
+  <script src="/js/components/nav-bar.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
+  <script src="/js/components/ad-slot.js"></script>
+  <script src="/js/market-app.js"></script>
+</body>
+</html>`);
 });
 
 // Alert settings page

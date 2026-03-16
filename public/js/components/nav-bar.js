@@ -11,6 +11,7 @@ class NavBar extends HTMLElement {
         </div>
         <nav class="header-nav">
           <a href="/dashboard">Dashboard</a>
+          <a href="/market">Market</a>
           <a href="/settings/alerts">Alerts</a>
           ${isLoggedIn
             ? `<a href="/billing">Billing</a><button class="link-btn nav-logout">Log out</button>`

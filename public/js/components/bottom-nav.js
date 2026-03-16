@@ -9,6 +9,10 @@ class BottomNav extends HTMLElement {
             <span class="bottom-nav-icon">&#9632;</span>
             <span>Dashboard</span>
           </a>
+          <a href="/market" class="bottom-nav-item${path === '/market' ? ' active' : ''}" aria-label="Market">
+            <span class="bottom-nav-icon">&#9638;</span>
+            <span>Market</span>
+          </a>
           <a href="/settings/alerts" class="bottom-nav-item${path === '/settings/alerts' ? ' active' : ''}" aria-label="Alerts">
             <span class="bottom-nav-icon">&#9888;</span>
             <span>Alerts</span>

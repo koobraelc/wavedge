@@ -120,7 +120,7 @@ class SignalDetailPanel extends HTMLElement {
         ${this._renderImpactSection()}
       </div>
       <div class="sdp-actions">
-        <a href="/alerts?token=${encodeURIComponent(this._symbol)}" class="btn btn-secondary btn-sm">${t('Set Alert')}</a>
+        <a href="/settings/alerts?token=${encodeURIComponent(this._symbol)}" class="btn btn-secondary btn-sm">${t('Set Alert')}</a>
         <a href="/tokens/${encodeURIComponent(this._symbol)}" class="btn btn-primary btn-sm">${t('Full Analysis')}</a>
       </div>
     `;

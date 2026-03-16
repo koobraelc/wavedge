@@ -170,7 +170,7 @@ class ImpactFeed extends HTMLElement {
 
     // Set Alert link for first token
     const alertLink = firstToken
-      ? `<a href="/alerts?token=${encodeURIComponent(firstToken.toUpperCase())}" class="feed-alert-link">Set Alert</a>`
+      ? `<a href="/settings/alerts?token=${encodeURIComponent(firstToken.toUpperCase())}" class="feed-alert-link">Set Alert</a>`
       : '';
 
     return `

@@ -25,6 +25,21 @@ class AlertSettings extends HTMLElement {
     this._pushSubscribed = pushStatusJson.data?.subscribed || false;
 
     this._render();
+    this._applyTokenParam();
+  }
+
+  _applyTokenParam() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (!token) return;
+    const symbol = token.toUpperCase();
+    // Add to watchlist if not already selected
+    if (!this._getSelectedSymbols().includes(symbol)) {
+      this._addToken(symbol);
+    }
+    // Scroll the watchlist section into view
+    const watchlist = this.querySelector('#watchlist-selected');
+    if (watchlist) watchlist.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   _render() {

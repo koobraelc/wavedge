@@ -177,6 +177,57 @@ export function initializeSchema(database: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_digest_history_generated ON digest_history(generated_at);
+
+    -- Auth & billing tables
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      tier TEXT NOT NULL DEFAULT 'free',
+      stripe_customer_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_stripe ON users(stripe_customer_id);
+
+    CREATE TABLE IF NOT EXISTS magic_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_magic_links_token ON magic_links(token);
+    CREATE INDEX IF NOT EXISTS idx_magic_links_email ON magic_links(email);
+
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      stripe_subscription_id TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'active',
+      plan TEXT NOT NULL DEFAULT 'pro',
+      current_period_start TEXT,
+      current_period_end TEXT,
+      cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe ON subscriptions(stripe_subscription_id);
+
+    CREATE TABLE IF NOT EXISTS api_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      endpoint TEXT NOT NULL,
+      request_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_usage_user_date ON api_usage(user_id, request_date);
   `);
 }
 

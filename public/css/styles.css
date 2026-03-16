@@ -5482,6 +5482,62 @@ info-tip {
 .sdp-pill-bull { border-color: var(--green); color: var(--green); }
 .sdp-pill-bear { border-color: var(--red); color: var(--red); }
 .sdp-pill-inactive { opacity: 0.5; }
+.sdp-pill .sdp-threshold {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+/* Plain-language summary */
+.sdp-plain-summary {
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  background: var(--bg-tertiary, rgba(255,255,255,0.03));
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--yellow, #e3a008);
+}
+
+/* Threshold bar */
+.sdp-threshold-bar {
+  display: flex;
+  gap: var(--spacing-xs, 4px);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.75rem;
+}
+.sdp-threshold-item {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-tertiary, rgba(255,255,255,0.03));
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+.sdp-threshold-item.sdp-threshold-active {
+  border-color: var(--yellow, #e3a008);
+  color: var(--yellow, #e3a008);
+  background: rgba(227, 160, 8, 0.08);
+}
+
+/* Impact explanation in detail panel */
+.sdp-impact-explanation {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.4;
+}
+
+/* Impact explanation in feed */
+.impact-explanation {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
 
 /* Loading */
 .sdp-loading {

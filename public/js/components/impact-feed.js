@@ -230,6 +230,13 @@ class ImpactFeed extends HTMLElement {
     const samples = first.historical.sampleSize;
     const symbol = first.symbol ? first.symbol.toUpperCase() : '';
 
+    const explanation = t('impact.impactExplanation', {
+      samples,
+      category: cat || t('impact.similarNews'),
+      symbol: symbol || '?',
+      change: `${sign}${avg24h.toFixed(2)}%`
+    });
+
     return `
       <div class="feed-impact">
         <span class="impact-badge ${cls}">
@@ -237,6 +244,7 @@ class ImpactFeed extends HTMLElement {
           <span class="impact-sample">${t('impact.sampleCount', { samples })}</span>
           <info-tip text="${t('impact.impactTip')}"></info-tip>
         </span>
+        <span class="impact-explanation">${explanation}</span>
       </div>
     `;
   }

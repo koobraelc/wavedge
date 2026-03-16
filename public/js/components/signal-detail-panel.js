@@ -136,29 +136,51 @@ class SignalDetailPanel extends HTMLElement {
   }
 
   _renderSignalSummary() {
+    const t = this._t();
     const news = this._data.newsSignal;
     const social = this._data.socialSentiment;
     const whale = this._data.whaleActivity;
     const priceData = this._data.price || {};
     const pct = priceData.price_change_percentage_24h ?? 0;
 
+    // Plain-language summary sentence
+    const summaryParts = [];
+    if (news && news.count > 0) {
+      const topCategories = this._getTopCategories(news.articles);
+      const catText = topCategories.length > 0 ? `, ${t('signal.mostlyAbout')} ${topCategories.join(', ')}` : '';
+      summaryParts.push(`${t('signal.hasArticles', { symbol: this._esc(this._symbol), count: news.count })}${catText}`);
+    }
+    if (social && social.mentionCount > 0) {
+      const label = social.sentimentLabel || 'neutral';
+      summaryParts.push(`${t('signal.socialSentimentIs', { label: t('signal.sentiment.' + label) })}`);
+    }
+    if (whale && whale.transactionCount > 0) {
+      summaryParts.push(`${t('signal.whaleDetected', { count: whale.transactionCount })}`);
+    }
+    const summaryText = summaryParts.length > 0
+      ? summaryParts.join('. ') + '.'
+      : t('signal.noActiveSignals', { symbol: this._esc(this._symbol) });
+
+    const summaryHtml = `<div class="sdp-plain-summary">${summaryText}</div>`;
+
     let pills = '';
 
-    // News pill
+    // News pill with threshold
     if (news && news.count > 0) {
-      const cls = news.count >= 3 ? 'sdp-pill-hot' : 'sdp-pill-active';
-      pills += `<span class="sdp-pill ${cls}">📰 ${news.count} article${news.count > 1 ? 's' : ''}</span>`;
+      const level = news.count >= 5 ? 'sdp-pill-hot' : news.count >= 3 ? 'sdp-pill-hot' : 'sdp-pill-active';
+      const threshold = news.count >= 5 ? t('signal.veryHigh') : news.count >= 3 ? t('signal.high') : t('signal.normal');
+      pills += `<span class="sdp-pill ${level}">📰 ${news.count} article${news.count > 1 ? 's' : ''} <span class="sdp-threshold">${threshold}</span></span>`;
     } else {
-      pills += `<span class="sdp-pill sdp-pill-inactive">📰 No news</span>`;
+      pills += `<span class="sdp-pill sdp-pill-inactive">📰 ${t('signal.noNews')}</span>`;
     }
 
     // Social pill
     if (social && social.mentionCount > 0) {
       const label = social.sentimentLabel || 'neutral';
       const cls = label === 'bullish' ? 'sdp-pill-bull' : label === 'bearish' ? 'sdp-pill-bear' : 'sdp-pill-active';
-      pills += `<span class="sdp-pill ${cls}">💬 ${this._capitalize(label)} · ${social.mentionCount} mentions</span>`;
+      pills += `<span class="sdp-pill ${cls}">💬 ${this._capitalize(label)} · ${social.mentionCount} ${t('signal.mentions')}</span>`;
     } else {
-      pills += `<span class="sdp-pill sdp-pill-inactive">💬 No social data</span>`;
+      pills += `<span class="sdp-pill sdp-pill-inactive">💬 ${t('signal.noSocialData')}</span>`;
     }
 
     // Whale pill
@@ -170,7 +192,21 @@ class SignalDetailPanel extends HTMLElement {
     const priceClass = pct >= 0 ? 'sdp-pill-bull' : 'sdp-pill-bear';
     pills += `<span class="sdp-pill ${priceClass}">📈 ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% (24h)</span>`;
 
-    return `<div class="sdp-signal-bar">${pills}</div>`;
+    return `${summaryHtml}<div class="sdp-signal-bar">${pills}</div>`;
+  }
+
+  _getTopCategories(articles) {
+    if (!articles || articles.length === 0) return [];
+    const cats = {};
+    for (const a of articles) {
+      if (a._impact && a._impact.category) {
+        cats[a._impact.category] = (cats[a._impact.category] || 0) + 1;
+      }
+    }
+    return Object.entries(cats)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([cat]) => cat);
   }
 
   _renderNewsSection() {
@@ -178,10 +214,17 @@ class SignalDetailPanel extends HTMLElement {
     if (!news || !news.articles || news.articles.length === 0) {
       return `
         <div class="sdp-section">
-          <div class="sdp-section-header"><span>📰 News</span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">No recent news articles for ${this._esc(this._symbol)}.</p></div>
+          <div class="sdp-section-header"><span>📰 ${t('signal.news')} <info-tip text="${t('signal.newsTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
+          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noRecentNews', { symbol: this._esc(this._symbol) })}</p></div>
         </div>`;
     }
+
+    // Threshold explanation
+    const thresholdHtml = `<div class="sdp-threshold-bar">
+      <span class="sdp-threshold-item${news.count < 3 ? ' sdp-threshold-active' : ''}">${t('signal.thresholdNormal')}</span>
+      <span class="sdp-threshold-item${news.count >= 3 && news.count < 5 ? ' sdp-threshold-active' : ''}">${t('signal.thresholdHigh')}</span>
+      <span class="sdp-threshold-item${news.count >= 5 ? ' sdp-threshold-active' : ''}">${t('signal.thresholdVeryHigh')}</span>
+    </div>`;
 
     const articles = news.articles.slice(0, 5);
     const rows = articles.map(a => {
@@ -216,8 +259,8 @@ class SignalDetailPanel extends HTMLElement {
 
     return `
       <div class="sdp-section">
-        <div class="sdp-section-header"><span>📰 News (${news.count})</span><span class="sdp-chevron">▾</span></div>
-        <div class="sdp-section-body">${rows}${moreLink}</div>
+        <div class="sdp-section-header"><span>📰 ${t('signal.newsCount', { count: news.count })} <info-tip text="${t('signal.newsTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
+        <div class="sdp-section-body">${thresholdHtml}${rows}${moreLink}</div>
       </div>`;
   }
 
@@ -228,8 +271,8 @@ class SignalDetailPanel extends HTMLElement {
     if (!social && !detail) {
       return `
         <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>💬 Social Sentiment</span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">No social data available.</p></div>
+          <div class="sdp-section-header"><span>💬 ${t('signal.socialSentiment')} <info-tip text="${t('signal.socialTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
+          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noSocialAvailable')}</p></div>
         </div>`;
     }
 
@@ -251,7 +294,7 @@ class SignalDetailPanel extends HTMLElement {
 
     return `
       <div class="sdp-section${!social ? ' sdp-collapsed' : ''}">
-        <div class="sdp-section-header"><span>💬 Social Sentiment</span><span class="sdp-chevron">▾</span></div>
+        <div class="sdp-section-header"><span>💬 ${t('signal.socialSentiment')} <info-tip text="${t('signal.socialTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
         <div class="sdp-section-body">
           <div class="sdp-sentiment-row">
             <span class="sdp-sentiment-label ${cls}">${this._capitalize(label)}</span>
@@ -272,14 +315,14 @@ class SignalDetailPanel extends HTMLElement {
     if (!whale || whale.transactionCount === 0) {
       return `
         <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>🐋 Whale Activity</span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">No whale activity detected.</p></div>
+          <div class="sdp-section-header"><span>🐋 ${t('signal.whaleActivity')} <info-tip text="${t('signal.whaleTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
+          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noWhaleDetected')}</p></div>
         </div>`;
     }
 
     return `
       <div class="sdp-section">
-        <div class="sdp-section-header"><span>🐋 Whale Activity</span><span class="sdp-chevron">▾</span></div>
+        <div class="sdp-section-header"><span>🐋 ${t('signal.whaleActivity')} <info-tip text="${t('signal.whaleTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
         <div class="sdp-section-body">
           <div class="sdp-whale-stats">
             <div class="sdp-stat">
@@ -300,8 +343,8 @@ class SignalDetailPanel extends HTMLElement {
     if (!impact || !impact.categories || impact.categories.length === 0) {
       return `
         <div class="sdp-section sdp-collapsed">
-          <div class="sdp-section-header"><span>📊 Historical Impact</span><span class="sdp-chevron">▾</span></div>
-          <div class="sdp-section-body"><p class="sdp-empty">No historical impact data available.</p></div>
+          <div class="sdp-section-header"><span>📊 ${t('signal.historicalImpact')} <info-tip text="${t('signal.impactTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
+          <div class="sdp-section-body"><p class="sdp-empty">${t('signal.noImpactData')}</p></div>
         </div>`;
     }
 
@@ -318,10 +361,11 @@ class SignalDetailPanel extends HTMLElement {
 
     return `
       <div class="sdp-section">
-        <div class="sdp-section-header"><span>📊 Historical Impact</span><span class="sdp-chevron">▾</span></div>
+        <div class="sdp-section-header"><span>📊 ${t('signal.historicalImpact')} <info-tip text="${t('signal.impactTip')}"></info-tip></span><span class="sdp-chevron">▾</span></div>
         <div class="sdp-section-body">
+          <div class="sdp-impact-explanation">${t('signal.impactExplanation', { symbol: this._esc(this._symbol) })}</div>
           <table class="sdp-impact-table">
-            <thead><tr><th>Category</th><th>Avg 24h</th><th>Samples</th></tr></thead>
+            <thead><tr><th>${t('signal.category')}</th><th>${t('signal.avg24h')}</th><th>${t('signal.samples')}</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>

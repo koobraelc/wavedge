@@ -12,6 +12,8 @@ import { createBillingRouter, createWebhookRouter } from "./api/billing.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
 import { getDatabase } from "./db/database.js";
+import { schedulerStatus } from "./scrapers/scheduler.js";
+import { SchedulerRepository } from "./db/scheduler-repository.js";
 
 const app = express();
 const startedAt = Date.now();
@@ -32,21 +34,86 @@ const apiLimiter = rateLimit({
 
 app.get("/health", (_req, res) => {
   let dbStatus = "ok";
+  let dbCounts: Record<string, number> = {};
+  let lastPriceFetch: string | null = null;
+  let lastNewsFetch: string | null = null;
+  let lastAlertCheck: string | null = null;
+  let lastDigest: string | null = null;
+
   try {
     const db = getDatabase();
-    const row = db.prepare("SELECT COUNT(*) AS n FROM tokens").get() as { n: number };
-    dbStatus = `ok (${row.n} tokens)`;
+    const tokenCount = (db.prepare("SELECT COUNT(*) AS n FROM tokens").get() as { n: number }).n;
+    const priceCount = (db.prepare("SELECT COUNT(*) AS n FROM prices").get() as { n: number }).n;
+    const articleCount = (db.prepare("SELECT COUNT(*) AS n FROM articles").get() as { n: number }).n;
+    const alertCount = (db.prepare("SELECT COUNT(*) AS n FROM triggered_alerts").get() as { n: number }).n;
+    dbCounts = { tokens: tokenCount, prices: priceCount, articles: articleCount, alerts: alertCount };
+
+    const latestPrice = db.prepare("SELECT MAX(fetched_at) AS ts FROM prices").get() as { ts: string | null };
+    lastPriceFetch = latestPrice.ts;
+
+    const latestNews = db.prepare("SELECT MAX(fetched_at) AS ts FROM articles").get() as { ts: string | null };
+    lastNewsFetch = latestNews.ts;
+
+    lastAlertCheck = schedulerStatus.alert.lastRun;
+
+    const latestDigest = db.prepare("SELECT MAX(generated_at) AS ts FROM digest_history").get() as { ts: string | null };
+    lastDigest = latestDigest.ts;
   } catch {
     dbStatus = "error";
   }
 
+  // Determine overall status: degraded if DB error or data exceeds 2x expected interval
+  let status: "ok" | "degraded" = dbStatus === "error" ? "degraded" : "ok";
+  const now = Date.now();
+
+  if (status === "ok") {
+    const checks = [
+      { ts: lastPriceFetch, intervalMs: 5 * 60 * 1000 },   // prices: 5min → degraded after 10min
+      { ts: lastNewsFetch, intervalMs: 15 * 60 * 1000 },    // news: 15min → degraded after 30min
+    ];
+    for (const check of checks) {
+      if (check.ts) {
+        const age = now - new Date(check.ts + "Z").getTime();
+        if (age > check.intervalMs * 2) {
+          status = "degraded";
+          break;
+        }
+      }
+    }
+  }
+
   res.json({
-    status: "ok",
+    status,
     uptime: Math.floor((Date.now() - startedAt) / 1000),
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version ?? "0.1.0",
-    database: dbStatus,
+    db: { status: dbStatus, counts: dbCounts },
+    lastPriceFetch,
+    lastNewsFetch,
+    lastAlertCheck,
+    lastDigest,
+    schedulers: schedulerStatus,
   });
+});
+
+// Stale data check for dashboard banner (price data >10min old)
+app.get("/api/health/freshness", (_req, res) => {
+  try {
+    const db = getDatabase();
+    const latestPrice = db.prepare("SELECT MAX(fetched_at) AS ts FROM prices").get() as { ts: string | null };
+    const ts = latestPrice.ts;
+    let stale = false;
+    let ageMinutes = 0;
+    if (ts) {
+      ageMinutes = Math.floor((Date.now() - new Date(ts + "Z").getTime()) / 60000);
+      stale = ageMinutes > 10;
+    } else {
+      stale = true;
+    }
+    res.json({ stale, lastPriceFetch: ts, ageMinutes });
+  } catch {
+    res.json({ stale: true, lastPriceFetch: null, ageMinutes: null });
+  }
 });
 
 // Public config endpoint (GA4 ID, base URL — no secrets)
@@ -204,10 +271,13 @@ app.get("/settings/alerts", (_req, res) => {
     </div>
   </main>
 
+  <bottom-nav></bottom-nav>
+
   <!-- Web Components -->
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/alert-settings.js"></script>
   <script src="/js/components/alert-history.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
 
   <!-- Settings app -->
   <script src="/js/settings-app.js"></script>
@@ -498,9 +568,12 @@ app.get("/tokens/:symbol", (req, res) => {
     </div>
   </main>
 
+  <bottom-nav></bottom-nav>
+
   <!-- Web Components -->
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/news-feed.js"></script>
+  <script src="/js/components/bottom-nav.js"></script>
 
   <!-- Lazy-load TradingView charts library -->
   <script>

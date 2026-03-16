@@ -3044,6 +3044,45 @@ a:hover { text-decoration: underline; }
 }
 
 /* Missed Alerts Banner */
+/* Stale data warning banner */
+.stale-data-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(210, 153, 34, 0.1);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  color: var(--yellow, #d29922);
+  font-size: 0.85rem;
+}
+
+.stale-data-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stale-data-content svg {
+  flex-shrink: 0;
+}
+
+.stale-data-dismiss {
+  background: none;
+  border: none;
+  color: var(--yellow, #d29922);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  opacity: 0.7;
+}
+
+.stale-data-dismiss:hover {
+  opacity: 1;
+}
+
 .missed-alerts-banner {
   background: linear-gradient(135deg, rgba(248, 81, 73, 0.08), rgba(210, 153, 34, 0.08));
   border: 1px solid rgba(248, 81, 73, 0.25);
@@ -3139,5 +3178,345 @@ a:hover { text-decoration: underline; }
     width: 100%;
     text-align: center;
     margin-top: 0.25rem;
+  }
+}
+
+/* === Mobile Bottom Navigation === */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  min-height: 56px;
+  padding: 8px 4px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.65rem;
+  font-weight: 500;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item.active {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.bottom-nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* === Swipeable Filter Tabs === */
+.feed-filter-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin-bottom: 16px;
+  padding: 2px 0;
+}
+
+.feed-filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-filter-tab {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.feed-filter-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.feed-filter-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* === Mobile-Specific Enhancements === */
+@media (max-width: 768px) {
+  /* Show bottom nav */
+  .bottom-nav {
+    display: block;
+  }
+
+  /* Hide top nav links on mobile (moved to bottom nav) */
+  .header-nav {
+    display: none;
+  }
+
+  /* Add bottom padding so content isn't hidden behind bottom nav */
+  body {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Full-width cards */
+  .main-content {
+    padding: 12px;
+  }
+
+  /* Touch-friendly feed cards */
+  .feed-card {
+    padding: 14px;
+    min-height: 44px;
+  }
+
+  .feed-card a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Touch-friendly token tags */
+  .token-tag {
+    min-height: 32px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+  }
+
+  /* Touch-friendly hot tokens */
+  .hot-token {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  /* Touch-friendly stat cards */
+  .stat-card {
+    min-height: 44px;
+  }
+
+  /* Touch-friendly FAQ buttons */
+  .faq-question {
+    min-height: 48px;
+    padding: 14px 16px;
+  }
+
+  /* Touch-friendly related tokens */
+  .related-token-chip {
+    min-height: 44px;
+    padding: 12px;
+  }
+
+  /* Feed filter tabs on mobile: slightly bigger touch targets */
+  .feed-filter-tab {
+    min-height: 40px;
+    padding: 8px 18px;
+    font-size: 0.82rem;
+  }
+
+  /* Right-now banner horizontal scroll on mobile */
+  .right-now-tokens {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .right-now-tokens::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Chart container mobile optimization */
+  .chart-container {
+    min-height: 240px;
+  }
+
+  .token-chart-section .chart-container {
+    min-height: 280px;
+  }
+
+  /* Token page hero layout adjustments */
+  .token-hero {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hero-meta {
+    font-size: 0.75rem;
+  }
+
+  /* Time range selector: scrollable on mobile */
+  .time-range-selector {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .time-range-selector::-webkit-scrollbar {
+    display: none;
+  }
+
+  .range-btn {
+    min-height: 40px;
+    min-width: 44px;
+    padding: 8px 14px;
+  }
+
+  /* Impact bar rows touch-friendly */
+  .impact-bar-row {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+
+  /* Timeline items */
+  .timeline-item {
+    min-height: 44px;
+  }
+
+  /* Missed alert items */
+  .missed-alert-item {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Single-column stats */
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Compact header */
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  .app-header .logo {
+    font-size: 1.1rem;
+  }
+
+  .search-box input {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+
+  /* Full-width feed cards */
+  .feed-card {
+    border-radius: 0;
+    margin-left: -12px;
+    margin-right: -12px;
+    padding: 14px 12px;
+  }
+
+  /* Feed headline: slightly bigger for readability */
+  .feed-headline a {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  /* Token page adjustments */
+  .token-hero-title {
+    font-size: 1.1rem;
+  }
+
+  .hero-price-value {
+    font-size: 1.2rem;
+  }
+
+  .hero-change {
+    font-size: 0.9rem;
+  }
+
+  /* Chart takes full width, edge to edge */
+  .token-chart-section {
+    margin-left: -12px;
+    margin-right: -12px;
+  }
+
+  .token-chart-section .chart-header {
+    padding: 0 12px;
+  }
+
+  /* Onboarding full-screen on mobile */
+  .onboarding-page {
+    padding: 16px 0 0;
+    min-height: 100vh;
+  }
+
+  .onboarding-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding: 24px 16px;
+    max-width: 100%;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .onboarding-step.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .onboarding-actions {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
+  .token-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .token-chip {
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .btn-next, .btn-skip {
+    min-height: 48px;
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  /* Toast notifications full width */
+  .toast-notification {
+    left: 12px;
+    right: 12px;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 }

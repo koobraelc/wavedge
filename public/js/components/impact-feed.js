@@ -6,9 +6,11 @@ class ImpactFeed extends HTMLElement {
   }
 
   connectedCallback() {
+    this._activeFilter = 'all';
     this.innerHTML = `
       <div class="impact-feed">
         <div id="right-now-banner" class="right-now-banner" style="display:none"></div>
+        <div class="feed-filter-tabs" id="feed-filters"></div>
         <div id="feed-list" class="feed-list">
           ${this._skeletonCards(6)}
         </div>
@@ -23,8 +25,41 @@ class ImpactFeed extends HTMLElement {
     this._articles = articles || [];
     this._prices = pricesMap || {};
 
+    this._renderFilterTabs();
     this._renderRightNow();
     this._renderFeed();
+  }
+
+  _renderFilterTabs() {
+    const container = this.querySelector('#feed-filters');
+    if (!container) return;
+
+    // Collect unique tokens from articles
+    const tokenSet = new Set();
+    for (const a of this._articles) {
+      const tags = this._parseTags(a.token_tags);
+      for (const t of tags) tokenSet.add(t.toUpperCase());
+    }
+
+    const tokens = Array.from(tokenSet).slice(0, 10);
+    if (tokens.length < 2) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = '';
+    container.innerHTML = `
+      <button class="feed-filter-tab${this._activeFilter === 'all' ? ' active' : ''}" data-filter="all">All</button>
+      ${tokens.map(t => `<button class="feed-filter-tab${this._activeFilter === t ? ' active' : ''}" data-filter="${this._esc(t)}">${this._esc(t)}</button>`).join('')}
+    `;
+
+    container.querySelectorAll('.feed-filter-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this._activeFilter = btn.dataset.filter;
+        this._renderFilterTabs();
+        this._renderFeed();
+      });
+    });
   }
 
   _renderRightNow() {
@@ -93,8 +128,23 @@ class ImpactFeed extends HTMLElement {
       return;
     }
 
+    // Filter by active token filter
+    let filtered = this._articles;
+    if (this._activeFilter && this._activeFilter !== 'all') {
+      const f = this._activeFilter.toLowerCase();
+      filtered = this._articles.filter(a => {
+        const tags = this._parseTags(a.token_tags).map(t => t.toLowerCase());
+        return tags.includes(f);
+      });
+    }
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="loading-state">No articles for this token</div>';
+      return;
+    }
+
     // Sort by impact magnitude (absolute avg 24h change), highest first
-    const sorted = [...this._articles].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       const impA = this._getImpactMagnitude(a);
       const impB = this._getImpactMagnitude(b);
       // Primary: impact magnitude descending

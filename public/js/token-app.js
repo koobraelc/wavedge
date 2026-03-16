@@ -42,9 +42,10 @@
     }
     container.innerHTML = '';
 
+    const chartHeight = window.innerWidth <= 480 ? 280 : 400;
     chart = LightweightCharts.createChart(container, {
       width: container.clientWidth,
-      height: 400,
+      height: chartHeight,
       layout: {
         background: { color: '#161b22' },
         textColor: '#8b949e',

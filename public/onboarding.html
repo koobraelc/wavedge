@@ -252,6 +252,51 @@
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
       }
     }
+
+    @media (max-width: 480px) {
+      .onboarding-page {
+        padding: 16px 0 0;
+        min-height: 100vh;
+      }
+      .onboarding-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        padding: 24px 16px;
+        max-width: 100%;
+        min-height: calc(100vh - 56px);
+        display: flex;
+        flex-direction: column;
+      }
+      .onboarding-step.active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      .onboarding-actions {
+        margin-top: auto;
+        padding-top: 24px;
+      }
+      .token-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      }
+      .token-chip {
+        min-height: 44px;
+        padding: 10px;
+      }
+      .btn-next, .btn-skip {
+        min-height: 48px;
+        font-size: 1rem;
+        flex: 1;
+      }
+      .step-title {
+        font-size: 1.5rem;
+      }
+      .telegram-input-row input {
+        min-height: 48px;
+        font-size: 1rem;
+      }
+    }
   </style>
 </head>
 <body>

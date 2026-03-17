@@ -16,7 +16,7 @@ export function createBillingRouter(): Router {
       res.json({ url });
     } catch (err) {
       console.error("[Billing] Checkout error:", err);
-      res.status(500).json({ error: (err as Error).message });
+      res.status(500).json({ error: "Unable to create checkout session. Please try again later." });
     }
   });
 
@@ -30,7 +30,7 @@ export function createBillingRouter(): Router {
       res.json({ url });
     } catch (err) {
       console.error("[Billing] Portal error:", err);
-      res.status(500).json({ error: (err as Error).message });
+      res.status(500).json({ error: "Unable to create portal session. Please try again later." });
     }
   });
 

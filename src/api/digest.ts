@@ -2,6 +2,21 @@ import { Router } from "express";
 import { DigestRepository } from "../db/digest-repository.js";
 import { DigestGenerator } from "../services/digest-generator.js";
 import { DigestDelivery } from "../services/digest-delivery.js";
+import { requireAuth, type AuthenticatedRequest } from "../services/auth.js";
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+
+function requireAdmin(req: AuthenticatedRequest, res: import("express").Response, next: import("express").NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(req.user.email.toLowerCase())) {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  next();
+}
 
 export function createDigestRouter(digestRepo?: DigestRepository): Router {
   const router = Router();
@@ -90,8 +105,8 @@ export function createDigestRouter(digestRepo?: DigestRepository): Router {
     res.json({ data: digest });
   });
 
-  // Manually trigger digest generation (for testing/admin)
-  router.post("/trigger", async (_req, res) => {
+  // Manually trigger digest generation (admin-only)
+  router.post("/trigger", requireAuth as any, requireAdmin as any, async (_req, res) => {
     try {
       const results = await delivery.runDaily();
       res.json({ data: results });

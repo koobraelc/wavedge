@@ -1,6 +1,7 @@
 /**
- * "New to crypto?" primer modal — a 30-second intro for beginners.
+ * "New to crypto?" primer — lightweight toast notification for beginners.
  * Shows on first visit (unless dismissed) or from nav help menu.
+ * Replaces the old modal with a less intrusive toast UX.
  */
 class CryptoPrimer extends HTMLElement {
   static DISMISSED_KEY = 'wavedge_primer_dismissed';
@@ -9,68 +10,48 @@ class CryptoPrimer extends HTMLElement {
     const t = window.i18n ? window.i18n.t : (k) => k;
 
     this.innerHTML = `
-      <div class="primer-backdrop" hidden></div>
-      <div class="primer-modal" hidden>
-        <div class="primer-header">
-          <h2 class="primer-title">${t('primer.title')}</h2>
-          <button class="primer-close" aria-label="${t('primer.close')}">&times;</button>
+      <div class="primer-toast" hidden>
+        <div class="primer-toast-icon">&#127891;</div>
+        <div class="primer-toast-body">
+          <div class="primer-toast-title">${t('primer.title')}</div>
+          <div class="primer-toast-text">${t('primer.tokensBody')}</div>
         </div>
-        <div class="primer-content">
-          <div class="primer-card">
-            <span class="primer-icon">&#x1FA99;</span>
-            <h3>${t('primer.tokensTitle')}</h3>
-            <p>${t('primer.tokensBody')}</p>
-          </div>
-          <div class="primer-card">
-            <span class="primer-icon">&#x1F4B0;</span>
-            <h3>${t('primer.marketCapTitle')}</h3>
-            <p>${t('primer.marketCapBody')}</p>
-          </div>
-          <div class="primer-card">
-            <span class="primer-icon">&#x1F4C8;</span>
-            <h3>${t('primer.priceChangesTitle')}</h3>
-            <p>${t('primer.priceChangesBody')}</p>
-          </div>
-        </div>
-        <div class="primer-footer">
-          <label class="primer-dismiss-label">
-            <input type="checkbox" class="primer-dismiss-check" /> ${t('primer.dontShowAgain')}
-          </label>
-          <button class="primer-got-it">${t('primer.gotIt')}</button>
-        </div>
+        <button class="primer-toast-close" aria-label="${t('primer.close')}">&times;</button>
       </div>
     `;
 
-    this._backdrop = this.querySelector('.primer-backdrop');
-    this._modal = this.querySelector('.primer-modal');
-    this._checkbox = this.querySelector('.primer-dismiss-check');
+    this._toast = this.querySelector('.primer-toast');
 
-    this.querySelector('.primer-close').addEventListener('click', () => this.close());
-    this._backdrop.addEventListener('click', () => this.close());
-    this.querySelector('.primer-got-it').addEventListener('click', () => this.close());
+    this.querySelector('.primer-toast-close').addEventListener('click', () => this.close());
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this._modal.hidden) this.close();
-    });
+    // Auto-dismiss after 8 seconds
+    this._autoDismissTimer = null;
 
     // Auto-show for new users who haven't dismissed it
     if (!localStorage.getItem(CryptoPrimer.DISMISSED_KEY) && !localStorage.getItem('wavedge_onboarding_complete')) {
-      // Small delay so dashboard loads first
       setTimeout(() => this.open(), 1500);
     }
   }
 
   open() {
-    this._backdrop.hidden = false;
-    this._modal.hidden = false;
+    this._toast.hidden = false;
+    // Trigger entrance animation on next frame
+    requestAnimationFrame(() => {
+      this._toast.classList.add('primer-toast-visible');
+    });
+    // Auto-dismiss after 8 seconds
+    clearTimeout(this._autoDismissTimer);
+    this._autoDismissTimer = setTimeout(() => this.close(), 8000);
   }
 
   close() {
-    this._backdrop.hidden = true;
-    this._modal.hidden = true;
-    if (this._checkbox && this._checkbox.checked) {
-      localStorage.setItem(CryptoPrimer.DISMISSED_KEY, '1');
-    }
+    clearTimeout(this._autoDismissTimer);
+    this._toast.classList.remove('primer-toast-visible');
+    // Wait for exit animation then hide
+    setTimeout(() => {
+      this._toast.hidden = true;
+    }, 300);
+    localStorage.setItem(CryptoPrimer.DISMISSED_KEY, '1');
   }
 }
 

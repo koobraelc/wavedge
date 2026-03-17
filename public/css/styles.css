@@ -6129,28 +6129,30 @@ widget-explainer {
 .glossary-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
   z-index: 900;
 }
 
 .glossary-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 380px;
-  max-width: 100vw;
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  max-height: 420px;
   background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
-  z-index: 901;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  z-index: 1000;
   display: flex;
   flex-direction: column;
-  animation: glossarySlideIn 0.2s ease-out;
+  transform: translateY(20px);
+  opacity: 0;
+  animation: glossaryFadeIn 0.3s ease-out forwards;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-@keyframes glossarySlideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+@keyframes glossaryFadeIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .glossary-header {
@@ -6234,143 +6236,84 @@ widget-explainer {
 
 @media (max-width: 480px) {
   .glossary-panel {
-    width: 100vw;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
   }
 }
 
 /* === Crypto Primer Modal === */
-.primer-backdrop {
+/* === Crypto Primer Toast === */
+.primer-toast {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 900;
-}
-
-.primer-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  width: 480px;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-  z-index: 901;
-  animation: primerFadeIn 0.2s ease-out;
+  max-width: 360px;
+  z-index: 1000;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-@keyframes primerFadeIn {
-  from { opacity: 0; transform: translate(-50%, -48%); }
-  to { opacity: 1; transform: translate(-50%, -50%); }
+.primer-toast-visible {
+  transform: translateY(0);
+  opacity: 1;
 }
 
-.primer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 12px;
-}
-
-.primer-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.primer-close {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 22px;
-  cursor: pointer;
-  padding: 4px 8px;
+.primer-toast-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
   line-height: 1;
 }
 
-.primer-close:hover {
-  color: var(--text-primary);
+.primer-toast-body {
+  flex: 1;
+  min-width: 0;
 }
 
-.primer-content {
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.primer-card {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-}
-
-.primer-icon {
-  font-size: 1.4rem;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.primer-card h3 {
+.primer-toast-title {
   font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 4px;
+  font-weight: 700;
   color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
-.primer-card p {
+.primer-toast-text {
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-secondary);
-  margin: 0;
 }
 
-.primer-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px 20px;
-  gap: 12px;
-}
-
-.primer-dismiss-label {
-  font-size: 12px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.primer-got-it {
-  padding: 8px 24px;
+.primer-toast-close {
+  background: none;
   border: none;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 18px;
   cursor: pointer;
-  transition: background 0.15s;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.primer-got-it:hover {
-  opacity: 0.9;
+.primer-toast-close:hover {
+  color: var(--text-primary);
 }
 
 @media (max-width: 480px) {
-  .primer-modal {
-    width: calc(100vw - 16px);
-  }
-  .primer-content {
-    padding: 0 16px;
-  }
-  .primer-header, .primer-footer {
-    padding-left: 16px;
-    padding-right: 16px;
+  .primer-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
   }
 }
 

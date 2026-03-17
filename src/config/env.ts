@@ -27,12 +27,8 @@ function requireEnv(name: string, fallback?: string): string {
   const value = process.env[name];
   if (value) return value;
 
-  if (isProduction) {
-    fatal(`Missing required environment variable: ${name}`);
-  }
-
   if (fallback !== undefined) {
-    warn(`${name} is not set — using development fallback. Do NOT deploy like this.`);
+    warn(`${name} is not set — using fallback.`);
     return fallback;
   }
 

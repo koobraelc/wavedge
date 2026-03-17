@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface TokenRow {
   id: string;
@@ -32,69 +32,78 @@ export interface PriceInsert {
 }
 
 export class PriceRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
-  upsertToken(id: string, symbol: string, name: string): void {
-    this.db
-      .prepare(
-        `INSERT INTO tokens (id, symbol, name) VALUES (?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET symbol = excluded.symbol, name = excluded.name, updated_at = datetime('now')`
-      )
-      .run(id, symbol.toLowerCase(), name);
+  async upsertToken(id: string, symbol: string, name: string): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO tokens (id, symbol, name) VALUES ($1, $2, $3)
+         ON CONFLICT(id) DO UPDATE SET symbol = excluded.symbol, name = excluded.name, updated_at = NOW()`,
+      [id, symbol.toLowerCase(), name]
+    );
   }
 
-  insertPrice(data: PriceInsert): void {
-    this.upsertToken(data.tokenId, data.symbol, data.name);
-    this.db
-      .prepare(
-        `INSERT OR IGNORE INTO prices (token_id, price_usd, market_cap, total_volume, price_change_24h, price_change_percentage_24h, circulating_supply)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+  async insertPrice(data: PriceInsert): Promise<void> {
+    await this.upsertToken(data.tokenId, data.symbol, data.name);
+    await this.pool.query(
+      `INSERT INTO prices (token_id, price_usd, market_cap, total_volume, price_change_24h, price_change_percentage_24h, circulating_supply)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT DO NOTHING`,
+      [
         data.tokenId,
         data.priceUsd,
         data.marketCap,
         data.totalVolume,
         data.priceChange24h,
         data.priceChangePercentage24h,
-        data.circulatingSupply
-      );
+        data.circulatingSupply,
+      ]
+    );
   }
 
-  insertPricesBatch(prices: PriceInsert[]): number {
-    const insertMany = this.db.transaction((items: PriceInsert[]) => {
+  async insertPricesBatch(prices: PriceInsert[]): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
       let count = 0;
-      for (const item of items) {
-        this.upsertToken(item.tokenId, item.symbol, item.name);
-        const result = this.db
-          .prepare(
-            `INSERT OR IGNORE INTO prices (token_id, price_usd, market_cap, total_volume, price_change_24h, price_change_percentage_24h, circulating_supply)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`
-          )
-          .run(
+      for (const item of prices) {
+        await client.query(
+          `INSERT INTO tokens (id, symbol, name) VALUES ($1, $2, $3)
+           ON CONFLICT(id) DO UPDATE SET symbol = excluded.symbol, name = excluded.name, updated_at = NOW()`,
+          [item.tokenId, item.symbol.toLowerCase(), item.name]
+        );
+        const result = await client.query(
+          `INSERT INTO prices (token_id, price_usd, market_cap, total_volume, price_change_24h, price_change_percentage_24h, circulating_supply)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT DO NOTHING`,
+          [
             item.tokenId,
             item.priceUsd,
             item.marketCap,
             item.totalVolume,
             item.priceChange24h,
             item.priceChangePercentage24h,
-            item.circulatingSupply
-          );
-        count += result.changes;
+            item.circulatingSupply,
+          ]
+        );
+        count += result.rowCount ?? 0;
       }
+      await client.query("COMMIT");
       return count;
-    });
-    return insertMany(prices);
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
-  getLatestPrices(): (TokenRow & PriceRow)[] {
-    return this.db
-      .prepare(
-        `SELECT t.id, t.symbol, t.name, p.price_usd, p.market_cap, p.total_volume,
+  async getLatestPrices(): Promise<(TokenRow & PriceRow)[]> {
+    const { rows } = await this.pool.query(
+      `SELECT t.id, t.symbol, t.name, p.price_usd, p.market_cap, p.total_volume,
                 p.price_change_24h, p.price_change_percentage_24h, p.circulating_supply, p.fetched_at
          FROM tokens t
          JOIN (
@@ -103,60 +112,64 @@ export class PriceRepository {
          ) latest ON latest.token_id = t.id
          JOIN prices p ON p.token_id = latest.token_id AND p.fetched_at = latest.max_fetched
          ORDER BY p.market_cap DESC`
-      )
-      .all() as (TokenRow & PriceRow)[];
+    );
+    return rows as (TokenRow & PriceRow)[];
   }
 
-  getPriceHistory(tokenId: string, limit: number = 288): PriceRow[] {
-    return this.db
-      .prepare(
-        `SELECT * FROM prices WHERE token_id = ? ORDER BY fetched_at DESC LIMIT ?`
-      )
-      .all(tokenId, limit) as PriceRow[];
+  async getPriceHistory(tokenId: string, limit: number = 288): Promise<PriceRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM prices WHERE token_id = $1 ORDER BY fetched_at DESC LIMIT $2`,
+      [tokenId, limit]
+    );
+    return rows as PriceRow[];
   }
 
   /**
    * Find the closest price to a given timestamp for a token symbol.
    * Returns null if no price exists within 6 hours of the target time.
    */
-  getPriceNearTimestamp(symbol: string, timestamp: string): PriceRow | null {
-    const token = this.db
-      .prepare(`SELECT id FROM tokens WHERE symbol = ?`)
-      .get(symbol.toLowerCase()) as { id: string } | undefined;
+  async getPriceNearTimestamp(symbol: string, timestamp: string): Promise<PriceRow | null> {
+    const { rows: tokenRows } = await this.pool.query(
+      `SELECT id FROM tokens WHERE symbol = $1`,
+      [symbol.toLowerCase()]
+    );
+    const token = tokenRows[0] as { id: string } | undefined;
     if (!token) return null;
 
-    const row = this.db
-      .prepare(
-        `SELECT * FROM prices
-         WHERE token_id = ?
-           AND ABS(strftime('%s', fetched_at) - strftime('%s', ?)) <= 21600
-         ORDER BY ABS(strftime('%s', fetched_at) - strftime('%s', ?)) ASC
-         LIMIT 1`
-      )
-      .get(token.id, timestamp, timestamp) as PriceRow | undefined;
+    const { rows } = await this.pool.query(
+      `SELECT * FROM prices
+         WHERE token_id = $1
+           AND ABS(EXTRACT(EPOCH FROM fetched_at) - EXTRACT(EPOCH FROM $2::timestamptz)) <= 21600
+         ORDER BY ABS(EXTRACT(EPOCH FROM fetched_at) - EXTRACT(EPOCH FROM $2::timestamptz)) ASC
+         LIMIT 1`,
+      [token.id, timestamp]
+    );
 
-    return row ?? null;
+    return (rows[0] as PriceRow | undefined) ?? null;
   }
 
-  getTokenBySymbol(symbol: string): TokenRow | undefined {
-    return this.db
-      .prepare(`SELECT * FROM tokens WHERE symbol = ?`)
-      .get(symbol.toLowerCase()) as TokenRow | undefined;
+  async getTokenBySymbol(symbol: string): Promise<TokenRow | undefined> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM tokens WHERE symbol = $1`,
+      [symbol.toLowerCase()]
+    );
+    return rows[0] as TokenRow | undefined;
   }
 
-  getAllTokens(): TokenRow[] {
-    return this.db
-      .prepare(`SELECT id, symbol, name FROM tokens ORDER BY symbol ASC`)
-      .all() as TokenRow[];
+  async getAllTokens(): Promise<TokenRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT id, symbol, name FROM tokens ORDER BY symbol ASC`
+    );
+    return rows as TokenRow[];
   }
 
-  getTokenCount(): number {
-    const row = this.db.prepare(`SELECT COUNT(*) as count FROM tokens`).get() as { count: number };
-    return row.count;
+  async getTokenCount(): Promise<number> {
+    const { rows } = await this.pool.query(`SELECT COUNT(*) as count FROM tokens`);
+    return parseInt(rows[0].count, 10);
   }
 
-  getPriceCount(): number {
-    const row = this.db.prepare(`SELECT COUNT(*) as count FROM prices`).get() as { count: number };
-    return row.count;
+  async getPriceCount(): Promise<number> {
+    const { rows } = await this.pool.query(`SELECT COUNT(*) as count FROM prices`);
+    return parseInt(rows[0].count, 10);
   }
 }

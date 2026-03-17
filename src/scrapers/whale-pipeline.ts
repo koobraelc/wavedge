@@ -1,7 +1,7 @@
 import { WhaleClient, type WhaleTransactionData } from "./whale-client.js";
 import { WhaleRepository, type WhaleTransactionInsert } from "../db/whale-repository.js";
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import type { Pool } from "pg";
+import { getPool } from "../db/database.js";
 
 export interface WhalePipelineResult {
   success: boolean;
@@ -22,12 +22,12 @@ export interface WhalePipelineResult {
 export class WhalePipeline {
   private client: WhaleClient;
   private repo: WhaleRepository;
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(client?: WhaleClient, repo?: WhaleRepository, db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(client?: WhaleClient, repo?: WhaleRepository, pool?: Pool) {
+    this.pool = pool || getPool();
     this.client = client || new WhaleClient();
-    this.repo = repo || new WhaleRepository(this.db);
+    this.repo = repo || new WhaleRepository(this.pool);
   }
 
   async ingest(): Promise<WhalePipelineResult> {
@@ -38,7 +38,7 @@ export class WhalePipeline {
       if (this.client.isConfigured) {
         return await this.ingestFromWhaleAlert(start, errors);
       }
-      return this.ingestFromVolume(start, errors);
+      return await this.ingestFromVolume(start, errors);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push(message);
@@ -61,7 +61,7 @@ export class WhalePipeline {
       transactionType: tx.transactionType,
     }));
 
-    const count = this.repo.insertBatch(inserts);
+    const count = await this.repo.insertBatch(inserts);
     console.log(`Whale pipeline (API): ingested ${count} transactions in ${Date.now() - start}ms`);
 
     return { success: true, transactionsIngested: count, source: "whale_alert", errors, durationMs: Date.now() - start };
@@ -71,17 +71,16 @@ export class WhalePipeline {
    * Derive whale-like activity from volume anomalies in our price data.
    * When a token's volume spikes significantly vs its average, we simulate a whale event.
    */
-  private ingestFromVolume(start: number, errors: string[]): WhalePipelineResult {
-    const rows = this.db
-      .prepare(
-        `SELECT t.symbol, p.total_volume, p.price_usd, p.fetched_at
-         FROM prices p
-         JOIN tokens t ON t.id = p.token_id
-         WHERE p.fetched_at >= datetime('now', '-30 minutes')
-           AND p.total_volume IS NOT NULL AND p.total_volume > 0
-         ORDER BY p.fetched_at DESC`
-      )
-      .all() as { symbol: string; total_volume: number; price_usd: number; fetched_at: string }[];
+  private async ingestFromVolume(start: number, errors: string[]): Promise<WhalePipelineResult> {
+    const result = await this.pool.query(
+      `SELECT t.symbol, p.total_volume, p.price_usd, p.fetched_at
+       FROM prices p
+       JOIN tokens t ON t.id = p.token_id
+       WHERE p.fetched_at >= NOW() - INTERVAL '30 minutes'
+         AND p.total_volume IS NOT NULL AND p.total_volume > 0
+       ORDER BY p.fetched_at DESC`
+    );
+    const rows = result.rows as { symbol: string; total_volume: number; price_usd: number; fetched_at: string }[];
 
     // Group by symbol, take latest
     const latestBySymbol = new Map<string, { total_volume: number; price_usd: number; fetched_at: string }>();
@@ -96,15 +95,15 @@ export class WhalePipeline {
     const inserts: WhaleTransactionInsert[] = [];
 
     for (const [symbol, latest] of latestBySymbol) {
-      const avgRow = this.db
-        .prepare(
-          `SELECT AVG(p.total_volume) as avg_vol
-           FROM prices p
-           JOIN tokens t ON t.id = p.token_id
-           WHERE t.symbol = ? AND p.fetched_at >= datetime('now', '-24 hours')
-             AND p.total_volume IS NOT NULL AND p.total_volume > 0`
-        )
-        .get(symbol.toLowerCase()) as { avg_vol: number | null };
+      const avgResult = await this.pool.query(
+        `SELECT AVG(p.total_volume) as avg_vol
+         FROM prices p
+         JOIN tokens t ON t.id = p.token_id
+         WHERE t.symbol = $1 AND p.fetched_at >= NOW() - INTERVAL '24 hours'
+           AND p.total_volume IS NOT NULL AND p.total_volume > 0`,
+        [symbol.toLowerCase()]
+      );
+      const avgRow = avgResult.rows[0] as { avg_vol: number | null };
 
       if (!avgRow?.avg_vol || avgRow.avg_vol === 0) continue;
 
@@ -131,17 +130,16 @@ export class WhalePipeline {
 
     // If no spikes detected, generate entries for top-volume tokens so pages aren't empty
     if (inserts.length === 0) {
-      const topVolume = this.db
-        .prepare(
-          `SELECT t.symbol, p.total_volume, p.price_usd, p.fetched_at
-           FROM prices p
-           JOIN tokens t ON t.id = p.token_id
-           WHERE p.fetched_at >= datetime('now', '-30 minutes')
-             AND p.total_volume IS NOT NULL AND p.total_volume > 0
-           ORDER BY p.total_volume DESC
-           LIMIT 10`
-        )
-        .all() as { symbol: string; total_volume: number; price_usd: number; fetched_at: string }[];
+      const topVolumeResult = await this.pool.query(
+        `SELECT t.symbol, p.total_volume, p.price_usd, p.fetched_at
+         FROM prices p
+         JOIN tokens t ON t.id = p.token_id
+         WHERE p.fetched_at >= NOW() - INTERVAL '30 minutes'
+           AND p.total_volume IS NOT NULL AND p.total_volume > 0
+         ORDER BY p.total_volume DESC
+         LIMIT 10`
+      );
+      const topVolume = topVolumeResult.rows as { symbol: string; total_volume: number; price_usd: number; fetched_at: string }[];
 
       const seen = new Set<string>();
       for (const row of topVolume) {
@@ -166,7 +164,7 @@ export class WhalePipeline {
       }
     }
 
-    const count = this.repo.insertBatch(inserts);
+    const count = await this.repo.insertBatch(inserts);
     console.log(`Whale pipeline (volume-derived): ingested ${count} events in ${Date.now() - start}ms`);
 
     return { success: true, transactionsIngested: count, source: "volume_derived", errors, durationMs: Date.now() - start };

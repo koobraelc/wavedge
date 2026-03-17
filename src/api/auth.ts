@@ -55,77 +55,92 @@ export function createAuthRouter(): Router {
       return;
     }
 
-    const magicLink = userRepo.createMagicLink(email.toLowerCase());
-    const sent = await sendMagicLinkEmail(email.toLowerCase(), magicLink.token);
+    try {
+      const magicLink = await userRepo.createMagicLink(email.toLowerCase());
+      const sent = await sendMagicLinkEmail(email.toLowerCase(), magicLink.token);
 
-    if (!sent) {
-      res.status(500).json({ error: "Failed to send magic link email" });
-      return;
+      if (!sent) {
+        res.status(500).json({ error: "Failed to send magic link email" });
+        return;
+      }
+
+      res.json({ message: "Magic link sent. Check your email." });
+    } catch (err) {
+      console.error("[Auth] Magic link error:", err);
+      res.status(500).json({ error: "Failed to create magic link" });
     }
-
-    res.json({ message: "Magic link sent. Check your email." });
   });
 
   /**
    * GET /api/auth/verify?token=...
    * Verify magic link token and return JWT.
    */
-  router.get("/verify", (req, res) => {
-    const { token } = req.query;
-    if (!token || typeof token !== "string") {
-      res.status(400).json({ error: "Token is required" });
-      return;
+  router.get("/verify", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== "string") {
+        res.status(400).json({ error: "Token is required" });
+        return;
+      }
+
+      const magicLink = await userRepo.verifyMagicLink(token);
+      if (!magicLink) {
+        res.status(400).json({ error: "Invalid or expired link" });
+        return;
+      }
+
+      const { user, isNew } = await userRepo.findOrCreateByEmail(magicLink.email);
+      const jwt = signToken(user.id);
+
+      // If accessed from browser, redirect with token
+      const accept = req.headers.accept || "";
+      if (accept.includes("text/html")) {
+        const callbackUrl = `${APP_URL}/auth/callback?token=${jwt}${isNew ? "&new=1" : ""}`;
+        res.redirect(callbackUrl);
+        return;
+      }
+
+      res.json({
+        token: jwt,
+        user: {
+          id: user.id,
+          email: user.email,
+          tier: user.tier,
+        },
+        isNew,
+      });
+    } catch (err) {
+      console.error("[Auth] Verify error:", err);
+      res.status(500).json({ error: "Failed to verify token" });
     }
-
-    const magicLink = userRepo.verifyMagicLink(token);
-    if (!magicLink) {
-      res.status(400).json({ error: "Invalid or expired link" });
-      return;
-    }
-
-    const { user, isNew } = userRepo.findOrCreateByEmail(magicLink.email);
-    const jwt = signToken(user.id);
-
-    // If accessed from browser, redirect with token
-    const accept = req.headers.accept || "";
-    if (accept.includes("text/html")) {
-      const callbackUrl = `${APP_URL}/auth/callback?token=${jwt}${isNew ? "&new=1" : ""}`;
-      res.redirect(callbackUrl);
-      return;
-    }
-
-    res.json({
-      token: jwt,
-      user: {
-        id: user.id,
-        email: user.email,
-        tier: user.tier,
-      },
-      isNew,
-    });
   });
 
   /**
    * GET /api/auth/me
    * Get current user info (requires auth).
    */
-  router.get("/me", requireAuth as any, (req: AuthenticatedRequest, res) => {
-    const user = req.user!;
-    const subscription = userRepo.getActiveSubscription(user.id);
+  router.get("/me", requireAuth as any, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const subscription = await userRepo.getActiveSubscription(user.id);
 
-    res.json({
-      id: user.id,
-      email: user.email,
-      tier: user.tier,
-      subscription: subscription
-        ? {
-            status: subscription.status,
-            plan: subscription.plan,
-            current_period_end: subscription.current_period_end,
-            cancel_at_period_end: !!subscription.cancel_at_period_end,
-          }
-        : null,
-    });
+      res.json({
+        id: user.id,
+        email: user.email,
+        tier: user.tier,
+        subscription: subscription
+          ? {
+              status: subscription.status,
+              plan: subscription.plan,
+              current_period_end: subscription.current_period_end,
+              cancel_at_period_end: !!subscription.cancel_at_period_end,
+            }
+          : null,
+      });
+    } catch (err) {
+      console.error("[Auth] Me error:", err);
+      res.status(500).json({ error: "Failed to fetch user info" });
+    }
   });
 
   return router;

@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 /** Compute confidence score from sample size (matches impact-calculator logic) */
 function computeConfidenceFromSampleSize(sampleSize: number): number {
@@ -65,50 +65,65 @@ export interface ImpactEventInsert {
 }
 
 export class ImpactRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
-  upsertCategory(insert: NewsCategoryInsert): void {
-    this.db
-      .prepare(
-        `INSERT INTO news_categories (article_id, category, confidence)
-         VALUES (?, ?, ?)
+  async upsertCategory(insert: NewsCategoryInsert): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO news_categories (article_id, category, confidence)
+         VALUES ($1, $2, $3)
          ON CONFLICT(article_id) DO UPDATE SET
            category = excluded.category,
            confidence = excluded.confidence,
-           classified_at = datetime('now')`
-      )
-      .run(insert.articleId, insert.category, insert.confidence);
+           classified_at = NOW()`,
+      [insert.articleId, insert.category, insert.confidence]
+    );
   }
 
-  upsertCategoriesBatch(inserts: NewsCategoryInsert[]): number {
-    const upsertMany = this.db.transaction((items: NewsCategoryInsert[]) => {
+  async upsertCategoriesBatch(inserts: NewsCategoryInsert[]): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
       let count = 0;
-      for (const item of items) {
-        this.upsertCategory(item);
+      for (const item of inserts) {
+        await client.query(
+          `INSERT INTO news_categories (article_id, category, confidence)
+           VALUES ($1, $2, $3)
+           ON CONFLICT(article_id) DO UPDATE SET
+             category = excluded.category,
+             confidence = excluded.confidence,
+             classified_at = NOW()`,
+          [item.articleId, item.category, item.confidence]
+        );
         count++;
       }
+      await client.query("COMMIT");
       return count;
-    });
-    return upsertMany(inserts);
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
-  getCategoryByArticleId(articleId: number): NewsCategoryRow | undefined {
-    return this.db
-      .prepare("SELECT * FROM news_categories WHERE article_id = ?")
-      .get(articleId) as NewsCategoryRow | undefined;
+  async getCategoryByArticleId(articleId: number): Promise<NewsCategoryRow | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM news_categories WHERE article_id = $1",
+      [articleId]
+    );
+    return rows[0] as NewsCategoryRow | undefined;
   }
 
-  upsertImpactEvent(insert: ImpactEventInsert): void {
-    this.db
-      .prepare(
-        `INSERT INTO impact_events (article_id, token_symbol, category, price_at_event,
+  async upsertImpactEvent(insert: ImpactEventInsert): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO impact_events (article_id, token_symbol, category, price_at_event,
           price_1h, price_4h, price_24h, change_1h, change_4h, change_24h,
           sample_size, avg_change_1h, avg_change_4h, avg_change_24h, confidence_score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          ON CONFLICT(article_id, token_symbol) DO UPDATE SET
            category = excluded.category,
            price_at_event = excluded.price_at_event,
@@ -123,9 +138,8 @@ export class ImpactRepository {
            avg_change_4h = excluded.avg_change_4h,
            avg_change_24h = excluded.avg_change_24h,
            confidence_score = excluded.confidence_score,
-           computed_at = datetime('now')`
-      )
-      .run(
+           computed_at = NOW()`,
+      [
         insert.articleId,
         insert.tokenSymbol,
         insert.category,
@@ -140,57 +154,105 @@ export class ImpactRepository {
         insert.avgChange1h,
         insert.avgChange4h,
         insert.avgChange24h,
-        insert.confidenceScore
-      );
+        insert.confidenceScore,
+      ]
+    );
   }
 
-  upsertImpactEventsBatch(inserts: ImpactEventInsert[]): number {
-    const upsertMany = this.db.transaction((items: ImpactEventInsert[]) => {
+  async upsertImpactEventsBatch(inserts: ImpactEventInsert[]): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
       let count = 0;
-      for (const item of items) {
-        this.upsertImpactEvent(item);
+      for (const item of inserts) {
+        await client.query(
+          `INSERT INTO impact_events (article_id, token_symbol, category, price_at_event,
+              price_1h, price_4h, price_24h, change_1h, change_4h, change_24h,
+              sample_size, avg_change_1h, avg_change_4h, avg_change_24h, confidence_score)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+           ON CONFLICT(article_id, token_symbol) DO UPDATE SET
+             category = excluded.category,
+             price_at_event = excluded.price_at_event,
+             price_1h = excluded.price_1h,
+             price_4h = excluded.price_4h,
+             price_24h = excluded.price_24h,
+             change_1h = excluded.change_1h,
+             change_4h = excluded.change_4h,
+             change_24h = excluded.change_24h,
+             sample_size = excluded.sample_size,
+             avg_change_1h = excluded.avg_change_1h,
+             avg_change_4h = excluded.avg_change_4h,
+             avg_change_24h = excluded.avg_change_24h,
+             confidence_score = excluded.confidence_score,
+             computed_at = NOW()`,
+          [
+            item.articleId,
+            item.tokenSymbol,
+            item.category,
+            item.priceAtEvent,
+            item.price1h,
+            item.price4h,
+            item.price24h,
+            item.change1h,
+            item.change4h,
+            item.change24h,
+            item.sampleSize,
+            item.avgChange1h,
+            item.avgChange4h,
+            item.avgChange24h,
+            item.confidenceScore,
+          ]
+        );
         count++;
       }
+      await client.query("COMMIT");
       return count;
-    });
-    return upsertMany(inserts);
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
-  getImpactByArticleId(articleId: number): ImpactEventRow[] {
-    return this.db
-      .prepare("SELECT * FROM impact_events WHERE article_id = ?")
-      .all(articleId) as ImpactEventRow[];
+  async getImpactByArticleId(articleId: number): Promise<ImpactEventRow[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM impact_events WHERE article_id = $1",
+      [articleId]
+    );
+    return rows as ImpactEventRow[];
   }
 
   /** Get historical avg impact for a given category and token */
-  getHistoricalImpact(
+  async getHistoricalImpact(
     category: string,
     tokenSymbol: string
-  ): {
+  ): Promise<{
     sampleSize: number;
     avgChange1h: number | null;
     avgChange4h: number | null;
     avgChange24h: number | null;
-  } {
-    const row = this.db
-      .prepare(
-        `SELECT
+  }> {
+    const { rows } = await this.pool.query(
+      `SELECT
            COUNT(*) as sample_size,
            AVG(change_1h) as avg_change_1h,
            AVG(change_4h) as avg_change_4h,
            AVG(change_24h) as avg_change_24h
          FROM impact_events
-         WHERE category = ? AND token_symbol = ? AND change_24h IS NOT NULL`
-      )
-      .get(category, tokenSymbol) as {
-      sample_size: number;
+         WHERE category = $1 AND token_symbol = $2 AND change_24h IS NOT NULL`,
+      [category, tokenSymbol]
+    );
+
+    const row = rows[0] as {
+      sample_size: string;
       avg_change_1h: number | null;
       avg_change_4h: number | null;
       avg_change_24h: number | null;
     };
 
     return {
-      sampleSize: row.sample_size,
+      sampleSize: parseInt(row.sample_size, 10),
       avgChange1h: row.avg_change_1h,
       avgChange4h: row.avg_change_4h,
       avgChange24h: row.avg_change_24h,
@@ -198,52 +260,51 @@ export class ImpactRepository {
   }
 
   /** Get impact statistics grouped by category for a specific token */
-  getImpactStatsByToken(
+  async getImpactStatsByToken(
     tokenSymbol: string
-  ): {
+  ): Promise<{
     category: string;
     sampleSize: number;
     avgChange1h: number | null;
     avgChange4h: number | null;
     avgChange24h: number | null;
     confidenceScore: number;
-  }[] {
-    const rows = this.db
-      .prepare(
-        `SELECT
+  }[]> {
+    const { rows } = await this.pool.query(
+      `SELECT
            category,
            COUNT(*) as sample_size,
            AVG(change_1h) as avg_change_1h,
            AVG(change_4h) as avg_change_4h,
            AVG(change_24h) as avg_change_24h
          FROM impact_events
-         WHERE token_symbol = ? AND change_24h IS NOT NULL
+         WHERE token_symbol = $1 AND change_24h IS NOT NULL
          GROUP BY category
-         ORDER BY COUNT(*) DESC`
-      )
-      .all(tokenSymbol.toLowerCase()) as {
+         ORDER BY COUNT(*) DESC`,
+      [tokenSymbol.toLowerCase()]
+    );
+
+    return (rows as {
       category: string;
-      sample_size: number;
+      sample_size: string;
       avg_change_1h: number | null;
       avg_change_4h: number | null;
       avg_change_24h: number | null;
-    }[];
-
-    return rows.map((r) => ({
+    }[]).map((r) => ({
       category: r.category,
-      sampleSize: r.sample_size,
+      sampleSize: parseInt(r.sample_size, 10),
       avgChange1h: r.avg_change_1h,
       avgChange4h: r.avg_change_4h,
       avgChange24h: r.avg_change_24h,
-      confidenceScore: computeConfidenceFromSampleSize(r.sample_size),
+      confidenceScore: computeConfidenceFromSampleSize(parseInt(r.sample_size, 10)),
     }));
   }
 
   /** Get recent classified articles for a token (last 7 days) */
-  getRecentClassifiedArticles(
+  async getRecentClassifiedArticles(
     tokenSymbol: string,
     days: number = 7
-  ): {
+  ): Promise<{
     articleId: number;
     title: string;
     summary: string | null;
@@ -251,29 +312,29 @@ export class ImpactRepository {
     confidence: number;
     publishedAt: string;
     change24h: number | null;
-  }[] {
-    return this.db
-      .prepare(
-        `SELECT
-           a.id as articleId,
+  }[]> {
+    const { rows } = await this.pool.query(
+      `SELECT
+           a.id as "articleId",
            a.title,
            a.summary,
            nc.category,
            nc.confidence,
-           a.published_at as publishedAt,
-           ie.change_24h as change24h
+           a.published_at as "publishedAt",
+           ie.change_24h as "change24h"
          FROM articles a
          JOIN news_categories nc ON nc.article_id = a.id
-         LEFT JOIN impact_events ie ON ie.article_id = a.id AND ie.token_symbol = ?
-         WHERE a.token_tags LIKE ?
-           AND a.published_at >= datetime('now', ?)
-         ORDER BY a.published_at DESC`
-      )
-      .all(
+         LEFT JOIN impact_events ie ON ie.article_id = a.id AND ie.token_symbol = $1
+         WHERE a.token_tags LIKE $2
+           AND a.published_at >= NOW() - make_interval(days => $3)
+         ORDER BY a.published_at DESC`,
+      [
         tokenSymbol.toLowerCase(),
         `%"${tokenSymbol.toUpperCase()}"%`,
-        `-${days} days`
-      ) as {
+        days,
+      ]
+    );
+    return rows as {
       articleId: number;
       title: string;
       summary: string | null;
@@ -285,18 +346,17 @@ export class ImpactRepository {
   }
 
   /** Get FAQ data for a token: top impact categories with data-backed stats */
-  getFaqData(
+  async getFaqData(
     tokenSymbol: string
-  ): {
+  ): Promise<{
     category: string;
     avgChange24h: number;
     sampleSize: number;
     direction: "bullish" | "bearish" | "neutral";
     recentExample: string | null;
-  }[] {
-    const rows = this.db
-      .prepare(
-        `SELECT
+  }[]> {
+    const { rows } = await this.pool.query(
+      `SELECT
            ie.category,
            COUNT(*) as sample_size,
            AVG(ie.change_24h) as avg_change_24h,
@@ -305,22 +365,22 @@ export class ImpactRepository {
             WHERE ie2.token_symbol = ie.token_symbol AND ie2.category = ie.category
             ORDER BY ie2.computed_at DESC LIMIT 1) as recent_example
          FROM impact_events ie
-         WHERE ie.token_symbol = ? AND ie.change_24h IS NOT NULL
-         GROUP BY ie.category
+         WHERE ie.token_symbol = $1 AND ie.change_24h IS NOT NULL
+         GROUP BY ie.category, ie.token_symbol
          HAVING COUNT(*) >= 2
-         ORDER BY ABS(AVG(ie.change_24h)) DESC`
-      )
-      .all(tokenSymbol.toLowerCase()) as {
+         ORDER BY ABS(AVG(ie.change_24h)) DESC`,
+      [tokenSymbol.toLowerCase()]
+    );
+
+    return (rows as {
       category: string;
-      sample_size: number;
+      sample_size: string;
       avg_change_24h: number;
       recent_example: string | null;
-    }[];
-
-    return rows.map((r) => ({
+    }[]).map((r) => ({
       category: r.category,
       avgChange24h: r.avg_change_24h,
-      sampleSize: r.sample_size,
+      sampleSize: parseInt(r.sample_size, 10),
       direction:
         r.avg_change_24h > 0.1
           ? "bullish"
@@ -332,24 +392,22 @@ export class ImpactRepository {
   }
 
   /** Get tokens frequently co-mentioned in articles with the given token */
-  getRelatedTokens(
+  async getRelatedTokens(
     tokenSymbol: string,
     limit: number = 8
-  ): { symbol: string; coMentions: number }[] {
-    // Find articles mentioning this token, extract other token tags
-    const rows = this.db
-      .prepare(
-        `SELECT token_tags FROM articles
-         WHERE token_tags LIKE ?
-         AND published_at >= datetime('now', '-30 days')
+  ): Promise<{ symbol: string; coMentions: number }[]> {
+    const { rows } = await this.pool.query(
+      `SELECT token_tags FROM articles
+         WHERE token_tags LIKE $1
+         AND published_at >= NOW() - INTERVAL '30 days'
          ORDER BY published_at DESC
-         LIMIT 200`
-      )
-      .all(`%"${tokenSymbol.toUpperCase()}"%`) as { token_tags: string }[];
+         LIMIT 200`,
+      [`%"${tokenSymbol.toUpperCase()}"%`]
+    );
 
     const counts = new Map<string, number>();
     const upperSymbol = tokenSymbol.toUpperCase();
-    for (const row of rows) {
+    for (const row of rows as { token_tags: string }[]) {
       try {
         const tags: string[] = JSON.parse(row.token_tags);
         for (const tag of tags) {
@@ -375,26 +433,26 @@ export class ImpactRepository {
    * Uses 1h minimum age so partial data (1h impact) is available quickly;
    * 4h and 24h fields will be null until enough time passes.
    */
-  getArticlesReadyForImpact(limit: number = 100): {
+  async getArticlesReadyForImpact(limit: number = 100): Promise<{
     articleId: number;
     publishedAt: string;
     tokenTags: string;
     category: string;
-  }[] {
-    return this.db
-      .prepare(
-        `SELECT a.id as articleId, a.published_at as publishedAt,
-                a.token_tags as tokenTags, nc.category
+  }[]> {
+    const { rows } = await this.pool.query(
+      `SELECT a.id as "articleId", a.published_at as "publishedAt",
+                a.token_tags as "tokenTags", nc.category
          FROM articles a
          JOIN news_categories nc ON nc.article_id = a.id
          LEFT JOIN impact_events ie ON ie.article_id = a.id
          WHERE ie.id IS NULL
            AND a.token_tags != '[]'
-           AND a.published_at <= datetime('now', '-1 hours')
+           AND a.published_at <= NOW() - INTERVAL '1 hour'
          ORDER BY a.published_at DESC
-         LIMIT ?`
-      )
-      .all(limit) as {
+         LIMIT $1`,
+      [limit]
+    );
+    return rows as {
       articleId: number;
       publishedAt: string;
       tokenTags: string;
@@ -402,16 +460,15 @@ export class ImpactRepository {
     }[];
   }
 
-  getUncategorizedArticleIds(limit: number = 100): number[] {
-    const rows = this.db
-      .prepare(
-        `SELECT a.id FROM articles a
+  async getUncategorizedArticleIds(limit: number = 100): Promise<number[]> {
+    const { rows } = await this.pool.query(
+      `SELECT a.id FROM articles a
          LEFT JOIN news_categories nc ON nc.article_id = a.id
          WHERE nc.id IS NULL
          ORDER BY a.published_at DESC
-         LIMIT ?`
-      )
-      .all(limit) as { id: number }[];
-    return rows.map((r) => r.id);
+         LIMIT $1`,
+      [limit]
+    );
+    return (rows as { id: number }[]).map((r) => r.id);
   }
 }

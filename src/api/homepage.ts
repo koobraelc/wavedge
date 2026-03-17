@@ -1,6 +1,5 @@
 import { Router } from "express";
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import { getPool } from "../db/database.js";
 import { SocialRepository } from "../db/social-repository.js";
 import { optionalAuth, type AuthenticatedRequest } from "../services/auth.js";
 
@@ -17,26 +16,25 @@ interface WatchlistTokenRow {
   news_count_24h: number;
 }
 
-export function createHomepageRouter(db?: Database.Database): Router {
+export function createHomepageRouter(): Router {
   const router = Router();
-  const database = db || getDatabase();
 
   /**
    * GET /api/homepage/sentiment
    * Aggregate impact scores from last 24h to compute market sentiment.
    */
-  router.get("/sentiment", (_req, res) => {
+  router.get("/sentiment", async (_req, res) => {
     try {
-      const rows = database
-        .prepare(
-          `SELECT ie.article_id, AVG(ie.change_24h) AS avg_change
-           FROM impact_events ie
-           JOIN articles a ON a.id = ie.article_id
-           WHERE a.published_at >= datetime('now', '-24 hours')
-             AND ie.change_24h IS NOT NULL
-           GROUP BY ie.article_id`
-        )
-        .all() as SentimentRow[];
+      const pool = getPool();
+      const result = await pool.query(
+        `SELECT ie.article_id, AVG(ie.change_24h) AS avg_change
+         FROM impact_events ie
+         JOIN articles a ON a.id = ie.article_id
+         WHERE a.published_at >= NOW() - INTERVAL '24 hours'
+           AND ie.change_24h IS NOT NULL
+         GROUP BY ie.article_id`
+      );
+      const rows = result.rows as SentimentRow[];
 
       let bullish = 0;
       let bearish = 0;
@@ -68,18 +66,20 @@ export function createHomepageRouter(db?: Database.Database): Router {
    * Authenticated: tokens from user's alert preferences with prices + news count.
    * Unauthenticated: top 8 tokens by market cap.
    */
-  router.get("/watchlist", optionalAuth, (req: AuthenticatedRequest, res) => {
+  router.get("/watchlist", optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {
+      const pool = getPool();
       const userId = req.user?.id;
       let userSymbols: string[] | null = null;
 
       if (userId) {
-        const prefs = database
-          .prepare(`SELECT token_symbols FROM alert_preferences WHERE user_id = ?`)
-          .get(userId) as { token_symbols: string } | undefined;
+        const prefsResult = await pool.query(
+          `SELECT token_symbols FROM alert_preferences WHERE user_id = $1`,
+          [userId]
+        );
 
-        if (prefs) {
-          const parsed = JSON.parse(prefs.token_symbols) as string[];
+        if (prefsResult.rows.length > 0) {
+          const parsed = JSON.parse(prefsResult.rows[0].token_symbols) as string[];
           if (parsed.length > 0) {
             userSymbols = parsed.map((s) => s.toLowerCase());
           }
@@ -89,34 +89,33 @@ export function createHomepageRouter(db?: Database.Database): Router {
       let tokens: WatchlistTokenRow[];
 
       if (userSymbols && userSymbols.length > 0) {
-        const placeholders = userSymbols.map(() => "?").join(",");
-        tokens = database
-          .prepare(
-            `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
-                    (SELECT COUNT(*) FROM articles a
-                     WHERE a.published_at >= datetime('now', '-24 hours')
-                       AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
-             FROM tokens t
-             JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
-             JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
-             WHERE t.symbol IN (${placeholders})
-             ORDER BY p.market_cap DESC`
-          )
-          .all(...userSymbols) as WatchlistTokenRow[];
+        const placeholders = userSymbols.map((_, i) => `$${i + 1}`).join(",");
+        const result = await pool.query(
+          `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
+                  (SELECT COUNT(*) FROM articles a
+                   WHERE a.published_at >= NOW() - INTERVAL '24 hours'
+                     AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
+           FROM tokens t
+           JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
+           JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
+           WHERE t.symbol IN (${placeholders})
+           ORDER BY p.market_cap DESC`,
+          userSymbols
+        );
+        tokens = result.rows as WatchlistTokenRow[];
       } else {
-        tokens = database
-          .prepare(
-            `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
-                    (SELECT COUNT(*) FROM articles a
-                     WHERE a.published_at >= datetime('now', '-24 hours')
-                       AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
-             FROM tokens t
-             JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
-             JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
-             ORDER BY p.market_cap DESC
-             LIMIT 8`
-          )
-          .all() as WatchlistTokenRow[];
+        const result = await pool.query(
+          `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h, p.market_cap,
+                  (SELECT COUNT(*) FROM articles a
+                   WHERE a.published_at >= NOW() - INTERVAL '24 hours'
+                     AND a.token_tags LIKE '%"' || UPPER(t.symbol) || '"%') AS news_count_24h
+           FROM tokens t
+           JOIN (SELECT token_id, MAX(fetched_at) as max_fetched FROM prices GROUP BY token_id) lp ON lp.token_id = t.id
+           JOIN prices p ON p.token_id = lp.token_id AND p.fetched_at = lp.max_fetched
+           ORDER BY p.market_cap DESC
+           LIMIT 8`
+        );
+        tokens = result.rows as WatchlistTokenRow[];
       }
 
       res.json({
@@ -141,10 +140,10 @@ export function createHomepageRouter(db?: Database.Database): Router {
    * GET /api/homepage/social-sentiment
    * Latest social sentiment across all tracked tokens.
    */
-  router.get("/social-sentiment", (_req, res) => {
+  router.get("/social-sentiment", async (_req, res) => {
     try {
-      const socialRepo = new SocialRepository(database);
-      const all = socialRepo.getLatestAll();
+      const socialRepo = new SocialRepository();
+      const all = await socialRepo.getLatestAll();
 
       res.json({
         data: {

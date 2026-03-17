@@ -27,7 +27,7 @@ export function verifyToken(token: string): { sub: string } | null {
  * Middleware that requires a valid JWT or API key. Returns 401 if missing/invalid.
  * API keys use the format: Bearer wv_...
  */
-export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     res.status(401).json({ error: "Authentication required" });
@@ -40,13 +40,13 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   // Check if this is an API key (wv_ prefix)
   if (token.startsWith("wv_")) {
     const apiKeyRepo = new ApiKeyRepository();
-    const apiKey = apiKeyRepo.findByKey(token);
+    const apiKey = await apiKeyRepo.findByKey(token);
     if (!apiKey) {
       res.status(401).json({ error: "Invalid or revoked API key" });
       return;
     }
 
-    const user = userRepo.findById(apiKey.user_id);
+    const user = await userRepo.findById(apiKey.user_id);
     if (!user) {
       res.status(401).json({ error: "User not found" });
       return;
@@ -67,7 +67,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
     return;
   }
 
-  const user = userRepo.findById(payload.sub);
+  const user = await userRepo.findById(payload.sub);
   if (!user) {
     res.status(401).json({ error: "User not found" });
     return;
@@ -81,7 +81,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
  * Middleware that optionally extracts user from JWT but does not block.
  * Useful for routes that work for both anon and authenticated users.
  */
-export function optionalAuth(req: AuthenticatedRequest, _res: Response, next: NextFunction): void {
+export async function optionalAuth(req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
   if (header?.startsWith("Bearer ")) {
     const token = header.slice(7);
@@ -89,15 +89,15 @@ export function optionalAuth(req: AuthenticatedRequest, _res: Response, next: Ne
 
     if (token.startsWith("wv_")) {
       const apiKeyRepo = new ApiKeyRepository();
-      const apiKey = apiKeyRepo.findByKey(token);
+      const apiKey = await apiKeyRepo.findByKey(token);
       if (apiKey) {
-        req.user = userRepo.findById(apiKey.user_id);
+        req.user = await userRepo.findById(apiKey.user_id) ?? undefined;
         apiKeyRepo.touchLastUsed(apiKey.id);
       }
     } else {
       const payload = verifyToken(token);
       if (payload) {
-        req.user = userRepo.findById(payload.sub);
+        req.user = await userRepo.findById(payload.sub) ?? undefined;
       }
     }
   }

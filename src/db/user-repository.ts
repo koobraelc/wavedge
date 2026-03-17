@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface User {
   id: string;
@@ -33,103 +34,118 @@ export interface Subscription {
 }
 
 export class UserRepository {
-  private db: ReturnType<typeof getDatabase>;
+  private pool: Pool;
 
-  constructor(db?: ReturnType<typeof getDatabase>) {
-    this.db = db ?? getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool ?? getPool();
   }
 
   // --- Users ---
 
-  findByEmail(email: string): User | undefined {
-    return this.db
-      .prepare("SELECT * FROM users WHERE email = ?")
-      .get(email) as User | undefined;
+  async findByEmail(email: string): Promise<User | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    return rows[0] as User | undefined;
   }
 
-  findById(id: string): User | undefined {
-    return this.db
-      .prepare("SELECT * FROM users WHERE id = ?")
-      .get(id) as User | undefined;
+  async findById(id: string): Promise<User | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [id]
+    );
+    return rows[0] as User | undefined;
   }
 
-  findByStripeCustomerId(customerId: string): User | undefined {
-    return this.db
-      .prepare("SELECT * FROM users WHERE stripe_customer_id = ?")
-      .get(customerId) as User | undefined;
+  async findByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM users WHERE stripe_customer_id = $1",
+      [customerId]
+    );
+    return rows[0] as User | undefined;
   }
 
-  createUser(email: string): User {
+  async createUser(email: string): Promise<User> {
     const id = crypto.randomUUID();
-    this.db
-      .prepare("INSERT INTO users (id, email) VALUES (?, ?)")
-      .run(id, email.toLowerCase());
-    return this.findById(id)!;
+    await this.pool.query(
+      "INSERT INTO users (id, email) VALUES ($1, $2)",
+      [id, email.toLowerCase()]
+    );
+    return (await this.findById(id))!;
   }
 
-  findOrCreateByEmail(email: string): { user: User; isNew: boolean } {
+  async findOrCreateByEmail(email: string): Promise<{ user: User; isNew: boolean }> {
     const normalized = email.toLowerCase();
-    const existing = this.findByEmail(normalized);
+    const existing = await this.findByEmail(normalized);
     if (existing) return { user: existing, isNew: false };
-    return { user: this.createUser(normalized), isNew: true };
+    return { user: await this.createUser(normalized), isNew: true };
   }
 
-  updateTier(userId: string, tier: "free" | "pro"): void {
-    this.db
-      .prepare("UPDATE users SET tier = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(tier, userId);
+  async updateTier(userId: string, tier: "free" | "pro"): Promise<void> {
+    await this.pool.query(
+      "UPDATE users SET tier = $1, updated_at = NOW() WHERE id = $2",
+      [tier, userId]
+    );
   }
 
-  updateStripeCustomerId(userId: string, customerId: string): void {
-    this.db
-      .prepare("UPDATE users SET stripe_customer_id = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(customerId, userId);
+  async updateStripeCustomerId(userId: string, customerId: string): Promise<void> {
+    await this.pool.query(
+      "UPDATE users SET stripe_customer_id = $1, updated_at = NOW() WHERE id = $2",
+      [customerId, userId]
+    );
   }
 
   // --- Magic Links ---
 
-  createMagicLink(email: string, expiresInMinutes = 15): MagicLink {
+  async createMagicLink(email: string, expiresInMinutes = 15): Promise<MagicLink> {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString();
-    this.db
-      .prepare("INSERT INTO magic_links (email, token, expires_at) VALUES (?, ?, ?)")
-      .run(email.toLowerCase(), token, expiresAt);
-    return this.db
-      .prepare("SELECT * FROM magic_links WHERE token = ?")
-      .get(token) as MagicLink;
+    await this.pool.query(
+      "INSERT INTO magic_links (email, token, expires_at) VALUES ($1, $2, $3)",
+      [email.toLowerCase(), token, expiresAt]
+    );
+    const { rows } = await this.pool.query(
+      "SELECT * FROM magic_links WHERE token = $1",
+      [token]
+    );
+    return rows[0] as MagicLink;
   }
 
-  verifyMagicLink(token: string): MagicLink | null {
-    const link = this.db
-      .prepare("SELECT * FROM magic_links WHERE token = ? AND used = 0")
-      .get(token) as MagicLink | undefined;
+  async verifyMagicLink(token: string): Promise<MagicLink | null> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM magic_links WHERE token = $1 AND used = 0",
+      [token]
+    );
+    const link = rows[0] as MagicLink | undefined;
     if (!link) return null;
     if (new Date(link.expires_at) < new Date()) return null;
-    // Mark as used
-    this.db.prepare("UPDATE magic_links SET used = 1 WHERE id = ?").run(link.id);
+    await this.pool.query(
+      "UPDATE magic_links SET used = 1 WHERE id = $1",
+      [link.id]
+    );
     return link;
   }
 
-  cleanExpiredLinks(): void {
-    // expires_at is stored as ISO 8601 (e.g. "2024-01-15T10:30:45.000Z")
-    // so compare against strftime which also produces a sortable format
+  async cleanExpiredLinks(): Promise<void> {
     const nowIso = new Date().toISOString();
-    this.db
-      .prepare("DELETE FROM magic_links WHERE expires_at < ? OR used = 1")
-      .run(nowIso);
+    await this.pool.query(
+      "DELETE FROM magic_links WHERE expires_at < $1 OR used = 1",
+      [nowIso]
+    );
   }
 
   // --- Subscriptions ---
 
-  getActiveSubscription(userId: string): Subscription | undefined {
-    return this.db
-      .prepare(
-        "SELECT * FROM subscriptions WHERE user_id = ? AND status IN ('active', 'trialing') ORDER BY created_at DESC LIMIT 1"
-      )
-      .get(userId) as Subscription | undefined;
+  async getActiveSubscription(userId: string): Promise<Subscription | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM subscriptions WHERE user_id = $1 AND status IN ('active', 'trialing') ORDER BY created_at DESC LIMIT 1",
+      [userId]
+    );
+    return rows[0] as Subscription | undefined;
   }
 
-  upsertSubscription(sub: {
+  async upsertSubscription(sub: {
     id: string;
     userId: string;
     stripeSubscriptionId: string;
@@ -138,19 +154,17 @@ export class UserRepository {
     currentPeriodStart?: string;
     currentPeriodEnd?: string;
     cancelAtPeriodEnd?: boolean;
-  }): void {
-    this.db
-      .prepare(
-        `INSERT INTO subscriptions (id, user_id, stripe_subscription_id, status, plan, current_period_start, current_period_end, cancel_at_period_end)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  }): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO subscriptions (id, user_id, stripe_subscription_id, status, plan, current_period_start, current_period_end, cancel_at_period_end)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT(stripe_subscription_id) DO UPDATE SET
            status = excluded.status,
            current_period_start = excluded.current_period_start,
            current_period_end = excluded.current_period_end,
            cancel_at_period_end = excluded.cancel_at_period_end,
-           updated_at = datetime('now')`
-      )
-      .run(
+           updated_at = NOW()`,
+      [
         sub.id,
         sub.userId,
         sub.stripeSubscriptionId,
@@ -158,33 +172,35 @@ export class UserRepository {
         sub.plan ?? "pro",
         sub.currentPeriodStart ?? null,
         sub.currentPeriodEnd ?? null,
-        sub.cancelAtPeriodEnd ? 1 : 0
-      );
+        sub.cancelAtPeriodEnd ? 1 : 0,
+      ]
+    );
   }
 
   // --- API Usage ---
 
-  getApiUsageCount(userId: string, date: string): number {
-    const result = this.db
-      .prepare("SELECT COUNT(*) as count FROM api_usage WHERE user_id = ? AND request_date = ?")
-      .get(userId, date) as { count: number };
-    return result.count;
+  async getApiUsageCount(userId: string, date: string): Promise<number> {
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM api_usage WHERE user_id = $1 AND request_date = $2",
+      [userId, date]
+    );
+    return Number(rows[0].count);
   }
 
-  recordApiUsage(userId: string, endpoint: string): void {
+  async recordApiUsage(userId: string, endpoint: string): Promise<void> {
     const date = new Date().toISOString().split("T")[0];
-    this.db
-      .prepare("INSERT INTO api_usage (user_id, endpoint, request_date) VALUES (?, ?, ?)")
-      .run(userId, endpoint, date);
+    await this.pool.query(
+      "INSERT INTO api_usage (user_id, endpoint, request_date) VALUES ($1, $2, $3)",
+      [userId, endpoint, date]
+    );
   }
 
-  getDailyAlertCount(userId: string): number {
+  async getDailyAlertCount(userId: string): Promise<number> {
     const today = new Date().toISOString().split("T")[0];
-    const result = this.db
-      .prepare(
-        "SELECT COUNT(*) as count FROM triggered_alerts WHERE user_id = ? AND date(created_at) = ?"
-      )
-      .get(userId, today) as { count: number };
-    return result.count;
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM triggered_alerts WHERE user_id = $1 AND created_at::date = $2",
+      [userId, today]
+    );
+    return Number(rows[0].count);
   }
 }

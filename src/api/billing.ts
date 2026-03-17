@@ -44,7 +44,7 @@ export function createWebhookRouter(): Router {
   const router = Router();
   const billing = new BillingService();
 
-  router.post("/stripe", (req, res) => {
+  router.post("/stripe", async (req, res) => {
     const signature = req.headers["stripe-signature"] as string;
     if (!signature) {
       res.status(400).json({ error: "Missing stripe-signature header" });
@@ -53,7 +53,7 @@ export function createWebhookRouter(): Router {
 
     try {
       // req.body is a raw Buffer when express.raw() is used
-      billing.handleWebhookEvent(req.body as Buffer, signature);
+      await billing.handleWebhookEvent(req.body as Buffer, signature);
       res.json({ received: true });
     } catch (err) {
       console.error("[Webhook] Error:", err);

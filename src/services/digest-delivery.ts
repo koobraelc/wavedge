@@ -23,7 +23,7 @@ export class DigestDelivery {
     const results: DigestDeliveryResult[] = [];
 
     for (const lang of ["en", "zh"] as const) {
-      const subscribers = this.repo.getActiveSubscribers(lang);
+      const subscribers = await this.repo.getActiveSubscribers(lang);
       if (subscribers.length === 0) {
         console.log(`Digest: no active ${lang} subscribers, skipping`);
         continue;
@@ -34,7 +34,7 @@ export class DigestDelivery {
         const result = await this.deliver(digest, subscribers);
         results.push(result);
 
-        this.repo.saveDigest({
+        await this.repo.saveDigest({
           lang,
           subject: digest.subject,
           contentHtml: digest.bodyHtml,
@@ -56,11 +56,11 @@ export class DigestDelivery {
 
   /** Generate and deliver for a specific language */
   async runForLang(lang: "en" | "zh"): Promise<DigestDeliveryResult> {
-    const subscribers = this.repo.getActiveSubscribers(lang);
+    const subscribers = await this.repo.getActiveSubscribers(lang);
     const digest = await this.generator.generate(lang);
     const result = await this.deliver(digest, subscribers);
 
-    this.repo.saveDigest({
+    await this.repo.saveDigest({
       lang,
       subject: digest.subject,
       contentHtml: digest.bodyHtml,

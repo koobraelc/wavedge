@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface ApiKey {
   id: string;
@@ -13,85 +14,84 @@ export interface ApiKey {
 }
 
 export class ApiKeyRepository {
-  private db: ReturnType<typeof getDatabase>;
+  private pool: Pool;
 
-  constructor(db?: ReturnType<typeof getDatabase>) {
-    this.db = db ?? getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool ?? getPool();
   }
 
   /**
    * Generate a new API key for a user. Returns the full plaintext key
    * (only time it's available) and the stored record.
    */
-  create(userId: string, name: string): { key: string; record: ApiKey } {
+  async create(userId: string, name: string): Promise<{ key: string; record: ApiKey }> {
     const id = crypto.randomUUID();
-    // Generate a 32-byte random key, base64url encoded
     const rawKey = crypto.randomBytes(32).toString("base64url");
     const key = `wv_${rawKey}`;
     const keyHash = this.hashKey(key);
     const keyPrefix = key.slice(0, 10);
 
-    this.db
-      .prepare(
-        "INSERT INTO api_keys (id, user_id, key_hash, key_prefix, name) VALUES (?, ?, ?, ?, ?)"
-      )
-      .run(id, userId, keyHash, keyPrefix, name);
+    const { rows } = await this.pool.query(
+      "INSERT INTO api_keys (id, user_id, key_hash, key_prefix, name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [id, userId, keyHash, keyPrefix, name]
+    );
 
-    const record = this.db
-      .prepare("SELECT * FROM api_keys WHERE id = ?")
-      .get(id) as ApiKey;
-
-    return { key, record };
+    return { key, record: rows[0] };
   }
 
   /**
    * Find a non-revoked API key by its plaintext value (hashed for lookup).
    */
-  findByKey(plaintext: string): ApiKey | undefined {
+  async findByKey(plaintext: string): Promise<ApiKey | undefined> {
     const keyHash = this.hashKey(plaintext);
-    return this.db
-      .prepare("SELECT * FROM api_keys WHERE key_hash = ? AND revoked_at IS NULL")
-      .get(keyHash) as ApiKey | undefined;
+    const { rows } = await this.pool.query(
+      "SELECT * FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL",
+      [keyHash]
+    );
+    return rows[0];
   }
 
   /**
    * List all API keys for a user (active and revoked).
    */
-  listByUser(userId: string): ApiKey[] {
-    return this.db
-      .prepare("SELECT * FROM api_keys WHERE user_id = ? ORDER BY created_at DESC")
-      .all(userId) as ApiKey[];
+  async listByUser(userId: string): Promise<ApiKey[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM api_keys WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    return rows;
   }
 
   /**
    * Count active (non-revoked) keys for a user.
    */
-  countActive(userId: string): number {
-    const result = this.db
-      .prepare("SELECT COUNT(*) as count FROM api_keys WHERE user_id = ? AND revoked_at IS NULL")
-      .get(userId) as { count: number };
-    return result.count;
+  async countActive(userId: string): Promise<number> {
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM api_keys WHERE user_id = $1 AND revoked_at IS NULL",
+      [userId]
+    );
+    return rows[0].count;
   }
 
   /**
    * Revoke an API key. Only the owning user can revoke their own key.
    */
-  revoke(keyId: string, userId: string): boolean {
-    const result = this.db
-      .prepare(
-        "UPDATE api_keys SET revoked_at = datetime('now') WHERE id = ? AND user_id = ? AND revoked_at IS NULL"
-      )
-      .run(keyId, userId);
-    return result.changes > 0;
+  async revoke(keyId: string, userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      "UPDATE api_keys SET revoked_at = NOW() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL",
+      [keyId, userId]
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 
   /**
    * Update last_used_at timestamp for a key.
    */
-  touchLastUsed(keyId: string): void {
-    this.db
-      .prepare("UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?")
-      .run(keyId);
+  async touchLastUsed(keyId: string): Promise<void> {
+    await this.pool.query(
+      "UPDATE api_keys SET last_used_at = NOW() WHERE id = $1",
+      [keyId]
+    );
   }
 
   /**

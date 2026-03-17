@@ -24,7 +24,7 @@ export const TIER_LIMITS = {
  * Middleware to enforce API rate limits per user tier.
  * Requires requireAuth to have run first (req.user must be set).
  */
-export function tierApiRateLimit(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export async function tierApiRateLimit(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: "Authentication required" });
     return;
@@ -42,7 +42,7 @@ export function tierApiRateLimit(req: AuthenticatedRequest, res: Response, next:
 
   const userRepo = new UserRepository();
   const today = new Date().toISOString().split("T")[0];
-  const usageCount = userRepo.getApiUsageCount(req.user.id, today);
+  const usageCount = await userRepo.getApiUsageCount(req.user.id, today);
 
   if (usageCount >= limits.apiRequestsPerDay) {
     res.status(429).json({
@@ -54,17 +54,17 @@ export function tierApiRateLimit(req: AuthenticatedRequest, res: Response, next:
   }
 
   // Record this request
-  userRepo.recordApiUsage(req.user.id, req.path);
+  await userRepo.recordApiUsage(req.user.id, req.path);
   next();
 }
 
 /**
  * Check if a user can receive more alerts today.
  */
-export function canReceiveAlert(userId: string, tier: "free" | "pro"): boolean {
+export async function canReceiveAlert(userId: string, tier: "free" | "pro"): Promise<boolean> {
   if (tier === "pro") return true;
   const userRepo = new UserRepository();
-  const count = userRepo.getDailyAlertCount(userId);
+  const count = await userRepo.getDailyAlertCount(userId);
   return count < TIER_LIMITS.free.alertsPerDay;
 }
 

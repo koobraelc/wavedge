@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface AlertPreferencesRow {
   id: number;
@@ -65,29 +65,31 @@ const SENSITIVITY_PRESETS: Record<string, { priceChange: number; volumeChange: n
 };
 
 export class AlertRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
-  getPreferences(userId: string = "default"): AlertPreferencesRow | undefined {
-    return this.db
-      .prepare("SELECT * FROM alert_preferences WHERE user_id = ?")
-      .get(userId) as AlertPreferencesRow | undefined;
+  async getPreferences(userId: string = "default"): Promise<AlertPreferencesRow | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM alert_preferences WHERE user_id = $1",
+      [userId]
+    );
+    return rows[0] as AlertPreferencesRow | undefined;
   }
 
-  getAllEnabledPreferences(): AlertPreferencesRow[] {
-    return this.db
-      .prepare("SELECT * FROM alert_preferences WHERE enabled = 1")
-      .all() as AlertPreferencesRow[];
+  async getAllEnabledPreferences(): Promise<AlertPreferencesRow[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM alert_preferences WHERE enabled = 1"
+    );
+    return rows as AlertPreferencesRow[];
   }
 
-  upsertPreferences(insert: AlertPreferencesInsert): AlertPreferencesRow {
+  async upsertPreferences(insert: AlertPreferencesInsert): Promise<AlertPreferencesRow> {
     const userId = insert.userId ?? "default";
-    const existing = this.getPreferences(userId);
+    const existing = await this.getPreferences(userId);
 
-    // Apply sensitivity presets if sensitivity changed
     let priceThreshold = insert.priceChangeThreshold;
     let volumeThreshold = insert.volumeChangeThreshold;
     let newsThreshold = insert.newsFrequencyThreshold;
@@ -103,27 +105,24 @@ export class AlertRepository {
     }
 
     if (existing) {
-      // Partial update
-      this.db
-        .prepare(
-          `UPDATE alert_preferences SET
-            token_symbols = ?,
-            channels = ?,
-            sensitivity = ?,
-            news_frequency_threshold = ?,
-            news_window_minutes = ?,
-            price_change_threshold = ?,
-            volume_change_threshold = ?,
-            sentiment_change_threshold = ?,
-            whale_transaction_threshold = ?,
-            min_signals = ?,
-            enabled = ?,
-            telegram_chat_id = ?,
-            email_address = ?,
-            updated_at = datetime('now')
-          WHERE user_id = ?`
-        )
-        .run(
+      await this.pool.query(
+        `UPDATE alert_preferences SET
+            token_symbols = $1,
+            channels = $2,
+            sensitivity = $3,
+            news_frequency_threshold = $4,
+            news_window_minutes = $5,
+            price_change_threshold = $6,
+            volume_change_threshold = $7,
+            sentiment_change_threshold = $8,
+            whale_transaction_threshold = $9,
+            min_signals = $10,
+            enabled = $11,
+            telegram_chat_id = $12,
+            email_address = $13,
+            updated_at = NOW()
+          WHERE user_id = $14`,
+        [
           JSON.stringify(insert.tokenSymbols ?? JSON.parse(existing.token_symbols)),
           JSON.stringify(insert.channels ?? JSON.parse(existing.channels)),
           insert.sensitivity ?? existing.sensitivity,
@@ -137,18 +136,17 @@ export class AlertRepository {
           insert.enabled !== undefined ? (insert.enabled ? 1 : 0) : existing.enabled,
           insert.telegramChatId !== undefined ? insert.telegramChatId : existing.telegram_chat_id,
           insert.emailAddress !== undefined ? insert.emailAddress : existing.email_address,
-          userId
-        );
+          userId,
+        ]
+      );
     } else {
-      this.db
-        .prepare(
-          `INSERT INTO alert_preferences
+      await this.pool.query(
+        `INSERT INTO alert_preferences
             (user_id, token_symbols, channels, sensitivity, news_frequency_threshold,
              news_window_minutes, price_change_threshold, volume_change_threshold,
              sentiment_change_threshold, whale_transaction_threshold, min_signals, enabled, telegram_chat_id, email_address)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        )
-        .run(
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+        [
           userId,
           JSON.stringify(insert.tokenSymbols ?? []),
           JSON.stringify(insert.channels ?? ["web"]),
@@ -162,85 +160,84 @@ export class AlertRepository {
           insert.minSignals ?? 2,
           insert.enabled !== undefined ? (insert.enabled ? 1 : 0) : 1,
           insert.telegramChatId ?? null,
-          insert.emailAddress ?? null
-        );
+          insert.emailAddress ?? null,
+        ]
+      );
     }
 
-    return this.getPreferences(userId)!;
+    return (await this.getPreferences(userId))!;
   }
 
-  insertTriggeredAlert(insert: TriggeredAlertInsert): number {
-    const result = this.db
-      .prepare(
-        `INSERT INTO triggered_alerts (user_id, token_symbol, signals, signal_count, summary, delivered_channels)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+  async insertTriggeredAlert(insert: TriggeredAlertInsert): Promise<number> {
+    const { rows } = await this.pool.query(
+      `INSERT INTO triggered_alerts (user_id, token_symbol, signals, signal_count, summary, delivered_channels)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+      [
         insert.userId,
         insert.tokenSymbol,
         JSON.stringify(insert.signals),
         insert.signalCount,
         insert.summary,
-        JSON.stringify(insert.deliveredChannels)
-      );
-    return result.lastInsertRowid as number;
+        JSON.stringify(insert.deliveredChannels),
+      ]
+    );
+    return rows[0].id as number;
   }
 
-  getRecentAlerts(userId: string, hours: number = 24): TriggeredAlertRow[] {
-    return this.db
-      .prepare(
-        `SELECT * FROM triggered_alerts
-         WHERE user_id = ? AND created_at >= datetime('now', ?)
-         ORDER BY created_at DESC`
-      )
-      .all(userId, `-${hours} hours`) as TriggeredAlertRow[];
+  async getRecentAlerts(userId: string, hours: number = 24): Promise<TriggeredAlertRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM triggered_alerts
+         WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '${hours} hours'
+         ORDER BY created_at DESC`,
+      [userId]
+    );
+    return rows as TriggeredAlertRow[];
   }
 
-  insertMissedAlert(insert: TriggeredAlertInsert): number {
-    const result = this.db
-      .prepare(
-        `INSERT INTO missed_alerts (user_id, token_symbol, signals, signal_count, summary)
-         VALUES (?, ?, ?, ?, ?)`
-      )
-      .run(
+  async insertMissedAlert(insert: TriggeredAlertInsert): Promise<number> {
+    const { rows } = await this.pool.query(
+      `INSERT INTO missed_alerts (user_id, token_symbol, signals, signal_count, summary)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id`,
+      [
         insert.userId,
         insert.tokenSymbol,
         JSON.stringify(insert.signals),
         insert.signalCount,
-        insert.summary
-      );
-    return result.lastInsertRowid as number;
+        insert.summary,
+      ]
+    );
+    return rows[0].id as number;
   }
 
-  getDailyMissedAlertCount(userId: string): number {
+  async getDailyMissedAlertCount(userId: string): Promise<number> {
     const today = new Date().toISOString().split("T")[0];
-    const result = this.db
-      .prepare(
-        "SELECT COUNT(*) as count FROM missed_alerts WHERE user_id = ? AND date(created_at) = ?"
-      )
-      .get(userId, today) as { count: number };
-    return result.count;
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM missed_alerts WHERE user_id = $1 AND created_at::date = $2",
+      [userId, today]
+    );
+    return Number(rows[0].count);
   }
 
-  getRecentMissedAlerts(userId: string, hours: number = 24): TriggeredAlertRow[] {
-    return this.db
-      .prepare(
-        `SELECT id, user_id, token_symbol, signals, signal_count, summary, '[]' as delivered_channels, created_at
+  async getRecentMissedAlerts(userId: string, hours: number = 24): Promise<TriggeredAlertRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT id, user_id, token_symbol, signals, signal_count, summary, '[]' as delivered_channels, created_at
          FROM missed_alerts
-         WHERE user_id = ? AND created_at >= datetime('now', ?)
-         ORDER BY created_at DESC`
-      )
-      .all(userId, `-${hours} hours`) as TriggeredAlertRow[];
+         WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '${hours} hours'
+         ORDER BY created_at DESC`,
+      [userId]
+    );
+    return rows as TriggeredAlertRow[];
   }
 
   /** Check if we already alerted for this token recently (dedup window) */
-  hasRecentAlert(userId: string, tokenSymbol: string, minutes: number = 30): boolean {
-    const row = this.db
-      .prepare(
-        `SELECT COUNT(*) as count FROM triggered_alerts
-         WHERE user_id = ? AND token_symbol = ? AND created_at >= datetime('now', ?)`
-      )
-      .get(userId, tokenSymbol, `-${minutes} minutes`) as { count: number };
-    return row.count > 0;
+  async hasRecentAlert(userId: string, tokenSymbol: string, minutes: number = 30): Promise<boolean> {
+    const { rows } = await this.pool.query(
+      `SELECT COUNT(*) as count FROM triggered_alerts
+         WHERE user_id = $1 AND token_symbol = $2 AND created_at >= NOW() - INTERVAL '${minutes} minutes'`,
+      [userId, tokenSymbol]
+    );
+    return Number(rows[0].count) > 0;
   }
 }

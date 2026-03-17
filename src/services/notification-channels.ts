@@ -172,7 +172,7 @@ export const webPushChannel: NotificationChannel = {
     );
 
     const pushRepo = new PushRepository();
-    const subscriptions = pushRepo.getByUser(userId);
+    const subscriptions = await pushRepo.getByUser(userId);
 
     if (subscriptions.length === 0) {
       console.warn(`Web Push: no subscriptions for user ${userId}, skipping`);
@@ -206,7 +206,7 @@ export const webPushChannel: NotificationChannel = {
         const statusCode = (err as { statusCode?: number }).statusCode;
         if (statusCode === 410 || statusCode === 404) {
           // Subscription expired or invalid — clean up
-          pushRepo.removeByEndpoint(sub.endpoint);
+          await pushRepo.removeByEndpoint(sub.endpoint);
           console.log(`Web Push: removed expired subscription ${sub.endpoint}`);
         } else {
           console.error(`Web Push send error for ${sub.endpoint}:`, err);

@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src/ ./src/
@@ -16,26 +16,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install sqlite backup tool
-RUN apk add --no-cache sqlite
-
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY public/ ./public/
 
-# Data volume for SQLite
-RUN mkdir -p /data /backups
-VOLUME ["/data", "/backups"]
-
 ENV NODE_ENV=production
-ENV PORT=3000
-ENV DATABASE_PATH=/data/wavedge.db
+ENV PORT=8080
 
-EXPOSE 3000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:8080/health || exit 1
 
 CMD ["node", "dist/index.js"]

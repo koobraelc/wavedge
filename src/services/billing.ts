@@ -21,7 +21,7 @@ export class BillingService {
     const stripe = getStripe();
     if (!stripe) throw new Error("Stripe is not configured");
 
-    const user = this.userRepo.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) throw new Error("User not found");
 
     // Get or create Stripe customer
@@ -32,7 +32,7 @@ export class BillingService {
         metadata: { wavedge_user_id: user.id },
       });
       customerId = customer.id;
-      this.userRepo.updateStripeCustomerId(userId, customerId);
+      await this.userRepo.updateStripeCustomerId(userId, customerId);
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -51,7 +51,7 @@ export class BillingService {
     const stripe = getStripe();
     if (!stripe) throw new Error("Stripe is not configured");
 
-    const user = this.userRepo.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user?.stripe_customer_id) {
       throw new Error("No billing account found");
     }
@@ -78,27 +78,27 @@ export class BillingService {
     this.processEvent(event);
   }
 
-  processEvent(event: Stripe.Event): void {
+  async processEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        this.handleCheckoutCompleted(session);
+        await this.handleCheckoutCompleted(session);
         break;
       }
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        this.handleSubscriptionUpdated(sub);
+        await this.handleSubscriptionUpdated(sub);
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        this.handleSubscriptionDeleted(sub);
+        await this.handleSubscriptionDeleted(sub);
         break;
       }
     }
   }
 
-  private handleCheckoutCompleted(session: Stripe.Checkout.Session): void {
+  private async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
     const userId = session.metadata?.wavedge_user_id;
     if (!userId || !session.subscription) return;
 
@@ -107,18 +107,18 @@ export class BillingService {
         ? session.subscription
         : session.subscription.id;
 
-    this.userRepo.upsertSubscription({
+    await this.userRepo.upsertSubscription({
       id: crypto.randomUUID(),
       userId,
       stripeSubscriptionId: subscriptionId,
       status: "active",
     });
-    this.userRepo.updateTier(userId, "pro");
+    await this.userRepo.updateTier(userId, "pro");
   }
 
-  private handleSubscriptionUpdated(sub: Stripe.Subscription): void {
+  private async handleSubscriptionUpdated(sub: Stripe.Subscription): Promise<void> {
     const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-    const user = this.userRepo.findByStripeCustomerId(customerId);
+    const user = await this.userRepo.findByStripeCustomerId(customerId);
     if (!user) return;
 
     // Period dates live on the first item in newer Stripe API versions
@@ -126,7 +126,7 @@ export class BillingService {
     const periodStart = firstItem?.current_period_start;
     const periodEnd = firstItem?.current_period_end;
 
-    this.userRepo.upsertSubscription({
+    await this.userRepo.upsertSubscription({
       id: crypto.randomUUID(),
       userId: user.id,
       stripeSubscriptionId: sub.id,
@@ -137,20 +137,20 @@ export class BillingService {
     });
 
     const isActive = ["active", "trialing"].includes(sub.status);
-    this.userRepo.updateTier(user.id, isActive ? "pro" : "free");
+    await this.userRepo.updateTier(user.id, isActive ? "pro" : "free");
   }
 
-  private handleSubscriptionDeleted(sub: Stripe.Subscription): void {
+  private async handleSubscriptionDeleted(sub: Stripe.Subscription): Promise<void> {
     const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-    const user = this.userRepo.findByStripeCustomerId(customerId);
+    const user = await this.userRepo.findByStripeCustomerId(customerId);
     if (!user) return;
 
-    this.userRepo.upsertSubscription({
+    await this.userRepo.upsertSubscription({
       id: crypto.randomUUID(),
       userId: user.id,
       stripeSubscriptionId: sub.id,
       status: "canceled",
     });
-    this.userRepo.updateTier(user.id, "free");
+    await this.userRepo.updateTier(user.id, "free");
   }
 }

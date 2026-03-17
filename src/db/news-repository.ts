@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface ArticleRow {
   id: number;
@@ -28,19 +28,18 @@ export interface ArticleInsert {
 }
 
 export class NewsRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
-  insertArticle(article: ArticleInsert): boolean {
-    const result = this.db
-      .prepare(
-        `INSERT OR IGNORE INTO articles (guid, title, summary, url, source, author, published_at, relevance_score, token_tags)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+  async insertArticle(article: ArticleInsert): Promise<boolean> {
+    const result = await this.pool.query(
+      `INSERT INTO articles (guid, title, summary, url, source, author, published_at, relevance_score, token_tags)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT(guid) DO NOTHING`,
+      [
         article.guid,
         article.title,
         article.summary,
@@ -49,106 +48,151 @@ export class NewsRepository {
         article.author,
         article.publishedAt,
         article.relevanceScore,
-        JSON.stringify(article.tokenTags)
-      );
-    return result.changes > 0;
+        JSON.stringify(article.tokenTags),
+      ]
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 
-  insertArticlesBatch(articles: ArticleInsert[]): number {
-    const insertMany = this.db.transaction((items: ArticleInsert[]) => {
+  async insertArticlesBatch(articles: ArticleInsert[]): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
       let count = 0;
-      for (const item of items) {
-        if (this.insertArticle(item)) {
+      for (const item of articles) {
+        const result = await client.query(
+          `INSERT INTO articles (guid, title, summary, url, source, author, published_at, relevance_score, token_tags)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT(guid) DO NOTHING`,
+          [
+            item.guid,
+            item.title,
+            item.summary,
+            item.url,
+            item.source,
+            item.author,
+            item.publishedAt,
+            item.relevanceScore,
+            JSON.stringify(item.tokenTags),
+          ]
+        );
+        if ((result.rowCount ?? 0) > 0) {
           count++;
         }
       }
+      await client.query("COMMIT");
       return count;
-    });
-    return insertMany(articles);
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
-  getArticles(options?: {
+  async getArticles(options?: {
     source?: string;
     tokenTag?: string;
     limit?: number;
     offset?: number;
-  }): ArticleRow[] {
+  }): Promise<ArticleRow[]> {
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
     const conditions: string[] = [];
     const params: (string | number)[] = [];
+    let paramIndex = 1;
 
     if (options?.source) {
-      conditions.push("source = ?");
+      conditions.push(`source = $${paramIndex++}`);
       params.push(options.source);
     }
 
     if (options?.tokenTag) {
-      conditions.push("token_tags LIKE ?");
+      conditions.push(`token_tags LIKE $${paramIndex++}`);
       params.push(`%"${options.tokenTag}"%`);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    return this.db
-      .prepare(
-        `SELECT * FROM articles ${where} ORDER BY published_at DESC LIMIT ? OFFSET ?`
-      )
-      .all(...params, limit, offset) as ArticleRow[];
+    params.push(limit);
+    const limitParam = `$${paramIndex++}`;
+    params.push(offset);
+    const offsetParam = `$${paramIndex++}`;
+
+    const { rows } = await this.pool.query(
+      `SELECT * FROM articles ${where} ORDER BY published_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
+      params
+    );
+    return rows as ArticleRow[];
   }
 
-  getArticleById(id: number): ArticleRow | undefined {
-    return this.db
-      .prepare("SELECT * FROM articles WHERE id = ?")
-      .get(id) as ArticleRow | undefined;
+  async getArticleById(id: number): Promise<ArticleRow | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM articles WHERE id = $1",
+      [id]
+    );
+    return rows[0] as ArticleRow | undefined;
   }
 
-  getArticleByGuid(guid: string): ArticleRow | undefined {
-    return this.db
-      .prepare("SELECT * FROM articles WHERE guid = ?")
-      .get(guid) as ArticleRow | undefined;
+  async getArticleByGuid(guid: string): Promise<ArticleRow | undefined> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM articles WHERE guid = $1",
+      [guid]
+    );
+    return rows[0] as ArticleRow | undefined;
   }
 
-  getArticleCount(): number {
-    const row = this.db
-      .prepare("SELECT COUNT(*) as count FROM articles")
-      .get() as { count: number };
-    return row.count;
+  async getArticleCount(): Promise<number> {
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM articles"
+    );
+    return parseInt(rows[0].count, 10);
   }
 
-  getSources(): string[] {
-    const rows = this.db
-      .prepare("SELECT DISTINCT source FROM articles ORDER BY source")
-      .all() as { source: string }[];
-    return rows.map((r) => r.source);
+  async getSources(): Promise<string[]> {
+    const { rows } = await this.pool.query(
+      "SELECT DISTINCT source FROM articles ORDER BY source"
+    );
+    return (rows as { source: string }[]).map((r) => r.source);
   }
 
-  getAllArticlesForRetag(): { id: number; title: string; summary: string | null }[] {
-    return this.db
-      .prepare("SELECT id, title, summary FROM articles")
-      .all() as { id: number; title: string; summary: string | null }[];
+  async getAllArticlesForRetag(): Promise<{ id: number; title: string; summary: string | null }[]> {
+    const { rows } = await this.pool.query(
+      "SELECT id, title, summary FROM articles"
+    );
+    return rows as { id: number; title: string; summary: string | null }[];
   }
 
-  updateTokenTags(id: number, tokenTags: string[]): void {
-    this.db
-      .prepare("UPDATE articles SET token_tags = ? WHERE id = ?")
-      .run(JSON.stringify(tokenTags), id);
+  async updateTokenTags(id: number, tokenTags: string[]): Promise<void> {
+    await this.pool.query(
+      "UPDATE articles SET token_tags = $1 WHERE id = $2",
+      [JSON.stringify(tokenTags), id]
+    );
   }
 
-  retagAllArticles(tagger: (text: string) => string[]): { total: number; updated: number } {
-    const articles = this.getAllArticlesForRetag();
+  async retagAllArticles(tagger: (text: string) => string[]): Promise<{ total: number; updated: number }> {
+    const articles = await this.getAllArticlesForRetag();
     let updated = 0;
 
-    const updateMany = this.db.transaction(() => {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
       for (const article of articles) {
         const searchText = `${article.title} ${article.summary || ""}`;
         const newTags = tagger(searchText);
-        this.updateTokenTags(article.id, newTags);
+        await client.query(
+          "UPDATE articles SET token_tags = $1 WHERE id = $2",
+          [JSON.stringify(newTags), article.id]
+        );
         updated++;
       }
-    });
-
-    updateMany();
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
     return { total: articles.length, updated };
   }
 }

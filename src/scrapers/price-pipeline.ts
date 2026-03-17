@@ -49,7 +49,7 @@ export class PricePipeline {
       }
 
       const inserts = marketData.map(mapMarketDataToInsert);
-      tokensProcessed = this.repo.insertPricesBatch(inserts);
+      tokensProcessed = await this.repo.insertPricesBatch(inserts);
 
       console.log(
         `Price pipeline: ingested ${tokensProcessed} price records for ${marketData.length} tokens in ${Date.now() - start}ms`

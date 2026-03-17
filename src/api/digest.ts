@@ -25,7 +25,7 @@ export function createDigestRouter(digestRepo?: DigestRepository): Router {
   const delivery = new DigestDelivery(generator, repo);
 
   // Subscribe via email
-  router.post("/subscribe", (req, res) => {
+  router.post("/subscribe", async (req, res) => {
     const { email, telegram_chat_id, lang } = req.body;
     const validLang = lang === "zh" ? "zh" : "en";
 
@@ -37,9 +37,9 @@ export function createDigestRouter(digestRepo?: DigestRepository): Router {
     try {
       let subscriber;
       if (email) {
-        subscriber = repo.subscribeEmail(email, validLang);
+        subscriber = await repo.subscribeEmail(email, validLang);
       } else {
-        subscriber = repo.subscribeTelegram(telegram_chat_id, validLang);
+        subscriber = await repo.subscribeTelegram(telegram_chat_id, validLang);
       }
       res.json({ data: subscriber });
     } catch (err) {
@@ -49,60 +49,85 @@ export function createDigestRouter(digestRepo?: DigestRepository): Router {
   });
 
   // Unsubscribe via token (from email link)
-  router.get("/unsubscribe", (req, res) => {
-    const token = req.query.token as string;
-    if (!token) {
-      res.status(400).json({ error: "token required" });
-      return;
-    }
+  router.get("/unsubscribe", async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      if (!token) {
+        res.status(400).json({ error: "token required" });
+        return;
+      }
 
-    const success = repo.unsubscribeByToken(token);
-    if (success) {
-      res.type("html").send(`
-        <html><body style="font-family:system-ui;text-align:center;padding:60px">
-          <h2>Unsubscribed</h2>
-          <p>You have been removed from the Wavedge daily digest.</p>
-        </body></html>
-      `);
-    } else {
-      res.status(404).json({ error: "Invalid or expired unsubscribe token" });
+      const success = await repo.unsubscribeByToken(token);
+      if (success) {
+        res.type("html").send(`
+          <html><body style="font-family:system-ui;text-align:center;padding:60px">
+            <h2>Unsubscribed</h2>
+            <p>You have been removed from the Wavedge daily digest.</p>
+          </body></html>
+        `);
+      } else {
+        res.status(404).json({ error: "Invalid or expired unsubscribe token" });
+      }
+    } catch (err) {
+      console.error("[Digest] Unsubscribe error:", err);
+      res.status(500).json({ error: "Failed to unsubscribe" });
     }
   });
 
   // Unsubscribe via email (API)
-  router.post("/unsubscribe", (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-      res.status(400).json({ error: "email required" });
-      return;
-    }
+  router.post("/unsubscribe", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ error: "email required" });
+        return;
+      }
 
-    const success = repo.unsubscribeEmail(email);
-    res.json({ success });
+      const success = await repo.unsubscribeEmail(email);
+      res.json({ success });
+    } catch (err) {
+      console.error("[Digest] Unsubscribe email error:", err);
+      res.status(500).json({ error: "Failed to unsubscribe" });
+    }
   });
 
   // Get subscriber stats
-  router.get("/subscribers", (_req, res) => {
-    const counts = repo.getSubscriberCount();
-    res.json({ data: counts });
+  router.get("/subscribers", async (_req, res) => {
+    try {
+      const counts = await repo.getSubscriberCount();
+      res.json({ data: counts });
+    } catch (err) {
+      console.error("[Digest] Subscribers error:", err);
+      res.status(500).json({ error: "Failed to fetch subscriber count" });
+    }
   });
 
   // Get digest history
-  router.get("/history", (req, res) => {
-    const limit = parseInt(req.query.limit as string) || 10;
-    const digests = repo.getRecentDigests(limit);
-    res.json({ data: digests });
+  router.get("/history", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const digests = await repo.getRecentDigests(limit);
+      res.json({ data: digests });
+    } catch (err) {
+      console.error("[Digest] History error:", err);
+      res.status(500).json({ error: "Failed to fetch digest history" });
+    }
   });
 
   // Get latest digest for a language
-  router.get("/latest", (req, res) => {
-    const lang = req.query.lang === "zh" ? "zh" : "en";
-    const digest = repo.getLatestDigest(lang);
-    if (!digest) {
-      res.status(404).json({ error: "No digest found" });
-      return;
+  router.get("/latest", async (req, res) => {
+    try {
+      const lang = req.query.lang === "zh" ? "zh" : "en";
+      const digest = await repo.getLatestDigest(lang);
+      if (!digest) {
+        res.status(404).json({ error: "No digest found" });
+        return;
+      }
+      res.json({ data: digest });
+    } catch (err) {
+      console.error("[Digest] Latest error:", err);
+      res.status(500).json({ error: "Failed to fetch latest digest" });
     }
-    res.json({ data: digest });
   });
 
   // Manually trigger digest generation (admin-only)

@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import type { Pool } from "pg";
+import { getPool } from "../db/database.js";
 
 /**
  * Dynamic token tagging configuration.
@@ -59,13 +59,12 @@ export function buildTokenConfig(
 let cachedConfig: Record<string, TokenConfig> | null = null;
 
 /** Get token config, loading from DB on first call (lazy init). */
-export function getTokenConfig(db?: Database.Database): Record<string, TokenConfig> {
+export async function getTokenConfig(db?: Pool): Promise<Record<string, TokenConfig>> {
   if (cachedConfig) return cachedConfig;
 
-  const database = db || getDatabase();
-  const rows = database
-    .prepare("SELECT symbol, name FROM tokens ORDER BY symbol ASC")
-    .all() as { symbol: string; name: string }[];
+  const pool = db || getPool();
+  const result = await pool.query('SELECT symbol, name FROM tokens ORDER BY symbol ASC');
+  const rows = result.rows as { symbol: string; name: string }[];
 
   cachedConfig = buildTokenConfig(rows);
   return cachedConfig;

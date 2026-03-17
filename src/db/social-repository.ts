@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface SocialMentionRow {
   id: number;
@@ -28,21 +28,28 @@ export interface SocialMentionInsert {
 }
 
 export class SocialRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
-  insertMention(insert: SocialMentionInsert): number {
-    const result = this.db
-      .prepare(
-        `INSERT OR REPLACE INTO social_mentions
-          (token_symbol, source, mention_count, sentiment_score, sentiment_label,
-           positive_count, negative_count, neutral_count, sample_texts)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+  async insertMention(insert: SocialMentionInsert): Promise<number> {
+    const { rows } = await this.pool.query(
+      `INSERT INTO social_mentions
+        (token_symbol, source, mention_count, sentiment_score, sentiment_label,
+         positive_count, negative_count, neutral_count, sample_texts)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT(token_symbol, source, fetched_at) DO UPDATE SET
+         mention_count = EXCLUDED.mention_count,
+         sentiment_score = EXCLUDED.sentiment_score,
+         sentiment_label = EXCLUDED.sentiment_label,
+         positive_count = EXCLUDED.positive_count,
+         negative_count = EXCLUDED.negative_count,
+         neutral_count = EXCLUDED.neutral_count,
+         sample_texts = EXCLUDED.sample_texts
+       RETURNING id`,
+      [
         insert.tokenSymbol.toUpperCase(),
         insert.source,
         insert.mentionCount,
@@ -51,87 +58,101 @@ export class SocialRepository {
         insert.positiveCount,
         insert.negativeCount,
         insert.neutralCount,
-        JSON.stringify(insert.sampleTexts)
-      );
-    return result.lastInsertRowid as number;
+        JSON.stringify(insert.sampleTexts),
+      ]
+    );
+    return rows[0].id;
   }
 
-  insertBatch(inserts: SocialMentionInsert[]): number {
-    const stmt = this.db.prepare(
-      `INSERT OR REPLACE INTO social_mentions
-        (token_symbol, source, mention_count, sentiment_score, sentiment_label,
-         positive_count, negative_count, neutral_count, sample_texts)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
-
-    let count = 0;
-    const tx = this.db.transaction(() => {
+  async insertBatch(inserts: SocialMentionInsert[]): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      let count = 0;
       for (const insert of inserts) {
-        stmt.run(
-          insert.tokenSymbol.toUpperCase(),
-          insert.source,
-          insert.mentionCount,
-          insert.sentimentScore,
-          insert.sentimentLabel,
-          insert.positiveCount,
-          insert.negativeCount,
-          insert.neutralCount,
-          JSON.stringify(insert.sampleTexts)
+        await client.query(
+          `INSERT INTO social_mentions
+            (token_symbol, source, mention_count, sentiment_score, sentiment_label,
+             positive_count, negative_count, neutral_count, sample_texts)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT(token_symbol, source, fetched_at) DO UPDATE SET
+             mention_count = EXCLUDED.mention_count,
+             sentiment_score = EXCLUDED.sentiment_score,
+             sentiment_label = EXCLUDED.sentiment_label,
+             positive_count = EXCLUDED.positive_count,
+             negative_count = EXCLUDED.negative_count,
+             neutral_count = EXCLUDED.neutral_count,
+             sample_texts = EXCLUDED.sample_texts`,
+          [
+            insert.tokenSymbol.toUpperCase(),
+            insert.source,
+            insert.mentionCount,
+            insert.sentimentScore,
+            insert.sentimentLabel,
+            insert.positiveCount,
+            insert.negativeCount,
+            insert.neutralCount,
+            JSON.stringify(insert.sampleTexts),
+          ]
         );
         count++;
       }
-    });
-    tx();
-    return count;
+      await client.query("COMMIT");
+      return count;
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
   /** Get the latest sentiment for a token. */
-  getLatest(tokenSymbol: string, source: string = "twitter"): SocialMentionRow | undefined {
-    return this.db
-      .prepare(
-        `SELECT * FROM social_mentions
-         WHERE token_symbol = ? AND source = ?
-         ORDER BY fetched_at DESC LIMIT 1`
-      )
-      .get(tokenSymbol.toUpperCase(), source) as SocialMentionRow | undefined;
+  async getLatest(tokenSymbol: string, source: string = "twitter"): Promise<SocialMentionRow | undefined> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM social_mentions
+       WHERE token_symbol = $1 AND source = $2
+       ORDER BY fetched_at DESC LIMIT 1`,
+      [tokenSymbol.toUpperCase(), source]
+    );
+    return rows[0];
   }
 
   /** Get sentiment history for a token within the last N hours. */
-  getHistory(tokenSymbol: string, hours: number = 24, source: string = "twitter"): SocialMentionRow[] {
-    return this.db
-      .prepare(
-        `SELECT * FROM social_mentions
-         WHERE token_symbol = ? AND source = ? AND fetched_at >= datetime('now', ?)
-         ORDER BY fetched_at DESC`
-      )
-      .all(tokenSymbol.toUpperCase(), source, `-${hours} hours`) as SocialMentionRow[];
+  async getHistory(tokenSymbol: string, hours: number = 24, source: string = "twitter"): Promise<SocialMentionRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM social_mentions
+       WHERE token_symbol = $1 AND source = $2 AND fetched_at >= NOW() - INTERVAL '${hours} hours'
+       ORDER BY fetched_at DESC`,
+      [tokenSymbol.toUpperCase(), source]
+    );
+    return rows;
   }
 
   /** Get latest sentiment for all tracked tokens. */
-  getLatestAll(source: string = "twitter"): SocialMentionRow[] {
-    return this.db
-      .prepare(
-        `SELECT s.* FROM social_mentions s
-         INNER JOIN (
-           SELECT token_symbol, MAX(fetched_at) as max_fetched
-           FROM social_mentions WHERE source = ?
-           GROUP BY token_symbol
-         ) latest ON s.token_symbol = latest.token_symbol AND s.fetched_at = latest.max_fetched
-         WHERE s.source = ?
-         ORDER BY s.mention_count DESC`
-      )
-      .all(source, source) as SocialMentionRow[];
+  async getLatestAll(source: string = "twitter"): Promise<SocialMentionRow[]> {
+    const { rows } = await this.pool.query(
+      `SELECT s.* FROM social_mentions s
+       INNER JOIN (
+         SELECT token_symbol, MAX(fetched_at) as max_fetched
+         FROM social_mentions WHERE source = $1
+         GROUP BY token_symbol
+       ) latest ON s.token_symbol = latest.token_symbol AND s.fetched_at = latest.max_fetched
+       WHERE s.source = $2
+       ORDER BY s.mention_count DESC`,
+      [source, source]
+    );
+    return rows;
   }
 
   /** Get mention count change between latest and previous data points. */
-  getMentionChange(tokenSymbol: string, source: string = "twitter"): { current: number; previous: number; changePercent: number } | null {
-    const rows = this.db
-      .prepare(
-        `SELECT mention_count, fetched_at FROM social_mentions
-         WHERE token_symbol = ? AND source = ?
-         ORDER BY fetched_at DESC LIMIT 2`
-      )
-      .all(tokenSymbol.toUpperCase(), source) as { mention_count: number; fetched_at: string }[];
+  async getMentionChange(tokenSymbol: string, source: string = "twitter"): Promise<{ current: number; previous: number; changePercent: number } | null> {
+    const { rows } = await this.pool.query(
+      `SELECT mention_count, fetched_at FROM social_mentions
+       WHERE token_symbol = $1 AND source = $2
+       ORDER BY fetched_at DESC LIMIT 2`,
+      [tokenSymbol.toUpperCase(), source]
+    );
 
     if (rows.length < 2) return null;
     const [current, previous] = rows;

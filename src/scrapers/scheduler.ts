@@ -51,7 +51,7 @@ export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void 
     } catch (err) {
       console.error("Price fetch failed:", err);
       schedulerStatus.price.lastError = new Date().toISOString();
-      schedulerRepo.logError("price", err);
+      await schedulerRepo.logError("price", err);
     }
   };
 
@@ -60,7 +60,7 @@ export function startPriceScheduler(intervalCron: string = "*/5 * * * *"): void 
   // Run immediately on start
   run();
 
-  priceTask = cron.schedule(intervalCron, run);
+  priceTask = cron.schedule(intervalCron, async () => { await run(); });
 }
 
 export function startNewsScheduler(intervalCron: string = "*/15 * * * *"): void {
@@ -86,13 +86,13 @@ export function startNewsScheduler(intervalCron: string = "*/15 * * * *"): void 
           await calculator.classifyNewArticles(result.articlesIngested + 10);
         } catch (err) {
           console.error("Post-ingestion classification failed:", err);
-          schedulerRepo.logError("news_classification", err);
+          await schedulerRepo.logError("news_classification", err);
         }
       }
     } catch (err) {
       console.error("News fetch failed:", err);
       schedulerStatus.news.lastError = new Date().toISOString();
-      schedulerRepo.logError("news", err);
+      await schedulerRepo.logError("news", err);
     }
   };
 
@@ -101,7 +101,7 @@ export function startNewsScheduler(intervalCron: string = "*/15 * * * *"): void 
   // Run immediately on start
   run();
 
-  newsTask = cron.schedule(intervalCron, run);
+  newsTask = cron.schedule(intervalCron, async () => { await run(); });
 }
 
 export function stopPriceScheduler(): void {
@@ -138,20 +138,20 @@ export function startAlertScheduler(intervalCron: string = "*/2 * * * *"): void 
       if (result.errors.length > 0) {
         console.error("Alert cycle errors:", result.errors);
         for (const e of result.errors) {
-          schedulerRepo.logError("alert", e);
+          await schedulerRepo.logError("alert", e);
         }
       }
     } catch (err) {
       console.error("Alert cycle failed:", err);
       schedulerStatus.alert.lastError = new Date().toISOString();
-      schedulerRepo.logError("alert", err);
+      await schedulerRepo.logError("alert", err);
     }
   };
 
   console.log(`Starting alert scheduler with cron: ${intervalCron}`);
 
   // Don't run immediately — wait for first price/news data
-  alertTask = cron.schedule(intervalCron, runCycle);
+  alertTask = cron.schedule(intervalCron, async () => { await runCycle(); });
 }
 
 export function stopAlertScheduler(): void {
@@ -181,13 +181,13 @@ export function startDigestScheduler(intervalCron: string = "0 8 * * *"): void {
     } catch (err) {
       console.error("Digest pipeline failed:", err);
       schedulerStatus.digest.lastError = new Date().toISOString();
-      schedulerRepo.logError("digest", err);
+      await schedulerRepo.logError("digest", err);
     }
   };
 
   console.log(`Starting digest scheduler with cron: ${intervalCron}`);
 
-  digestTask = cron.schedule(intervalCron, runDigest);
+  digestTask = cron.schedule(intervalCron, async () => { await runDigest(); });
 }
 
 export function stopDigestScheduler(): void {
@@ -215,7 +215,7 @@ export function startSentimentScheduler(intervalCron: string = "*/30 * * * *"): 
     } catch (err) {
       console.error("Sentiment pipeline failed:", err);
       schedulerStatus.sentiment.lastError = new Date().toISOString();
-      schedulerRepo.logError("sentiment", err);
+      await schedulerRepo.logError("sentiment", err);
     }
   };
 
@@ -224,7 +224,7 @@ export function startSentimentScheduler(intervalCron: string = "*/30 * * * *"): 
   // Run immediately on start
   run();
 
-  sentimentTask = cron.schedule(intervalCron, run);
+  sentimentTask = cron.schedule(intervalCron, async () => { await run(); });
 }
 
 export function stopSentimentScheduler(): void {
@@ -252,7 +252,7 @@ export function startWhaleScheduler(intervalCron: string = "*/10 * * * *"): void
     } catch (err) {
       console.error("Whale pipeline failed:", err);
       schedulerStatus.whale.lastError = new Date().toISOString();
-      schedulerRepo.logError("whale", err);
+      await schedulerRepo.logError("whale", err);
     }
   };
 
@@ -261,7 +261,7 @@ export function startWhaleScheduler(intervalCron: string = "*/10 * * * *"): void
   // Run immediately on start
   run();
 
-  whaleTask = cron.schedule(intervalCron, run);
+  whaleTask = cron.schedule(intervalCron, async () => { await run(); });
 }
 
 /** Impact computation scheduler — runs every hour to compute price impact for classified articles */
@@ -278,9 +278,9 @@ export function startImpactScheduler(intervalCron: string = "0 * * * *"): void {
     new PriceRepository()
   );
 
-  const run = () => {
+  const run = async () => {
     try {
-      const count = calculator.computeImpactEvents(200);
+      const count = await calculator.computeImpactEvents(200);
       schedulerStatus.impact.lastRun = new Date().toISOString();
       if (count > 0) {
         console.log(`Impact scheduler: computed ${count} events`);
@@ -288,7 +288,7 @@ export function startImpactScheduler(intervalCron: string = "0 * * * *"): void {
     } catch (err) {
       console.error("Impact computation failed:", err);
       schedulerStatus.impact.lastError = new Date().toISOString();
-      schedulerRepo.logError("impact", err);
+      await schedulerRepo.logError("impact", err);
     }
   };
 
@@ -297,7 +297,7 @@ export function startImpactScheduler(intervalCron: string = "0 * * * *"): void {
   // Run immediately to backfill existing articles
   run();
 
-  impactTask = cron.schedule(intervalCron, run);
+  impactTask = cron.schedule(intervalCron, async () => { await run(); });
 }
 
 export function stopImpactScheduler(): void {

@@ -5,14 +5,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - DATABASE_PATH=/data/wavedge.db
-    volumes:
-      - wavedge-data:/data
-      - wavedge-backups:/backups
+      - DATABASE_URL=${DATABASE_URL}
     expose:
-      - "3000"
+      - "8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -34,24 +31,6 @@ services:
       wavedge:
         condition: service_healthy
 
-  # Daily SQLite backup at 2:00 AM UTC
-  backup:
-    image: alpine:3.20
-    container_name: wavedge-backup
-    restart: unless-stopped
-    entrypoint: /bin/sh
-    command:
-      - -c
-      - |
-        apk add --no-cache sqlite && \
-        echo "0 2 * * * sqlite3 /data/wavedge.db '.backup /backups/wavedge-$(date +%Y%m%d).db' && find /backups -name '*.db' -mtime +7 -delete" | crontab - && \
-        crond -f -l 2
-    volumes:
-      - wavedge-data:/data:ro
-      - wavedge-backups:/backups
-
 volumes:
-  wavedge-data:
-  wavedge-backups:
   caddy-data:
   caddy-config:

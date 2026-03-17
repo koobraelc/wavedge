@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import type { Pool } from "pg";
+import { getPool } from "../db/database.js";
 
 export interface Signal {
   type: "news_frequency" | "price_movement" | "volume_change" | "sentiment_shift" | "whale_alert";
@@ -12,19 +12,19 @@ export interface Signal {
 /**
  * Detect news frequency spike: count articles mentioning a token within a time window.
  */
-export function detectNewsFrequency(
+export async function detectNewsFrequency(
   tokenSymbol: string,
   windowMinutes: number,
   threshold: number,
-  db?: Database.Database
-): Signal | null {
-  const database = db || getDatabase();
-  const row = database
-    .prepare(
-      `SELECT COUNT(*) as count FROM articles
-       WHERE token_tags LIKE ? AND published_at >= datetime('now', ?)`
-    )
-    .get(`%"${tokenSymbol.toUpperCase()}"%`, `-${windowMinutes} minutes`) as { count: number };
+  db?: Pool
+): Promise<Signal | null> {
+  const pool = db || getPool();
+  const result = await pool.query(
+    `SELECT COUNT(*) as count FROM articles
+     WHERE token_tags LIKE $1 AND published_at >= NOW() - INTERVAL '${windowMinutes} minutes'`,
+    [`%"${tokenSymbol.toUpperCase()}"%`]
+  );
+  const row = result.rows[0] as { count: number };
 
   if (row.count >= threshold) {
     return {
@@ -42,35 +42,35 @@ export function detectNewsFrequency(
  * Detect price movement: compare latest price to price N minutes ago.
  * Returns signal if absolute percentage change exceeds threshold.
  */
-export function detectPriceMovement(
+export async function detectPriceMovement(
   tokenSymbol: string,
   thresholdPercent: number,
   lookbackMinutes: number = 60,
-  db?: Database.Database
-): Signal | null {
-  const database = db || getDatabase();
+  db?: Pool
+): Promise<Signal | null> {
+  const pool = db || getPool();
 
   // Get latest price
-  const latest = database
-    .prepare(
-      `SELECT p.price_usd, p.fetched_at FROM prices p
-       JOIN tokens t ON t.id = p.token_id
-       WHERE t.symbol = ?
-       ORDER BY p.fetched_at DESC LIMIT 1`
-    )
-    .get(tokenSymbol.toLowerCase()) as { price_usd: number; fetched_at: string } | undefined;
+  const latestResult = await pool.query(
+    `SELECT p.price_usd, p.fetched_at FROM prices p
+     JOIN tokens t ON t.id = p.token_id
+     WHERE t.symbol = $1
+     ORDER BY p.fetched_at DESC LIMIT 1`,
+    [tokenSymbol.toLowerCase()]
+  );
+  const latest = latestResult.rows[0] as { price_usd: number; fetched_at: string } | undefined;
 
   if (!latest) return null;
 
   // Get price from lookback period
-  const past = database
-    .prepare(
-      `SELECT p.price_usd FROM prices p
-       JOIN tokens t ON t.id = p.token_id
-       WHERE t.symbol = ? AND p.fetched_at <= datetime('now', ?)
-       ORDER BY p.fetched_at DESC LIMIT 1`
-    )
-    .get(tokenSymbol.toLowerCase(), `-${lookbackMinutes} minutes`) as { price_usd: number } | undefined;
+  const pastResult = await pool.query(
+    `SELECT p.price_usd FROM prices p
+     JOIN tokens t ON t.id = p.token_id
+     WHERE t.symbol = $1 AND p.fetched_at <= NOW() - INTERVAL '${lookbackMinutes} minutes'
+     ORDER BY p.fetched_at DESC LIMIT 1`,
+    [tokenSymbol.toLowerCase()]
+  );
+  const past = pastResult.rows[0] as { price_usd: number } | undefined;
 
   if (!past || past.price_usd === 0) return null;
 
@@ -93,22 +93,22 @@ export function detectPriceMovement(
  * Detect volume change: compare latest volume to previous data point.
  * Returns signal if percentage change exceeds threshold.
  */
-export function detectVolumeChange(
+export async function detectVolumeChange(
   tokenSymbol: string,
   thresholdPercent: number,
-  db?: Database.Database
-): Signal | null {
-  const database = db || getDatabase();
+  db?: Pool
+): Promise<Signal | null> {
+  const pool = db || getPool();
 
   // Get the two most recent volume readings
-  const rows = database
-    .prepare(
-      `SELECT p.total_volume, p.fetched_at FROM prices p
-       JOIN tokens t ON t.id = p.token_id
-       WHERE t.symbol = ? AND p.total_volume IS NOT NULL AND p.total_volume > 0
-       ORDER BY p.fetched_at DESC LIMIT 2`
-    )
-    .all(tokenSymbol.toLowerCase()) as { total_volume: number; fetched_at: string }[];
+  const result = await pool.query(
+    `SELECT p.total_volume, p.fetched_at FROM prices p
+     JOIN tokens t ON t.id = p.token_id
+     WHERE t.symbol = $1 AND p.total_volume IS NOT NULL AND p.total_volume > 0
+     ORDER BY p.fetched_at DESC LIMIT 2`,
+    [tokenSymbol.toLowerCase()]
+  );
+  const rows = result.rows as { total_volume: number; fetched_at: string }[];
 
   if (rows.length < 2) return null;
 
@@ -135,27 +135,27 @@ export function detectVolumeChange(
  * Fires when mention volume change exceeds threshold (indicating viral social activity).
  * Also reports sentiment direction (bullish/bearish/neutral).
  */
-export function detectSentimentShift(
+export async function detectSentimentShift(
   tokenSymbol: string,
   thresholdPercent: number,
-  db?: Database.Database
-): Signal | null {
-  const database = db || getDatabase();
+  db?: Pool
+): Promise<Signal | null> {
+  const pool = db || getPool();
 
   // Get the two most recent sentiment readings
-  const rows = database
-    .prepare(
-      `SELECT mention_count, sentiment_score, sentiment_label, fetched_at
-       FROM social_mentions
-       WHERE token_symbol = ? AND mention_count > 0
-       ORDER BY fetched_at DESC LIMIT 2`
-    )
-    .all(tokenSymbol.toUpperCase()) as {
-      mention_count: number;
-      sentiment_score: number;
-      sentiment_label: string;
-      fetched_at: string;
-    }[];
+  const result = await pool.query(
+    `SELECT mention_count, sentiment_score, sentiment_label, fetched_at
+     FROM social_mentions
+     WHERE token_symbol = $1 AND mention_count > 0
+     ORDER BY fetched_at DESC LIMIT 2`,
+    [tokenSymbol.toUpperCase()]
+  );
+  const rows = result.rows as {
+    mention_count: number;
+    sentiment_score: number;
+    sentiment_label: string;
+    fetched_at: string;
+  }[];
 
   if (rows.length < 2) return null;
 
@@ -182,21 +182,21 @@ export function detectSentimentShift(
  * Detect whale alert: check for large on-chain transfers within a time window.
  * Fires when the total USD value of whale transactions exceeds the threshold.
  */
-export function detectWhaleAlert(
+export async function detectWhaleAlert(
   tokenSymbol: string,
   thresholdUsd: number,
   windowHours: number = 1,
-  db?: Database.Database
-): Signal | null {
-  const database = db || getDatabase();
+  db?: Pool
+): Promise<Signal | null> {
+  const pool = db || getPool();
 
-  const row = database
-    .prepare(
-      `SELECT COUNT(*) as tx_count, COALESCE(SUM(amount_usd), 0) as total_usd
-       FROM whale_transactions
-       WHERE token_symbol = ? AND fetched_at >= datetime('now', ?)`
-    )
-    .get(tokenSymbol.toUpperCase(), `-${windowHours} hours`) as { tx_count: number; total_usd: number };
+  const result = await pool.query(
+    `SELECT COUNT(*) as tx_count, COALESCE(SUM(amount_usd), 0) as total_usd
+     FROM whale_transactions
+     WHERE token_symbol = $1 AND fetched_at >= NOW() - INTERVAL '${windowHours} hours'`,
+    [tokenSymbol.toUpperCase()]
+  );
+  const row = result.rows[0] as { tx_count: number; total_usd: number };
 
   if (row.total_usd >= thresholdUsd) {
     const formatted = row.total_usd >= 1_000_000_000

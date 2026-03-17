@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import type { Pool } from "pg";
+import { getPool } from "../db/database.js";
 import type { ImpactRepository } from "../db/impact-repository.js";
 
 export interface TokenSummary {
@@ -29,14 +29,14 @@ interface CachedSummaryRow {
  */
 export class SummaryService {
   private client: Anthropic | null = null;
-  private db: Database.Database;
+  private pool: Pool;
 
   constructor(
     private impactRepo: ImpactRepository,
-    db?: Database.Database,
+    db?: Pool,
     apiKey?: string
   ) {
-    this.db = db || getDatabase();
+    this.pool = db || getPool();
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
     if (key) {
       this.client = new Anthropic({ apiKey: key });
@@ -51,15 +51,15 @@ export class SummaryService {
     const normalizedSymbol = symbol.toUpperCase();
 
     // Check cache first
-    const cached = this.getCachedSummary(normalizedSymbol, lang);
+    const cached = await this.getCachedSummary(normalizedSymbol, lang);
     if (cached) return cached;
 
     // Gather data for summary generation
-    const articles = this.impactRepo.getRecentClassifiedArticles(
+    const articles = await this.impactRepo.getRecentClassifiedArticles(
       normalizedSymbol,
       7
     );
-    const impactStats = this.impactRepo.getImpactStatsByToken(normalizedSymbol);
+    const impactStats = await this.impactRepo.getImpactStatsByToken(normalizedSymbol);
 
     if (articles.length === 0) {
       return null;
@@ -148,47 +148,47 @@ export class SummaryService {
     };
 
     // Cache the result (24h TTL)
-    this.cacheSummary(normalizedSymbol, lang, result);
+    await this.cacheSummary(normalizedSymbol, lang, result);
     return result;
   }
 
-  private getCachedSummary(
+  private async getCachedSummary(
     symbol: string,
     lang: string
-  ): TokenSummary | null {
-    const row = this.db
-      .prepare(
-        `SELECT * FROM summary_cache
-         WHERE token_symbol = ? AND lang = ? AND expires_at > datetime('now')`
-      )
-      .get(symbol, lang) as CachedSummaryRow | undefined;
+  ): Promise<TokenSummary | null> {
+    const result = await this.pool.query(
+      `SELECT * FROM summary_cache
+       WHERE token_symbol = $1 AND lang = $2 AND expires_at > NOW()`,
+      [symbol, lang]
+    );
+    const row = result.rows[0] as CachedSummaryRow | undefined;
 
     if (!row) return null;
     return JSON.parse(row.summary_json) as TokenSummary;
   }
 
-  private cacheSummary(
+  private async cacheSummary(
     symbol: string,
     lang: string,
     summary: TokenSummary
-  ): void {
-    this.db
-      .prepare(
-        `INSERT INTO summary_cache (token_symbol, lang, summary_json, expires_at)
-         VALUES (?, ?, ?, datetime('now', '+1 day'))
-         ON CONFLICT(token_symbol, lang) DO UPDATE SET
-           summary_json = excluded.summary_json,
-           generated_at = datetime('now'),
-           expires_at = datetime('now', '+1 day')`
-      )
-      .run(symbol, lang, JSON.stringify(summary));
+  ): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO summary_cache (token_symbol, lang, summary_json, expires_at)
+       VALUES ($1, $2, $3, NOW() + INTERVAL '1 day')
+       ON CONFLICT(token_symbol, lang) DO UPDATE SET
+         summary_json = EXCLUDED.summary_json,
+         generated_at = NOW(),
+         expires_at = NOW() + INTERVAL '1 day'`,
+      [symbol, lang, JSON.stringify(summary)]
+    );
   }
 
   /** Invalidate cached summaries for a token (e.g., on significant news events) */
-  invalidateCache(symbol: string): void {
-    this.db
-      .prepare("DELETE FROM summary_cache WHERE token_symbol = ?")
-      .run(symbol.toUpperCase());
+  async invalidateCache(symbol: string): Promise<void> {
+    await this.pool.query(
+      "DELETE FROM summary_cache WHERE token_symbol = $1",
+      [symbol.toUpperCase()]
+    );
   }
 
   private async generateWithLLM(

@@ -1,13 +1,11 @@
 import { Router } from "express";
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import { getPool } from "../db/database.js";
 
-export function createSearchRouter(db?: Database.Database): Router {
+export function createSearchRouter(): Router {
   const router = Router();
-  const database = db || getDatabase();
 
   /** GET /api/search?q=bitcoin&limit=20 — search across tokens and articles */
-  router.get("/", (req, res) => {
+  router.get("/", async (req, res) => {
     const query = (req.query.q as string || "").trim();
     if (!query) {
       res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -17,32 +15,37 @@ export function createSearchRouter(db?: Database.Database): Router {
     const limit = Math.min(Math.max(1, parseInt(req.query.limit as string) || 20), 100);
     const pattern = `%${query}%`;
 
-    const tokens = database
-      .prepare(
+    try {
+      const pool = getPool();
+
+      const tokensResult = await pool.query(
         `SELECT t.id, t.symbol, t.name, p.price_usd, p.market_cap
          FROM tokens t
          LEFT JOIN prices p ON p.token_id = t.id
            AND p.fetched_at = (SELECT MAX(p2.fetched_at) FROM prices p2 WHERE p2.token_id = t.id)
-         WHERE t.symbol LIKE ? OR t.name LIKE ?
+         WHERE t.symbol LIKE $1 OR t.name LIKE $2
          ORDER BY p.market_cap DESC NULLS LAST
-         LIMIT ?`
-      )
-      .all(pattern, pattern, limit) as Record<string, unknown>[];
+         LIMIT $3`,
+        [pattern, pattern, limit]
+      );
 
-    const articles = database
-      .prepare(
+      const articlesResult = await pool.query(
         `SELECT id, guid, title, summary, url, source, published_at, relevance_score, token_tags
          FROM articles
-         WHERE title LIKE ? OR summary LIKE ?
+         WHERE title LIKE $1 OR summary LIKE $2
          ORDER BY relevance_score DESC, published_at DESC
-         LIMIT ?`
-      )
-      .all(pattern, pattern, limit) as Record<string, unknown>[];
+         LIMIT $3`,
+        [pattern, pattern, limit]
+      );
 
-    res.json({
-      data: { tokens, articles },
-      query,
-    });
+      res.json({
+        data: { tokens: tokensResult.rows, articles: articlesResult.rows },
+        query,
+      });
+    } catch (err) {
+      console.error("[Search] Error:", err);
+      res.status(500).json({ error: "Failed to perform search" });
+    }
   });
 
   return router;

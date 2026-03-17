@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getDatabase } from "../db/database.js";
+import { getPool } from "../db/database.js";
 
 export function createAffiliateRouter(): Router {
   const router = Router();
@@ -17,7 +17,7 @@ export function createAffiliateRouter(): Router {
   });
 
   /** POST /api/affiliate/click — track an affiliate click */
-  router.post("/click", (req, res) => {
+  router.post("/click", async (req, res) => {
     const { token, exchange } = req.body;
 
     if (!token || !exchange) {
@@ -32,10 +32,11 @@ export function createAffiliateRouter(): Router {
     }
 
     try {
-      const db = getDatabase();
-      db.prepare(
-        "INSERT INTO affiliate_clicks (token_symbol, exchange) VALUES (?, ?)"
-      ).run(String(token).toUpperCase(), String(exchange).toLowerCase());
+      const pool = getPool();
+      await pool.query(
+        "INSERT INTO affiliate_clicks (token_symbol, exchange) VALUES ($1, $2)",
+        [String(token).toUpperCase(), String(exchange).toLowerCase()]
+      );
 
       res.json({ ok: true });
     } catch {

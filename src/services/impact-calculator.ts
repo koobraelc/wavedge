@@ -66,11 +66,11 @@ export class ImpactCalculator {
    * Classifies the article if not already classified, then looks up historical impact.
    */
   async getArticleImpact(articleId: number): Promise<ArticleImpact | null> {
-    const article = this.newsRepo.getArticleById(articleId);
+    const article = await this.newsRepo.getArticleById(articleId);
     if (!article) return null;
 
     // Get or compute classification
-    let categoryRow = this.impactRepo.getCategoryByArticleId(articleId);
+    let categoryRow = await this.impactRepo.getCategoryByArticleId(articleId);
     let classification: ClassificationResult;
 
     if (categoryRow) {
@@ -83,7 +83,7 @@ export class ImpactCalculator {
         title: article.title,
         summary: article.summary,
       });
-      this.impactRepo.upsertCategory({
+      await this.impactRepo.upsertCategory({
         articleId,
         category: classification.category,
         confidence: classification.confidence,
@@ -94,11 +94,12 @@ export class ImpactCalculator {
     const tokenTags: string[] = JSON.parse(article.token_tags);
 
     // Fetch all impact events for this article once (not per-token)
-    const allImpactEvents = this.impactRepo.getImpactByArticleId(articleId);
+    const allImpactEvents = await this.impactRepo.getImpactByArticleId(articleId);
 
     // Build token impacts with historical data
-    const tokenImpacts: TokenImpact[] = tokenTags.map((symbol) => {
-      const historical = this.impactRepo.getHistoricalImpact(
+    const tokenImpacts: TokenImpact[] = [];
+    for (const symbol of tokenTags) {
+      const historical = await this.impactRepo.getHistoricalImpact(
         classification.category,
         symbol
       );
@@ -119,7 +120,7 @@ export class ImpactCalculator {
           }
         : null;
 
-      return {
+      tokenImpacts.push({
         tokenSymbol: symbol,
         historical: {
           sampleSize: historical.sampleSize,
@@ -129,8 +130,8 @@ export class ImpactCalculator {
           confidenceScore,
         },
         actual,
-      };
-    });
+      });
+    }
 
     return {
       articleId,
@@ -164,12 +165,12 @@ export class ImpactCalculator {
    * computes % changes, and stores the impact event.
    * Returns the number of impact events created.
    */
-  computeImpactEvents(limit: number = 100): number {
+  async computeImpactEvents(limit: number = 100): Promise<number> {
     if (!this.priceRepo) {
       throw new Error("PriceRepository required for computeImpactEvents");
     }
 
-    const articles = this.impactRepo.getArticlesReadyForImpact(limit);
+    const articles = await this.impactRepo.getArticlesReadyForImpact(limit);
     if (articles.length === 0) return 0;
 
     const inserts: import("../db/impact-repository.js").ImpactEventInsert[] = [];
@@ -187,16 +188,16 @@ export class ImpactCalculator {
 
       for (const symbol of tokens) {
         // Look up price at event time and at +1h, +4h, +24h
-        const priceAtEvent = this.priceRepo.getPriceNearTimestamp(symbol, publishedAt);
+        const priceAtEvent = await this.priceRepo.getPriceNearTimestamp(symbol, publishedAt);
         if (!priceAtEvent) continue; // No price data for this token — skip
 
         const t1h = addHours(publishedAt, 1);
         const t4h = addHours(publishedAt, 4);
         const t24h = addHours(publishedAt, 24);
 
-        const price1h = this.priceRepo.getPriceNearTimestamp(symbol, t1h);
-        const price4h = this.priceRepo.getPriceNearTimestamp(symbol, t4h);
-        const price24h = this.priceRepo.getPriceNearTimestamp(symbol, t24h);
+        const price1h = await this.priceRepo.getPriceNearTimestamp(symbol, t1h);
+        const price4h = await this.priceRepo.getPriceNearTimestamp(symbol, t4h);
+        const price24h = await this.priceRepo.getPriceNearTimestamp(symbol, t24h);
 
         const basePrice = priceAtEvent.price_usd;
         const change1h = price1h ? pctChange(basePrice, price1h.price_usd) : null;
@@ -204,7 +205,7 @@ export class ImpactCalculator {
         const change24h = price24h ? pctChange(basePrice, price24h.price_usd) : null;
 
         // Get historical stats for confidence scoring
-        const historical = this.impactRepo.getHistoricalImpact(article.category, symbol);
+        const historical = await this.impactRepo.getHistoricalImpact(article.category, symbol);
         const confidence = computeConfidence(historical.sampleSize);
 
         inserts.push({
@@ -229,7 +230,7 @@ export class ImpactCalculator {
 
     if (inserts.length === 0) return 0;
 
-    const count = this.impactRepo.upsertImpactEventsBatch(inserts);
+    const count = await this.impactRepo.upsertImpactEventsBatch(inserts);
     console.log(`Impact engine: computed ${count} impact events from ${articles.length} articles`);
     return count;
   }
@@ -238,12 +239,12 @@ export class ImpactCalculator {
    * Classify and store categories for all unclassified articles.
    */
   async classifyNewArticles(limit: number = 50): Promise<number> {
-    const uncategorized = this.impactRepo.getUncategorizedArticleIds(limit);
+    const uncategorized = await this.impactRepo.getUncategorizedArticleIds(limit);
     if (uncategorized.length === 0) return 0;
 
     let classified = 0;
     for (const articleId of uncategorized) {
-      const article = this.newsRepo.getArticleById(articleId);
+      const article = await this.newsRepo.getArticleById(articleId);
       if (!article) continue;
 
       const result = await this.classifier.classify({
@@ -251,7 +252,7 @@ export class ImpactCalculator {
         summary: article.summary,
       });
 
-      this.impactRepo.upsertCategory({
+      await this.impactRepo.upsertCategory({
         articleId,
         category: result.category,
         confidence: result.confidence,

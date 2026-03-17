@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
-import { getDatabase } from "./database.js";
+import { Pool } from "pg";
+import { getPool } from "./database.js";
 
 export interface PushSubscriptionRow {
   id: number;
@@ -11,48 +11,50 @@ export interface PushSubscriptionRow {
 }
 
 export class PushRepository {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database) {
-    this.db = db || getDatabase();
+  constructor(pool?: Pool) {
+    this.pool = pool || getPool();
   }
 
   /** Save or update a push subscription for a user */
-  upsert(userId: string, endpoint: string, p256dh: string, auth: string): void {
-    this.db
-      .prepare(
-        `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(endpoint) DO UPDATE SET
-           user_id = excluded.user_id,
-           p256dh = excluded.p256dh,
-           auth = excluded.auth`
-      )
-      .run(userId, endpoint, p256dh, auth);
+  async upsert(userId: string, endpoint: string, p256dh: string, auth: string): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT(endpoint) DO UPDATE SET
+         user_id = EXCLUDED.user_id,
+         p256dh = EXCLUDED.p256dh,
+         auth = EXCLUDED.auth`,
+      [userId, endpoint, p256dh, auth]
+    );
   }
 
   /** Remove a push subscription by endpoint */
-  removeByEndpoint(endpoint: string): void {
-    this.db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+  async removeByEndpoint(endpoint: string): Promise<void> {
+    await this.pool.query("DELETE FROM push_subscriptions WHERE endpoint = $1", [endpoint]);
   }
 
   /** Remove all push subscriptions for a user */
-  removeByUser(userId: string): void {
-    this.db.prepare("DELETE FROM push_subscriptions WHERE user_id = ?").run(userId);
+  async removeByUser(userId: string): Promise<void> {
+    await this.pool.query("DELETE FROM push_subscriptions WHERE user_id = $1", [userId]);
   }
 
   /** Get all push subscriptions for a user */
-  getByUser(userId: string): PushSubscriptionRow[] {
-    return this.db
-      .prepare("SELECT * FROM push_subscriptions WHERE user_id = ?")
-      .all(userId) as PushSubscriptionRow[];
+  async getByUser(userId: string): Promise<PushSubscriptionRow[]> {
+    const { rows } = await this.pool.query(
+      "SELECT * FROM push_subscriptions WHERE user_id = $1",
+      [userId]
+    );
+    return rows;
   }
 
   /** Check if a user has any push subscriptions */
-  hasSubscription(userId: string): boolean {
-    const row = this.db
-      .prepare("SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = ?")
-      .get(userId) as { count: number };
-    return row.count > 0;
+  async hasSubscription(userId: string): Promise<boolean> {
+    const { rows } = await this.pool.query(
+      "SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = $1",
+      [userId]
+    );
+    return rows[0].count > 0;
   }
 }

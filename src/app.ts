@@ -17,7 +17,7 @@ import { createAdminRouter } from "./api/admin.js";
 import { createWhalesRouter } from "./api/whales.js";
 import { PriceRepository } from "./db/price-repository.js";
 import { DigestRepository } from "./db/digest-repository.js";
-import { getDatabase } from "./db/database.js";
+import { getPool } from "./db/database.js";
 import { schedulerStatus } from "./scrapers/scheduler.js";
 import { SchedulerRepository } from "./db/scheduler-repository.js";
 import { cacheMiddleware } from "./services/response-cache.js";
@@ -143,7 +143,7 @@ const apiLimiter = rateLimit({
   message: { error: "Too many requests, please try again later" },
 });
 
-app.get("/health", (_req, res) => {
+app.get("/health", async (_req, res) => {
   let dbStatus = "ok";
   let dbCounts: Record<string, number> = {};
   let lastPriceFetch: string | null = null;
@@ -152,22 +152,22 @@ app.get("/health", (_req, res) => {
   let lastDigest: string | null = null;
 
   try {
-    const db = getDatabase();
-    const tokenCount = (db.prepare("SELECT COUNT(*) AS n FROM tokens").get() as { n: number }).n;
-    const priceCount = (db.prepare("SELECT COUNT(*) AS n FROM prices").get() as { n: number }).n;
-    const articleCount = (db.prepare("SELECT COUNT(*) AS n FROM articles").get() as { n: number }).n;
-    const alertCount = (db.prepare("SELECT COUNT(*) AS n FROM triggered_alerts").get() as { n: number }).n;
+    const pool = getPool();
+    const tokenCount = Number((await pool.query("SELECT COUNT(*) AS n FROM tokens")).rows[0].n);
+    const priceCount = Number((await pool.query("SELECT COUNT(*) AS n FROM prices")).rows[0].n);
+    const articleCount = Number((await pool.query("SELECT COUNT(*) AS n FROM articles")).rows[0].n);
+    const alertCount = Number((await pool.query("SELECT COUNT(*) AS n FROM triggered_alerts")).rows[0].n);
     dbCounts = { tokens: tokenCount, prices: priceCount, articles: articleCount, alerts: alertCount };
 
-    const latestPrice = db.prepare("SELECT MAX(fetched_at) AS ts FROM prices").get() as { ts: string | null };
+    const latestPrice = (await pool.query("SELECT MAX(fetched_at) AS ts FROM prices")).rows[0] as { ts: string | null };
     lastPriceFetch = latestPrice.ts;
 
-    const latestNews = db.prepare("SELECT MAX(fetched_at) AS ts FROM articles").get() as { ts: string | null };
+    const latestNews = (await pool.query("SELECT MAX(fetched_at) AS ts FROM articles")).rows[0] as { ts: string | null };
     lastNewsFetch = latestNews.ts;
 
     lastAlertCheck = schedulerStatus.alert.lastRun;
 
-    const latestDigest = db.prepare("SELECT MAX(generated_at) AS ts FROM digest_history").get() as { ts: string | null };
+    const latestDigest = (await pool.query("SELECT MAX(generated_at) AS ts FROM digest_history")).rows[0] as { ts: string | null };
     lastDigest = latestDigest.ts;
   } catch {
     dbStatus = "error";
@@ -210,10 +210,10 @@ app.get("/health", (_req, res) => {
 // Stale data check for dashboard banner with tiered thresholds.
 // Prices update every 5 min. "slightly behind" (<15 min) is normal and should not alarm users.
 // "stale" (15-30 min) shows a subtle notice. "very stale" (>30 min) shows a warning banner.
-app.get("/api/health/freshness", (_req, res) => {
+app.get("/api/health/freshness", async (_req, res) => {
   try {
-    const db = getDatabase();
-    const latestPrice = db.prepare("SELECT MAX(fetched_at) AS ts FROM prices").get() as { ts: string | null };
+    const pool = getPool();
+    const latestPrice = (await pool.query("SELECT MAX(fetched_at) AS ts FROM prices")).rows[0] as { ts: string | null };
     const ts = latestPrice.ts;
     let ageMinutes = 0;
     let level: "fresh" | "slight" | "stale" | "critical" = "fresh";
@@ -296,9 +296,9 @@ app.use(express.static(publicDir));
 
 // SEO: Dynamic sitemap.xml
 const sitemapRepo = new PriceRepository();
-app.get("/sitemap.xml", (_req, res) => {
+app.get("/sitemap.xml", async (_req, res) => {
   const baseUrl = getEnvConfig().BASE_URL;
-  const tokens = sitemapRepo.getAllTokens();
+  const tokens = await sitemapRepo.getAllTokens();
   const today = new Date().toISOString().split("T")[0];
 
   const staticPages = [
@@ -860,10 +860,10 @@ function ga4Snippet(): string {
 
 // Public digest page
 const digestRepo = new DigestRepository();
-app.get("/digest/latest", (req, res) => {
+app.get("/digest/latest", async (req, res) => {
   const digestLang = req.query.lang === "zh" ? "zh" : "en";
   const htmlLang = toLangTag(req.locale || "en");
-  const digest = digestRepo.getLatestDigest(digestLang);
+  const digest = await digestRepo.getLatestDigest(digestLang);
 
   const title = digest
     ? `${digest.subject} — Wavedge Daily Digest`
@@ -1095,9 +1095,9 @@ app.get("/compare", (req, res) => {
 </html>`);
 });
 
-app.get("/tokens/:symbol", (req, res) => {
+app.get("/tokens/:symbol", async (req, res) => {
   const symbol = req.params.symbol.toLowerCase();
-  const token = priceRepo.getTokenBySymbol(symbol);
+  const token = await priceRepo.getTokenBySymbol(symbol);
 
   if (!token) {
     const sym = req.params.symbol.toUpperCase();
@@ -1111,7 +1111,7 @@ app.get("/tokens/:symbol", (req, res) => {
 
   const displaySymbol = token.symbol.toUpperCase();
   const displayName = token.name;
-  const history = priceRepo.getPriceHistory(token.id, 1);
+  const history = await priceRepo.getPriceHistory(token.id, 1);
   const latestPrice = history[0] || null;
 
   const priceStr = latestPrice

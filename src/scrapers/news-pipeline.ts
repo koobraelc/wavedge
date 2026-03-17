@@ -141,7 +141,7 @@ export class NewsPipeline {
       }
 
       const articles = items.map(normalizeArticle);
-      const ingested = this.repo.insertArticlesBatch(articles);
+      const ingested = await this.repo.insertArticlesBatch(articles);
 
       console.log(
         `News pipeline: ingested ${ingested} new articles from ${items.length} fetched in ${Date.now() - start}ms`

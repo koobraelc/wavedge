@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type Database from "better-sqlite3";
-import { getDatabase } from "../db/database.js";
+import type { Pool } from "pg";
+import { getPool } from "../db/database.js";
 
 export interface DigestContent {
   lang: "en" | "zh";
@@ -39,10 +39,10 @@ interface AlertDigestData {
  */
 export class DigestGenerator {
   private client: Anthropic | null = null;
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(db?: Database.Database, apiKey?: string) {
-    this.db = db || getDatabase();
+  constructor(db?: Pool, apiKey?: string) {
+    this.pool = db || getPool();
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
     if (key) {
       this.client = new Anthropic({ apiKey: key });
@@ -50,9 +50,9 @@ export class DigestGenerator {
   }
 
   async generate(lang: "en" | "zh"): Promise<DigestContent> {
-    const articles = this.getRecentArticles();
-    const topMovers = this.getTopMovers();
-    const alerts = this.getRecentAlerts();
+    const articles = await this.getRecentArticles();
+    const topMovers = await this.getTopMovers();
+    const alerts = await this.getRecentAlerts();
 
     const dateStr = new Date().toISOString().split("T")[0];
 
@@ -84,45 +84,42 @@ export class DigestGenerator {
     };
   }
 
-  private getRecentArticles(): ArticleDigestData[] {
-    return this.db
-      .prepare(
-        `SELECT a.title, a.source, a.published_at, a.token_tags,
-                nc.category, ie.change_24h
-         FROM articles a
-         LEFT JOIN news_categories nc ON nc.article_id = a.id
-         LEFT JOIN impact_events ie ON ie.article_id = a.id
-         WHERE a.published_at >= datetime('now', '-1 day')
-         ORDER BY a.relevance_score DESC, a.published_at DESC
-         LIMIT 30`
-      )
-      .all() as ArticleDigestData[];
+  private async getRecentArticles(): Promise<ArticleDigestData[]> {
+    const result = await this.pool.query(
+      `SELECT a.title, a.source, a.published_at, a.token_tags,
+              nc.category, ie.change_24h
+       FROM articles a
+       LEFT JOIN news_categories nc ON nc.article_id = a.id
+       LEFT JOIN impact_events ie ON ie.article_id = a.id
+       WHERE a.published_at >= NOW() - INTERVAL '1 day'
+       ORDER BY a.relevance_score DESC, a.published_at DESC
+       LIMIT 30`
+    );
+    return result.rows as ArticleDigestData[];
   }
 
-  private getTopMovers(): PriceMover[] {
-    return this.db
-      .prepare(
-        `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h as change_pct
-         FROM tokens t
-         JOIN prices p ON p.token_id = t.id
-         WHERE p.fetched_at = (SELECT MAX(p2.fetched_at) FROM prices p2 WHERE p2.token_id = t.id)
-           AND p.price_change_percentage_24h IS NOT NULL
-         ORDER BY ABS(p.price_change_percentage_24h) DESC
-         LIMIT 10`
-      )
-      .all() as PriceMover[];
+  private async getTopMovers(): Promise<PriceMover[]> {
+    const result = await this.pool.query(
+      `SELECT t.symbol, t.name, p.price_usd, p.price_change_percentage_24h as change_pct
+       FROM tokens t
+       JOIN prices p ON p.token_id = t.id
+       WHERE p.fetched_at = (SELECT MAX(p2.fetched_at) FROM prices p2 WHERE p2.token_id = t.id)
+         AND p.price_change_percentage_24h IS NOT NULL
+       ORDER BY ABS(p.price_change_percentage_24h) DESC
+       LIMIT 10`
+    );
+    return result.rows as PriceMover[];
   }
 
-  private getRecentAlerts(): AlertDigestData[] {
-    return this.db
-      .prepare(
-        `SELECT token_symbol, signal_count, summary, created_at
-         FROM triggered_alerts
-         WHERE created_at >= datetime('now', '-1 day')
-         ORDER BY signal_count DESC, created_at DESC
-         LIMIT 10`
-      )
-      .all() as AlertDigestData[];
+  private async getRecentAlerts(): Promise<AlertDigestData[]> {
+    const result = await this.pool.query(
+      `SELECT token_symbol, signal_count, summary, created_at
+       FROM triggered_alerts
+       WHERE created_at >= NOW() - INTERVAL '1 day'
+       ORDER BY signal_count DESC, created_at DESC
+       LIMIT 10`
+    );
+    return result.rows as AlertDigestData[];
   }
 
   private async generateWithLLM(

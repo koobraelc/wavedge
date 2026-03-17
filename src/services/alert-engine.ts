@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { Pool } from "pg";
 import { AlertRepository, type AlertPreferencesRow } from "../db/alert-repository.js";
 import { PriceRepository } from "../db/price-repository.js";
 import { UserRepository } from "../db/user-repository.js";
@@ -24,13 +24,13 @@ export class AlertEngine {
   private alertRepo: AlertRepository;
   private priceRepo: PriceRepository;
   private userRepo: UserRepository;
-  private db: Database.Database | undefined;
+  private pool: Pool | undefined;
 
-  constructor(alertRepo: AlertRepository, priceRepo: PriceRepository, db?: Database.Database) {
+  constructor(alertRepo: AlertRepository, priceRepo: PriceRepository, pool?: Pool) {
     this.alertRepo = alertRepo;
     this.priceRepo = priceRepo;
-    this.userRepo = new UserRepository(db);
-    this.db = db;
+    this.userRepo = new UserRepository(pool);
+    this.pool = pool;
   }
 
   /**
@@ -39,7 +39,7 @@ export class AlertEngine {
   async runCycle(): Promise<AlertEngineResult> {
     const result: AlertEngineResult = { checkedTokens: 0, alertsTriggered: 0, alertsMissed: 0, errors: [] };
 
-    const allPrefs = this.alertRepo.getAllEnabledPreferences();
+    const allPrefs = await this.alertRepo.getAllEnabledPreferences();
     if (allPrefs.length === 0) return result;
 
     for (const pref of allPrefs) {
@@ -61,12 +61,12 @@ export class AlertEngine {
 
     // If no tokens configured, use top tokens by market cap
     if (tokenSymbols.length === 0) {
-      const latestPrices = this.priceRepo.getLatestPrices();
+      const latestPrices = await this.priceRepo.getLatestPrices();
       tokenSymbols = latestPrices.slice(0, 20).map((p) => p.symbol.toUpperCase());
     }
 
     // Determine user's tier
-    const user = this.userRepo.findById(pref.user_id);
+    const user = await this.userRepo.findById(pref.user_id);
     const tier = user?.tier ?? "free";
 
     let triggered = 0;
@@ -74,19 +74,19 @@ export class AlertEngine {
 
     for (const symbol of tokenSymbols) {
       // Skip if we already alerted recently for this token (30 min dedup)
-      if (this.alertRepo.hasRecentAlert(pref.user_id, symbol, 30)) {
+      if (await this.alertRepo.hasRecentAlert(pref.user_id, symbol, 30)) {
         continue;
       }
 
-      const signals = this.detectSignals(symbol, pref);
+      const signals = await this.detectSignals(symbol, pref);
       if (signals.length >= pref.min_signals) {
         // Check tier limit before firing
-        if (canReceiveAlert(pref.user_id, tier)) {
+        if (await canReceiveAlert(pref.user_id, tier)) {
           await this.fireAlert(pref, symbol, signals);
           triggered++;
         } else {
           // Record as missed alert for free tier users
-          this.recordMissedAlert(pref, symbol, signals);
+          await this.recordMissedAlert(pref, symbol, signals);
           missed++;
         }
       }
@@ -95,46 +95,46 @@ export class AlertEngine {
     return { triggered, missed };
   }
 
-  private detectSignals(tokenSymbol: string, pref: AlertPreferencesRow): Signal[] {
+  private async detectSignals(tokenSymbol: string, pref: AlertPreferencesRow): Promise<Signal[]> {
     const signals: Signal[] = [];
 
-    const newsSignal = detectNewsFrequency(
+    const newsSignal = await detectNewsFrequency(
       tokenSymbol,
       pref.news_window_minutes,
       pref.news_frequency_threshold,
-      this.db
+      this.pool
     );
     if (newsSignal) signals.push(newsSignal);
 
-    const priceSignal = detectPriceMovement(
+    const priceSignal = await detectPriceMovement(
       tokenSymbol,
       pref.price_change_threshold,
       pref.news_window_minutes, // use same lookback as news window
-      this.db
+      this.pool
     );
     if (priceSignal) signals.push(priceSignal);
 
-    const volumeSignal = detectVolumeChange(
+    const volumeSignal = await detectVolumeChange(
       tokenSymbol,
       pref.volume_change_threshold,
-      this.db
+      this.pool
     );
     if (volumeSignal) signals.push(volumeSignal);
 
     const sentimentThreshold = (pref as any).sentiment_change_threshold ?? 30;
-    const sentimentSignal = detectSentimentShift(
+    const sentimentSignal = await detectSentimentShift(
       tokenSymbol,
       sentimentThreshold,
-      this.db
+      this.pool
     );
     if (sentimentSignal) signals.push(sentimentSignal);
 
     const whaleThreshold = (pref as any).whale_transaction_threshold ?? 1_000_000;
-    const whaleSignal = detectWhaleAlert(
+    const whaleSignal = await detectWhaleAlert(
       tokenSymbol,
       whaleThreshold,
       1, // 1-hour window
-      this.db
+      this.pool
     );
     if (whaleSignal) signals.push(whaleSignal);
 
@@ -172,7 +172,7 @@ export class AlertEngine {
     }
 
     // Always record the alert
-    this.alertRepo.insertTriggeredAlert({
+    await this.alertRepo.insertTriggeredAlert({
       userId: pref.user_id,
       tokenSymbol,
       signals: signals.map((s) => ({ type: s.type, value: s.value, detail: s.detail })),
@@ -186,13 +186,13 @@ export class AlertEngine {
     );
   }
 
-  private recordMissedAlert(
+  private async recordMissedAlert(
     pref: AlertPreferencesRow,
     tokenSymbol: string,
     signals: Signal[]
-  ): void {
+  ): Promise<void> {
     const summary = this.buildSummary(tokenSymbol, signals);
-    this.alertRepo.insertMissedAlert({
+    await this.alertRepo.insertMissedAlert({
       userId: pref.user_id,
       tokenSymbol,
       signals: signals.map((s) => ({ type: s.type, value: s.value, detail: s.detail })),

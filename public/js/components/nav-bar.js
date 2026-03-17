@@ -60,6 +60,16 @@ class NavBar extends HTMLElement {
                 ${t('nav.billing')}
               </a>
               <div class="settings-menu-divider"></div>
+              <div class="settings-menu-section">${t('nav.help')}</div>
+              <button class="settings-menu-btn" id="nav-glossary-btn">
+                <span class="settings-menu-icon">&#128218;</span>
+                ${t('nav.glossary')}
+              </button>
+              <button class="settings-menu-btn" id="nav-primer-btn">
+                <span class="settings-menu-icon">&#127891;</span>
+                ${t('nav.newToCrypto')}
+              </button>
+              <div class="settings-menu-divider"></div>
               <div class="settings-menu-section">${t('nav.switchTheme')}</div>
               <div class="settings-theme-list">${themeOptions}</div>
               <div class="settings-menu-divider"></div>
@@ -253,6 +263,26 @@ class NavBar extends HTMLElement {
             window.i18n.setLocale(locale);
           }
         });
+      });
+    }
+
+    // Glossary button
+    const glossaryBtn = this.querySelector('#nav-glossary-btn');
+    if (glossaryBtn) {
+      glossaryBtn.addEventListener('click', () => {
+        const gl = document.querySelector('crypto-glossary');
+        if (gl) gl.open();
+        settingsMenu?.classList.remove('open');
+      });
+    }
+
+    // Primer button
+    const primerBtn = this.querySelector('#nav-primer-btn');
+    if (primerBtn) {
+      primerBtn.addEventListener('click', () => {
+        const pr = document.querySelector('crypto-primer');
+        if (pr) pr.open();
+        settingsMenu?.classList.remove('open');
       });
     }
 

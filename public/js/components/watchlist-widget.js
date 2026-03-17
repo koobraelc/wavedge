@@ -11,6 +11,7 @@ class WatchlistWidget extends HTMLElement {
       <div class="wl-widget">
         <div class="wl-header">
           <span class="wl-title">${t('watchlist.topTokens')}</span>
+          <widget-explainer key="watchlist"></widget-explainer>
         </div>
         <div class="wl-body" id="wl-body">
           ${this._skeletonRows(4)}

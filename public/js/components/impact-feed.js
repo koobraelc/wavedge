@@ -9,6 +9,7 @@ class ImpactFeed extends HTMLElement {
     this._activeFilter = 'all';
     this.innerHTML = `
       <div class="impact-feed">
+        <widget-explainer key="impact"></widget-explainer>
         <div class="feed-filter-tabs" id="feed-filters"></div>
         <div id="feed-list" class="feed-list">
           ${this._skeletonCards(6)}

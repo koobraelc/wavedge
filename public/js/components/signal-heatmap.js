@@ -27,6 +27,7 @@ class SignalHeatmap extends HTMLElement {
           <span class="hm-legend-item">💬 ${t('heatmap.legendSocial')} <info-tip text="${t('heatmap.legendSocialTip')}"></info-tip></span>
           <span class="hm-legend-item">🐋 ${t('heatmap.legendWhale')} <info-tip text="${t('heatmap.legendWhaleTip')}"></info-tip></span>
         </div>
+        <widget-explainer key="heatmap"></widget-explainer>
         <div class="signal-heatmap-grid" id="heatmap-grid" role="grid" aria-label="${t('heatmap.title')}"></div>
       </div>
     `;

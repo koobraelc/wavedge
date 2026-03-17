@@ -6235,6 +6235,11 @@ widget-explainer {
   text-align: center;
 }
 
+.glossary-panel[hidden],
+.glossary-backdrop[hidden] {
+  display: none;
+}
+
 @media (max-width: 480px) {
   .glossary-panel {
     left: 16px;

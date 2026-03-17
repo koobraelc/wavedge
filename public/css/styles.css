@@ -6130,6 +6130,7 @@ widget-explainer {
   position: fixed;
   inset: 0;
   z-index: 900;
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .glossary-panel {

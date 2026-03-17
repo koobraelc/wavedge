@@ -53,6 +53,25 @@ class CryptoGlossary extends HTMLElement {
   }
 
   open() {
+    const t = window.i18n ? window.i18n.t : (k) => k;
+    this._terms = [
+      { term: t('glossary.token.term'), def: t('glossary.token.def') },
+      { term: t('glossary.marketCap.term'), def: t('glossary.marketCap.def') },
+      { term: t('glossary.volume.term'), def: t('glossary.volume.def') },
+      { term: t('glossary.priceChange.term'), def: t('glossary.priceChange.def') },
+      { term: t('glossary.bullish.term'), def: t('glossary.bullish.def') },
+      { term: t('glossary.bearish.term'), def: t('glossary.bearish.def') },
+      { term: t('glossary.whale.term'), def: t('glossary.whale.def') },
+      { term: t('glossary.signal.term'), def: t('glossary.signal.def') },
+      { term: t('glossary.impactScore.term'), def: t('glossary.impactScore.def') },
+      { term: t('glossary.sentiment.term'), def: t('glossary.sentiment.def') },
+      { term: t('glossary.heatmap.term'), def: t('glossary.heatmap.def') },
+      { term: t('glossary.watchlist.term'), def: t('glossary.watchlist.def') },
+    ];
+    this.querySelector('.glossary-title').textContent = t('glossary.title');
+    this.querySelector('.glossary-close').setAttribute('aria-label', t('glossary.close'));
+    this._searchInput.placeholder = t('glossary.searchPlaceholder');
+    this._searchInput.setAttribute('aria-label', t('glossary.searchPlaceholder'));
     this._backdrop.hidden = false;
     this._panel.hidden = false;
     this._searchInput.value = '';

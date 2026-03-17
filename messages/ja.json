@@ -1,0 +1,397 @@
+{
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "market": "マーケット",
+    "alerts": "アラート",
+    "billing": "請求",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "searchPlaceholder": "トークンやニュースを検索...",
+    "searchLabel": "検索",
+    "settings": "設定",
+    "alertSettings": "アラート設定",
+    "watchlist": "ウォッチリスト",
+    "apiKeys": "APIキー",
+    "compare": "比較",
+    "switchTheme": "テーマ",
+    "language": "言語",
+    "help": "ヘルプ",
+    "glossary": "用語集",
+    "newToCrypto": "暗号通貨は初めて？",
+    "fontSize": "フォントサイズ",
+    "dashboardMode": "ダッシュボードモード"
+  },
+  "welcome": {
+    "title": "Wavedgeへようこそ！",
+    "description": "暗号通貨インテリジェンスダッシュボードの準備ができました。始め方：",
+    "setupWatchlist": "ウォッチリストを設定",
+    "learnImpact": "影響スコアについて",
+    "setupAlerts": "アラートを設定",
+    "dismiss": "閉じる"
+  },
+  "heatmap": {
+    "title": "シグナルヒートマップ",
+    "tip": "シグナル = ニュース量 + ソーシャル議論 + クジラ活動の複合指標。シグナルが多いほど注目すべきトークンです。",
+    "legendUp": "上昇",
+    "legendDown": "下落",
+    "legendSize": "大きいほど時価総額が高い",
+    "legendNews": "ニュース",
+    "legendSocial": "ソーシャル",
+    "legendWhale": "クジラ",
+    "legendSizeTip": "セルが大きいほど時価総額が高いです。",
+    "legendNewsTip": "過去24時間のニュース記事数。矢印は強気/弱気の感情を示します。",
+    "legendSocialTip": "Twitter、Reddit、Telegramでのソーシャルメディアの言及と感情。",
+    "legendWhaleTip": "過去24時間にオンチェーンで検出された大規模取引（クジラ活動）。",
+    "noData": "トークンデータなし",
+    "articles24h": "{count} 記事（24時間）",
+    "sentiment": "センチメント：{label}",
+    "whale": "クジラ：{count} 件の取引"
+  },
+  "feed": {
+    "noArticles": "まだ記事がありません",
+    "avg": "平均",
+    "historicalTooltip": "{samples} 件の類似イベント{plural}に基づく過去の平均24時間価格変動",
+    "newsTooltip": "{category} ニュース："
+  },
+  "time": {
+    "justNow": "たった今",
+    "mAgo": "{n}分前",
+    "hAgo": "{n}時間前",
+    "dAgo": "{n}日前"
+  },
+  "stats": {
+    "btcPrice": "BTC 価格",
+    "ethPrice": "ETH 価格",
+    "price": "価格",
+    "priceTip": "過去24時間の価格変動率。",
+    "sentiment": "市場センチメント",
+    "sentimentTip": "市場センチメント：強気 = 楽観的、弱気 = 悲観的。",
+    "marketCap": "総時価総額",
+    "marketCapTip": "流通しているすべてのコインの総価値。高いほど市場が大きい。",
+    "neutral": "中立",
+    "na": "N/A",
+    "24h": "24時間"
+  },
+  "chart": {
+    "selectToken": "トークンを選択してチャートを表示",
+    "chartTip": "ローソク足チャート：各ローソクは一定期間の始値、高値、安値、終値を表します。緑 = 上昇、赤 = 下落。",
+    "line": "ライン",
+    "candlestick": "ローソク足",
+    "clickToLoad": "トークン行をクリックして価格チャートを読み込む",
+    "loading": "チャートを読み込み中...",
+    "noData": "履歴データがありません",
+    "failed": "チャートデータの読み込みに失敗しました"
+  },
+  "table": {
+    "rank": "#",
+    "token": "トークン",
+    "price": "価格（USD）",
+    "change24h": "24時間変動",
+    "marketCap": "時価総額",
+    "marketCapTip": "流通しているすべてのコインの総価値。高いほど市場が大きい。",
+    "volume": "出来高（24時間）",
+    "volumeTip": "24時間出来高：過去1日の総取引量。高いほど活発な市場。",
+    "noData": "価格データはまだありません — 5分ごとに更新"
+  },
+  "impact": {
+    "all": "すべて",
+    "noArticles": "まだ記事がありません",
+    "noArticlesToken": "このトークンの記事はありません",
+    "avgAfter": "{category} ニュース後の平均変動",
+    "sampleCount": "（n={samples}）",
+    "impactTip": "履歴データに基づき、類似ニュース公開後24時間以内の平均価格変動。（n=サンプル数）",
+    "emptyTitle": "まだ関連ニュースがありません",
+    "emptyAction": "ウォッチリストにトークンを追加して関連ニュースを表示",
+    "emptyAddTokens": "ウォッチリストにトークンを追加",
+    "setAlert": "アラートを設定",
+    "impactExplanation": "{samples} 件の過去のイベントに基づき、{category} ニュースは {symbol} を24時間以内に平均 {change} 変動させました。",
+    "similarNews": "類似"
+  },
+  "alerts": {
+    "status": "アラート状態",
+    "active": "有効",
+    "paused": "一時停止",
+    "watchlist": "トークンウォッチリスト",
+    "watchlistDesc": "アラートを受け取りたいトークンを選択してください。",
+    "searchTokens": "トークンを検索...",
+    "channels": "通知チャンネル",
+    "channelsDesc": "アラートの受け取り方法を選択してください。",
+    "channelWeb": "ウェブ",
+    "channelWebDesc": "ダッシュボードの履歴にアラートを表示",
+    "channelTelegram": "Telegram",
+    "channelTelegramDesc": "Telegramボットでアラートを受信",
+    "channelEmail": "メール",
+    "channelEmailDesc": "メール通知を受信",
+    "channelPush": "プッシュ通知",
+    "channelPushDesc": "タブを閉じていてもブラウザのプッシュアラートを受信",
+    "telegramChatId": "Telegram チャット ID",
+    "telegramPlaceholder": "例：123456789",
+    "telegramHelp": "@WavedgeBot に /start を送信してチャット ID を取得",
+    "emailAddress": "メールアドレス",
+    "emailPlaceholder": "you@example.com",
+    "pushSubscribed": "プッシュ通知に登録済み",
+    "pushNotSubscribed": "未登録",
+    "enablePush": "プッシュを有効化",
+    "resubscribe": "再登録",
+    "sensitivity": "感度",
+    "sensitivityTip": "感度が高いほどアラートが発動しやすくなります。初心者には中がおすすめです。",
+    "sensitivityDesc": "アラートの発動しやすさを制御します。感度が高い = アラートが多い。",
+    "sensitivityLow": "低",
+    "sensitivityMedium": "中",
+    "sensitivityHigh": "高",
+    "sensitivityLowDesc": "大きな動きのみ",
+    "sensitivityMediumDesc": "バランスの取れたアラート",
+    "sensitivityHighDesc": "何も見逃さない",
+    "recommended": "おすすめ",
+    "signalRequirements": "シグナル要件",
+    "signalRequirementsTip": "アラートを発動するために同時に必要なシグナル数。初心者はノイズを減らすため 2〜3 を推奨。",
+    "signalRequirementsDesc": "アラートを発動するために同時に必要なシグナル数。",
+    "signalAny": "任意の単一シグナル",
+    "signalTwo": "2つ以上のシグナル",
+    "signalThree": "3つ以上のシグナル",
+    "signalFour": "4つ以上のシグナル",
+    "signalAll": "全5つのシグナル",
+    "modeSimple": "シンプル",
+    "modeAdvanced": "詳細",
+    "simpleSetup": "アラートを設定",
+    "simpleHint": "トークンを選んで、どのくらいの価格変動でアラートを出すか設定します。",
+    "simpleTellMeWhen": "次の場合に通知：",
+    "simplePickToken": "トークンを選択",
+    "simpleMovesMoreThan": "の変動が超えた時",
+    "simpleWatching": "監視中：",
+    "simpleNoTokens": "まだトークンが選択されていません。上から選んで始めましょう。",
+    "simpleNotifyHow": "通知方法",
+    "simpleNotifyHint": "Web通知はデフォルトで有効です。メールを追加して通知範囲を広げることもできます。",
+    "simpleWebAlwaysOn": "常にオン",
+    "save": "設定を保存",
+    "pushEnabled": "プッシュ通知が有効になりました",
+    "pushNotSupported": "このブラウザではプッシュ通知がサポートされていません",
+    "pushNotConfigured": "サーバーでプッシュ通知が設定されていません",
+    "pushDenied": "通知の許可が拒否されました",
+    "pushFailed": "プッシュ通知の有効化に失敗しました",
+    "saveSuccess": "設定が正常に保存されました",
+    "saveFailed": "設定の保存に失敗しました"
+  },
+  "alertHistory": {
+    "loading": "アラート履歴を読み込み中...",
+    "failed": "アラート履歴の読み込みに失敗しました",
+    "noAlerts": "過去 {hours} 時間にアラートは発動されていません。",
+    "explanation": "複数のシグナル（ニュース、価格、出来高）が同時に閾値を超えるとアラートが発動します。",
+    "alert": "件のアラート",
+    "alerts": "件のアラート",
+    "newsSignal": "ニュース：{count} 記事",
+    "priceSignal": "価格：{sign}{pct}%",
+    "volumeSignal": "出来高：+{pct}%"
+  },
+  "upgrade": {
+    "title": "Proにアップグレード",
+    "description": "{feature} などの機能を Wavedge Pro で解放。",
+    "cta": "アップグレード — $19/月"
+  },
+  "missed": {
+    "alert": "今日 {count} 件のアラートを見逃しました",
+    "alerts": "今日 {count} 件のアラートを見逃しました",
+    "proDesc": "Proユーザーはすべて受信済み。無料プラン：1日 {limit} 件まで。",
+    "upgrade": "Proにアップグレード"
+  },
+  "bottomNav": {
+    "dashboard": "ダッシュボード",
+    "market": "マーケット",
+    "alerts": "アラート",
+    "tokens": "トークン",
+    "settings": "設定"
+  },
+  "stale": {
+    "delayed": "データに遅延がある可能性があります（最終更新：{age}前）",
+    "dismiss": "閉じる"
+  },
+  "watchlist": {
+    "topTokens": "人気トークン",
+    "yourWatchlist": "あなたのウォッチリスト",
+    "token": "トークン",
+    "price": "価格",
+    "change24h": "24時間",
+    "signals": "シグナル",
+    "signalsTip": "過去24時間にこのトークンに関連するニュース記事やイベントの数。",
+    "noTokens": "利用可能なトークンがありません",
+    "emptyTitle": "ウォッチリストにトークンがありません",
+    "emptyAction": "設定でトークンを追加",
+    "loadFailed": "ウォッチリストを読み込めませんでした"
+  },
+  "affiliate": {
+    "tradeNow": "今すぐ取引",
+    "tradeOn": "{exchange} で {symbol} を取引"
+  },
+  "ad": {
+    "upgradePro": "Proにアップグレード — 広告なし、リアルタイムアラート、完全な履歴",
+    "goPro": "Proへ"
+  },
+  "apiKey": {
+    "loading": "APIキーを読み込み中...",
+    "loginRequired": "APIキーを管理するにはログインしてください。",
+    "proOnly": "APIアクセス — Proのみ",
+    "proDesc": "APIキーを生成してWavedgeデータにプログラムからアクセス。Proにアップグレードして解放。",
+    "upgradePro": "Proにアップグレード",
+    "loadFailed": "APIキーの読み込みに失敗しました。再試行してください。",
+    "usageToday": "本日のAPI使用量",
+    "usageCount": "{usage} / {limit} リクエスト",
+    "activeKeys": "有効なキー：{active} / {max}",
+    "createNew": "新しいキーを作成",
+    "keyNamePlaceholder": "キー名（例：マイトレーディングボット）",
+    "generate": "キーを生成",
+    "copyWarning": "今すぐこのキーをコピーしてください — 再度表示されません。",
+    "copy": "コピー",
+    "activeKeysTitle": "有効なキー",
+    "noKeys": "有効なAPIキーがありません。上で作成してください。",
+    "headerName": "名前",
+    "headerKey": "キー",
+    "headerCreated": "作成日",
+    "headerLastUsed": "最終使用",
+    "never": "なし",
+    "revoke": "取り消し",
+    "revokedKeys": "取り消されたキー（{count}）",
+    "headerRevoked": "取り消し日",
+    "quickStart": "クイックスタート",
+    "quickStartDesc": "APIキーをBearerトークンとして使用。レート制限：1日100リクエスト。",
+    "revokeConfirm": "このAPIキーを取り消しますか？使用中のアプリケーションは動作を停止します。",
+    "generating": "生成中...",
+    "copied": "コピーしました！"
+  },
+  "signal": {
+    "hasArticles": "{symbol} は過去24時間に {count} 件のニュース記事があります",
+    "mostlyAbout": "主に",
+    "socialSentimentIs": "ソーシャルセンチメントは{label}です",
+    "sentiment": {
+      "bullish": "強気",
+      "bearish": "弱気",
+      "neutral": "中立"
+    },
+    "whaleDetected": "{count} 件の大口クジラ送金を検出",
+    "noActiveSignals": "{symbol} のアクティブなシグナルはありません",
+    "veryHigh": "非常に高い",
+    "high": "高い",
+    "normal": "通常",
+    "noNews": "ニュースなし",
+    "mentions": "件の言及",
+    "noSocialData": "ソーシャルデータなし",
+    "newsCount": "ニュース（{count}）",
+    "newsTip": "過去24時間にこのトークンに言及したニュース記事。通常：<3件/時、高い：3-5件、非常に高い：>5件。",
+    "thresholdNormal": "通常（<3/時）",
+    "thresholdHigh": "高い（3-5/時）",
+    "thresholdVeryHigh": "非常に高い（>5/時）",
+    "news": "ニュース",
+    "noRecentNews": "{symbol} の最近のニュースはありません。",
+    "socialSentiment": "ソーシャルセンチメント",
+    "socialTip": "ソーシャルメディア（Twitter、Reddit、Telegram）の総合センチメント。スコアは -1（非常に弱気）から +1（非常に強気）。",
+    "noSocialAvailable": "ソーシャルデータがありません。",
+    "whaleActivity": "クジラ活動",
+    "whaleTip": "過去24時間に検出された大口オンチェーン送金（通常 >$100K）。クジラ活動が多いと価格変動の兆候になることがあります。",
+    "noWhaleDetected": "クジラ活動は検出されませんでした。",
+    "historicalImpact": "過去の影響",
+    "impactTip": "類似のニュースイベントが過去24時間以内にこのトークンの価格にどのように影響したかを表示します。",
+    "noImpactData": "過去の影響データがありません。",
+    "impactExplanation": "{samples} 件の過去のイベントに基づき、{category} ニュースは {symbol} を24時間以内に平均 {change} 変動させました。",
+    "category": "カテゴリ",
+    "avg24h": "平均24時間",
+    "samples": "サンプル数"
+  },
+  "market": {
+    "sectorL1": "レイヤー1",
+    "sectorL2": "レイヤー2",
+    "sectorStable": "ステーブルコイン",
+    "sectorInfra": "インフラ",
+    "sectorOther": "その他",
+    "tokens": "トークン",
+    "noData": "価格データはまだありません。",
+    "loadFailed": "マーケットデータの読み込みに失敗しました。",
+    "lastUpdated": "最終更新：{time}",
+    "loadingMarket": "マーケットデータを読み込み中...",
+    "loadingSectors": "セクターを読み込み中...",
+    "loading": "読み込み中..."
+  },
+  "explainer": {
+    "whatDoesThisMean": "これはどういう意味？",
+    "heatmap": {
+      "title": "シグナルヒートマップ",
+      "body": "このカラーグリッドはトップ50トークンを表示します。緑は価格上昇、赤は下落を意味します。大きいタイルほど時価総額が高いトークンです。バッジはニュース活動、ソーシャルの注目度、大口取引を示します。"
+    },
+    "impact": {
+      "title": "インパクトフィード",
+      "body": "各ニュース記事は、類似のニュースが過去にトークン価格をどれだけ動かしたかでスコアリングされます。インパクトスコアが高いほど、この種のニュースが過去に大きな価格変動を引き起こしたことを意味します。"
+    },
+    "watchlist": {
+      "title": "ウォッチリストとシグナル",
+      "body": "ウォッチリストは関心のあるトークンを追跡します。「シグナル」列は過去24時間のニュースやイベントの数を示し、シグナルが多いほどそのトークンで多くのことが起きています。"
+    }
+  },
+  "glossary": {
+    "title": "暗号通貨用語集",
+    "close": "閉じる",
+    "searchPlaceholder": "用語を検索...",
+    "noResults": "一致する用語が見つかりません。",
+    "token": {
+      "term": "トークン / コイン",
+      "def": "ブロックチェーン上のデジタル資産。ビットコイン（BTC）とイーサリアム（ETH）が時価総額で最大の2つのトークンです。"
+    },
+    "marketCap": {
+      "term": "時価総額",
+      "def": "流通しているすべてのコインの総価値。計算方法：価格 × 流通量。時価総額が高いほど、より確立されたトークンです。"
+    },
+    "volume": {
+      "term": "出来高（24時間）",
+      "def": "過去24時間の取引活動の総量。出来高が高いということは、多くの人が売買していることを意味します。"
+    },
+    "priceChange": {
+      "term": "価格変動（24時間）",
+      "def": "過去24時間で価格がどれだけ上下したかをパーセントで表示。+5%は価格が5%上昇したことを意味します。"
+    },
+    "bullish": {
+      "term": "強気（ブル）",
+      "def": "価格が上がると予想される状態。強気市場は楽観的で価格が上昇する傾向があります。"
+    },
+    "bearish": {
+      "term": "弱気（ベア）",
+      "def": "価格が下がると予想される状態。弱気市場は悲観的で価格が下落する傾向があります。"
+    },
+    "whale": {
+      "term": "クジラ",
+      "def": "非常に大量のトークンを保有する人。クジラが売買すると、価格に大きな影響を与えることがあります。"
+    },
+    "signal": {
+      "term": "シグナル",
+      "def": "トークンに注目すべきことが起きていることを示す指標 — ニュースの急増、ソーシャルメディアの話題、クジラ取引など。"
+    },
+    "impactScore": {
+      "term": "インパクトスコア",
+      "def": "類似のニュースが過去24時間以内にトークン価格にどれだけ影響したかを示す数値。スコアが高いほど、過去の価格変動が大きかったことを意味します。"
+    },
+    "sentiment": {
+      "term": "センチメント",
+      "def": "トークンに対する市場やコミュニティの全体的な雰囲気。ソーシャルメディアやニュースから、強気（ポジティブ）、弱気（ネガティブ）、中立として測定されます。"
+    },
+    "heatmap": {
+      "term": "ヒートマップ",
+      "def": "色の濃さで価格変動を示すビジュアルグリッド。緑 = 上昇、赤 = 下落。タイルの大きさは時価総額を表します。"
+    },
+    "watchlist": {
+      "term": "ウォッチリスト",
+      "def": "追跡したいトークンの個人リスト。Wavedgeがこれらのトークンを監視し、重要なことが起きた時にアラートを送信します。"
+    }
+  },
+  "primer": {
+    "title": "暗号通貨は初めてですか？",
+    "close": "閉じる",
+    "tokensTitle": "トークンとは？",
+    "tokensBody": "トークン（またはコイン）はブロックチェーン上で動作するデジタルマネーです。ビットコインとイーサリアムが最もよく知られています。各トークンの価格は需給に基づいて変動します。",
+    "marketCapTitle": "時価総額とは？",
+    "marketCapBody": "時価総額 = 価格 × 流通総量。トークン全体の規模を示します。ビットコインは最大の時価総額を持ち、最も「大きな」暗号通貨です。",
+    "priceChangesTitle": "なぜ価格は変動するの？",
+    "priceChangesBody": "人々が買う（価格上昇）または売る（価格下落）と暗号通貨の価格が動きます。ニュース、規制、大口取引（「クジラの動き」）が急激な価格変動を引き起こすことがあります。",
+    "dontShowAgain": "今後表示しない",
+    "gotIt": "了解！"
+  },
+  "digest": {
+    "title": "AI マーケットサマリー",
+    "noDigest": "まだマーケットサマリーはありません。後でまた確認してください。"
+  }
+}

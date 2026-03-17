@@ -1,0 +1,397 @@
+{
+  "nav": {
+    "dashboard": "儀表板",
+    "market": "市場",
+    "alerts": "提醒",
+    "billing": "帳單",
+    "login": "登入",
+    "logout": "登出",
+    "searchPlaceholder": "搜尋代幣或新聞...",
+    "searchLabel": "搜尋",
+    "settings": "設定",
+    "alertSettings": "提醒設定",
+    "watchlist": "觀察清單",
+    "apiKeys": "API 金鑰",
+    "compare": "比較",
+    "switchTheme": "主題",
+    "language": "語言",
+    "help": "幫助",
+    "glossary": "詞彙表",
+    "newToCrypto": "加密貨幣新手？",
+    "fontSize": "字體大小",
+    "dashboardMode": "儀表板模式"
+  },
+  "welcome": {
+    "title": "歡迎來到 Wavedge！",
+    "description": "你的加密貨幣情報總覽已就緒。以下是快速上手指南：",
+    "setupWatchlist": "設定觀察清單",
+    "learnImpact": "了解影響評分",
+    "setupAlerts": "設定提醒",
+    "dismiss": "關閉"
+  },
+  "heatmap": {
+    "title": "訊號熱力圖",
+    "tip": "訊號 = 新聞量 + 社群討論 + 鯨魚活動的綜合指標。訊號越多代表該代幣越值得關注。",
+    "legendUp": "漲",
+    "legendDown": "跌",
+    "legendSize": "越大 = 市值越高",
+    "legendNews": "新聞",
+    "legendSocial": "社群",
+    "legendWhale": "鯨魚",
+    "legendSizeTip": "格子越大 = 市值越高。最大的代幣佔據最多空間。",
+    "legendNewsTip": "過去24小時的新聞文章數量。箭頭表示情緒是看漲還是看跌。",
+    "legendSocialTip": "來自 Twitter、Reddit 和 Telegram 的社群媒體提及與情緒。",
+    "legendWhaleTip": "過去24小時在鏈上偵測到的大額交易（鯨魚活動）。",
+    "noData": "無代幣資料",
+    "articles24h": "{count} 篇文章（24小時）",
+    "sentiment": "情緒：{label}",
+    "whale": "鯨魚：{count} 筆交易"
+  },
+  "feed": {
+    "noArticles": "暫無文章",
+    "avg": "平均",
+    "historicalTooltip": "根據 {samples} 個類似事件{plural}的歷史平均24小時價格變化",
+    "newsTooltip": "{category} 新聞："
+  },
+  "time": {
+    "justNow": "剛剛",
+    "mAgo": "{n}分鐘前",
+    "hAgo": "{n}小時前",
+    "dAgo": "{n}天前"
+  },
+  "stats": {
+    "btcPrice": "BTC 價格",
+    "ethPrice": "ETH 價格",
+    "price": "價格",
+    "priceTip": "過去24小時的價格變化百分比。",
+    "sentiment": "市場情緒",
+    "sentimentTip": "市場情緒：看漲 = 樂觀，看跌 = 悲觀。",
+    "marketCap": "總市值",
+    "marketCapTip": "所有流通幣的總價值。越高代表市場越大。",
+    "neutral": "中性",
+    "na": "N/A",
+    "24h": "24小時"
+  },
+  "chart": {
+    "selectToken": "選擇代幣查看圖表",
+    "chartTip": "K線圖：每根K線代表某時段的開盤、最高、最低、收盤價。綠色 = 上漲，紅色 = 下跌。",
+    "line": "折線",
+    "candlestick": "K線",
+    "clickToLoad": "點擊代幣列以載入價格圖表",
+    "loading": "載入圖表中...",
+    "noData": "無歷史資料",
+    "failed": "載入圖表資料失敗"
+  },
+  "table": {
+    "rank": "#",
+    "token": "代幣",
+    "price": "價格（USD）",
+    "change24h": "24小時漲跌",
+    "marketCap": "市值",
+    "marketCapTip": "所有流通幣的總價值。越高代表市場越大。",
+    "volume": "成交量（24小時）",
+    "volumeTip": "24小時成交量：過去一天的交易總量。越高代表市場越活躍。",
+    "noData": "尚無價格資料 — 每5分鐘更新一次"
+  },
+  "impact": {
+    "all": "全部",
+    "noArticles": "暫無文章",
+    "noArticlesToken": "此代幣暫無文章",
+    "avgAfter": "{category} 新聞後的平均變化",
+    "sampleCount": "（n={samples}）",
+    "impactTip": "根據歷史資料，類似新聞發布後24小時內的平均價格變化。（n=樣本數）",
+    "emptyTitle": "暫無相關新聞",
+    "emptyAction": "添加代幣到觀察清單以查看相關新聞",
+    "emptyAddTokens": "添加更多代幣到觀察清單",
+    "setAlert": "設定提醒",
+    "impactExplanation": "根據 {samples} 個歷史事件，{category} 新聞平均在 24 小時內使 {symbol} 變動 {change}。",
+    "similarNews": "類似"
+  },
+  "alerts": {
+    "status": "提醒狀態",
+    "active": "啟用",
+    "paused": "暫停",
+    "watchlist": "代幣觀察清單",
+    "watchlistDesc": "選擇你想接收提醒的代幣。",
+    "searchTokens": "搜尋代幣...",
+    "channels": "通知管道",
+    "channelsDesc": "選擇接收提醒的方式。",
+    "channelWeb": "網頁",
+    "channelWebDesc": "提醒顯示在儀表板歷史記錄中",
+    "channelTelegram": "Telegram",
+    "channelTelegramDesc": "透過 Telegram 機器人接收提醒",
+    "channelEmail": "電子郵件",
+    "channelEmailDesc": "接收電子郵件通知",
+    "channelPush": "推播通知",
+    "channelPushDesc": "即使關閉分頁也能收到瀏覽器推播提醒",
+    "telegramChatId": "Telegram 聊天 ID",
+    "telegramPlaceholder": "例如 123456789",
+    "telegramHelp": "傳送 /start 給 @WavedgeBot 以取得你的聊天 ID",
+    "emailAddress": "電子郵件地址",
+    "emailPlaceholder": "you@example.com",
+    "pushSubscribed": "已訂閱推播通知",
+    "pushNotSubscribed": "尚未訂閱",
+    "enablePush": "啟用推播",
+    "resubscribe": "重新訂閱",
+    "sensitivity": "靈敏度",
+    "sensitivityTip": "靈敏度越高，提醒觸發越容易。建議新手使用中等。",
+    "sensitivityDesc": "控制提醒觸發的難易度。靈敏度越高 = 提醒越多。",
+    "sensitivityLow": "低",
+    "sensitivityMedium": "中",
+    "sensitivityHigh": "高",
+    "sensitivityLowDesc": "僅重大波動",
+    "sensitivityMediumDesc": "平衡提醒",
+    "sensitivityHighDesc": "不錯過任何事",
+    "recommended": "建議",
+    "signalRequirements": "訊號需求",
+    "signalRequirementsTip": "需要多少訊號同時觸發才發出提醒。建議新手選擇 2-3 個以減少噪音。",
+    "signalRequirementsDesc": "需要多少訊號同時觸發才發出提醒。",
+    "signalAny": "任何單一訊號",
+    "signalTwo": "兩個以上訊號同時",
+    "signalThree": "三個以上訊號",
+    "signalFour": "四個以上訊號",
+    "signalAll": "全部五個訊號",
+    "modeSimple": "簡易",
+    "modeAdvanced": "進階",
+    "simpleSetup": "設定你的提醒",
+    "simpleHint": "選擇代幣，並設定多大的價格波動會觸發提醒。",
+    "simpleTellMeWhen": "當",
+    "simplePickToken": "選擇代幣",
+    "simpleMovesMoreThan": "波動超過",
+    "simpleWatching": "監控中：",
+    "simpleNoTokens": "尚未選擇任何代幣。請從上方選擇一個來開始。",
+    "simpleNotifyHow": "通知方式",
+    "simpleNotifyHint": "預設會透過網頁通知。也可以加上 Email 以增加覆蓋率。",
+    "simpleWebAlwaysOn": "始終開啟",
+    "save": "儲存設定",
+    "pushEnabled": "推播通知已啟用",
+    "pushNotSupported": "此瀏覽器不支援推播通知",
+    "pushNotConfigured": "伺服器尚未設定推播通知",
+    "pushDenied": "通知權限被拒絕",
+    "pushFailed": "啟用推播通知失敗",
+    "saveSuccess": "設定已成功儲存",
+    "saveFailed": "儲存設定失敗"
+  },
+  "alertHistory": {
+    "loading": "載入提醒歷史...",
+    "failed": "載入提醒歷史失敗",
+    "noAlerts": "過去 {hours} 小時內沒有觸發的提醒。",
+    "explanation": "當多個訊號（新聞、價格、成交量）同時突破閾值時，提醒就會觸發。",
+    "alert": "則提醒",
+    "alerts": "則提醒",
+    "newsSignal": "新聞：{count} 篇文章",
+    "priceSignal": "價格：{sign}{pct}%",
+    "volumeSignal": "成交量：+{pct}%"
+  },
+  "upgrade": {
+    "title": "升級至 Pro",
+    "description": "解鎖 {feature} 和更多 Wavedge Pro 功能。",
+    "cta": "升級 — $19/月"
+  },
+  "missed": {
+    "alert": "你今天錯過了 {count} 則提醒",
+    "alerts": "你今天錯過了 {count} 則提醒",
+    "proDesc": "Pro 用戶已收到所有提醒。免費方案：每日 {limit} 則提醒。",
+    "upgrade": "升級至 Pro"
+  },
+  "bottomNav": {
+    "dashboard": "儀表板",
+    "market": "市場",
+    "alerts": "提醒",
+    "tokens": "代幣",
+    "settings": "設定"
+  },
+  "stale": {
+    "delayed": "資料可能有延遲（最後更新：{age}前）",
+    "dismiss": "關閉"
+  },
+  "watchlist": {
+    "topTokens": "熱門代幣",
+    "yourWatchlist": "你的觀察清單",
+    "token": "代幣",
+    "price": "價格",
+    "change24h": "24小時",
+    "signals": "訊號",
+    "signalsTip": "過去24小時內與此代幣相關的新聞文章和事件數量。",
+    "noTokens": "無可用代幣",
+    "emptyTitle": "觀察清單還沒有代幣",
+    "emptyAction": "去設定加入代幣",
+    "loadFailed": "無法載入觀察清單"
+  },
+  "affiliate": {
+    "tradeNow": "立即交易",
+    "tradeOn": "在 {exchange} 交易 {symbol}"
+  },
+  "ad": {
+    "upgradePro": "升級至 Pro — 無廣告、即時提醒、完整歷史",
+    "goPro": "升級 Pro"
+  },
+  "apiKey": {
+    "loading": "載入 API 金鑰...",
+    "loginRequired": "請先登入以管理 API 金鑰。",
+    "proOnly": "API 存取 — 僅限 Pro",
+    "proDesc": "產生 API 金鑰以程式化存取 Wavedge 資料。升級至 Pro 以解鎖 API 存取。",
+    "upgradePro": "升級至 Pro",
+    "loadFailed": "載入 API 金鑰失敗，請重試。",
+    "usageToday": "今日 API 用量",
+    "usageCount": "{usage} / {limit} 次請求",
+    "activeKeys": "使用中金鑰：{active} / {max}",
+    "createNew": "建立新金鑰",
+    "keyNamePlaceholder": "金鑰名稱（例如：我的交易機器人）",
+    "generate": "產生金鑰",
+    "copyWarning": "請立即複製此金鑰 — 之後將無法再次顯示。",
+    "copy": "複製",
+    "activeKeysTitle": "使用中的金鑰",
+    "noKeys": "尚無使用中的 API 金鑰，請在上方建立。",
+    "headerName": "名稱",
+    "headerKey": "金鑰",
+    "headerCreated": "建立時間",
+    "headerLastUsed": "最後使用",
+    "never": "從未",
+    "revoke": "撤銷",
+    "revokedKeys": "已撤銷的金鑰（{count}）",
+    "headerRevoked": "撤銷時間",
+    "quickStart": "快速開始",
+    "quickStartDesc": "將 API 金鑰作為 Bearer token 使用。頻率限制：每日 100 次請求。",
+    "revokeConfirm": "撤銷此 API 金鑰？使用此金鑰的應用程式將停止運作。",
+    "generating": "產生中...",
+    "copied": "已複製！"
+  },
+  "signal": {
+    "hasArticles": "{symbol} 在過去 24 小時內有 {count} 篇新聞",
+    "mostlyAbout": "主要關於",
+    "socialSentimentIs": "社群情緒為{label}",
+    "sentiment": {
+      "bullish": "看漲",
+      "bearish": "看跌",
+      "neutral": "中性"
+    },
+    "whaleDetected": "偵測到 {count} 筆大額鯨魚轉帳",
+    "noActiveSignals": "{symbol} 目前沒有活躍訊號",
+    "veryHigh": "非常高",
+    "high": "高",
+    "normal": "正常",
+    "noNews": "無新聞",
+    "mentions": "則提及",
+    "noSocialData": "無社群資料",
+    "newsCount": "新聞（{count}）",
+    "newsTip": "過去 24 小時提及此代幣的新聞文章。正常：<3 篇/小時，高：3-5 篇，非常高：>5 篇。",
+    "thresholdNormal": "正常（<3/小時）",
+    "thresholdHigh": "高（3-5/小時）",
+    "thresholdVeryHigh": "非常高（>5/小時）",
+    "news": "新聞",
+    "noRecentNews": "{symbol} 沒有近期新聞。",
+    "socialSentiment": "社群情緒",
+    "socialTip": "來自社群媒體（Twitter、Reddit、Telegram）的綜合情緒。分數從 -1（非常看跌）到 +1（非常看漲）。",
+    "noSocialAvailable": "無社群資料。",
+    "whaleActivity": "鯨魚活動",
+    "whaleTip": "過去 24 小時偵測到的大額鏈上轉帳（通常 >$100K）。高鯨魚活動可能預示價格波動。",
+    "noWhaleDetected": "未偵測到鯨魚活動。",
+    "historicalImpact": "歷史影響",
+    "impactTip": "顯示類似新聞事件在歷史上如何在 24 小時內影響此代幣的價格。",
+    "noImpactData": "無歷史影響資料。",
+    "impactExplanation": "根據 {samples} 個歷史事件，{category} 新聞平均在 24 小時內使 {symbol} 變動 {change}。",
+    "category": "類別",
+    "avg24h": "平均 24 小時",
+    "samples": "樣本數"
+  },
+  "market": {
+    "sectorL1": "第一層",
+    "sectorL2": "第二層",
+    "sectorStable": "穩定幣",
+    "sectorInfra": "基礎設施",
+    "sectorOther": "其他",
+    "tokens": "種代幣",
+    "noData": "暫無價格資料。",
+    "loadFailed": "載入市場資料失敗。",
+    "lastUpdated": "最後更新：{time}",
+    "loadingMarket": "載入市場資料中...",
+    "loadingSectors": "載入板塊中...",
+    "loading": "載入中..."
+  },
+  "explainer": {
+    "whatDoesThisMean": "這是什麼意思？",
+    "heatmap": {
+      "title": "訊號熱力圖",
+      "body": "這個彩色方格顯示前 50 大代幣。綠色代表價格上漲，紅色代表下跌。方格越大代表市值越高。標籤顯示新聞活動、社群討論度和大額交易。"
+    },
+    "impact": {
+      "title": "影響動態",
+      "body": "每篇新聞文章都會根據類似新聞歷史上對代幣價格的影響程度進行評分。影響分數越高，代表這類新聞歷史上造成的價格波動越大。"
+    },
+    "watchlist": {
+      "title": "觀察清單與訊號",
+      "body": "你的觀察清單追蹤你關注的代幣。「訊號」欄位統計過去 24 小時內發生的新聞和事件數量 — 訊號越多代表該代幣越值得關注。"
+    }
+  },
+  "glossary": {
+    "title": "加密貨幣詞彙表",
+    "close": "關閉",
+    "searchPlaceholder": "搜尋詞彙...",
+    "noResults": "找不到符合的詞彙。",
+    "token": {
+      "term": "代幣 / 幣",
+      "def": "區塊鏈上的數位資產。比特幣（BTC）和以太坊（ETH）是市值最大的兩種代幣。"
+    },
+    "marketCap": {
+      "term": "市值",
+      "def": "所有流通幣的總價值。計算方式：價格 × 流通量。市值越高通常代表代幣越成熟。"
+    },
+    "volume": {
+      "term": "成交量（24小時）",
+      "def": "過去 24 小時的總交易活動量。成交量高代表有很多人在買賣。"
+    },
+    "priceChange": {
+      "term": "價格變化（24小時）",
+      "def": "過去 24 小時內價格的漲跌幅度，以百分比顯示。+5% 代表價格上漲了 5%。"
+    },
+    "bullish": {
+      "term": "看漲（牛市）",
+      "def": "人們預期價格會上漲。看漲的市場代表樂觀情緒和價格上升。"
+    },
+    "bearish": {
+      "term": "看跌（熊市）",
+      "def": "人們預期價格會下跌。看跌的市場代表悲觀情緒和價格下降。"
+    },
+    "whale": {
+      "term": "鯨魚",
+      "def": "持有大量代幣的人。當鯨魚買入或賣出時，可能會顯著影響價格。"
+    },
+    "signal": {
+      "term": "訊號",
+      "def": "表示某個代幣正在發生重要事件的指標 — 例如新聞數量激增、社群討論度上升或鯨魚交易。"
+    },
+    "impactScore": {
+      "term": "影響分數",
+      "def": "顯示類似新聞歷史上在 24 小時內對代幣價格影響程度的數值。分數越高代表歷史價格波動越大。"
+    },
+    "sentiment": {
+      "term": "情緒",
+      "def": "市場或社群對某個代幣的整體情緒。透過社群媒體和新聞衡量，分為看漲（正面）、看跌（負面）或中性。"
+    },
+    "heatmap": {
+      "term": "熱力圖",
+      "def": "用顏色深淺顯示價格變動的視覺方格。綠色 = 上漲，紅色 = 下跌。方格大小代表市值。"
+    },
+    "watchlist": {
+      "term": "觀察清單",
+      "def": "你個人追蹤的代幣清單。Wavedge 會監控這些代幣，並在有重要事件發生時發送提醒。"
+    }
+  },
+  "primer": {
+    "title": "加密貨幣新手？",
+    "close": "關閉",
+    "tokensTitle": "什麼是代幣？",
+    "tokensBody": "代幣（或幣）是運行在區塊鏈上的數位貨幣。比特幣和以太坊是最知名的。每個代幣的價格會根據供需變動。",
+    "marketCapTitle": "什麼是市值？",
+    "marketCapBody": "市值 = 價格 × 流通總量。它告訴你一個代幣整體有多大。比特幣擁有最大的市值，是最「大」的加密貨幣。",
+    "priceChangesTitle": "為什麼價格會變動？",
+    "priceChangesBody": "當人們買入（價格上漲）或賣出（價格下跌）時，加密貨幣價格就會變動。新聞、法規和大額交易（「鯨魚動態」）都可能導致價格突然變化。",
+    "dontShowAgain": "不再顯示",
+    "gotIt": "了解！"
+  },
+  "digest": {
+    "title": "AI 市場摘要",
+    "noDigest": "尚無市場摘要。請稍後再查看。"
+  }
+}

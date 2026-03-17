@@ -1,0 +1,397 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "market": "Market",
+    "alerts": "Alerts",
+    "billing": "Billing",
+    "login": "Log in",
+    "logout": "Log out",
+    "searchPlaceholder": "Search tokens or news...",
+    "searchLabel": "Search",
+    "settings": "Settings",
+    "alertSettings": "Alert Settings",
+    "watchlist": "Watchlist",
+    "apiKeys": "API Keys",
+    "compare": "Compare",
+    "switchTheme": "Theme",
+    "language": "Language",
+    "help": "Help",
+    "glossary": "Glossary",
+    "newToCrypto": "New to crypto?",
+    "fontSize": "Font Size",
+    "dashboardMode": "Dashboard Mode"
+  },
+  "welcome": {
+    "title": "Welcome to Wavedge!",
+    "description": "Your crypto intelligence dashboard is ready. Here's how to get started:",
+    "setupWatchlist": "Set up Watchlist",
+    "learnImpact": "Learn about Impact Scores",
+    "setupAlerts": "Configure Alerts",
+    "dismiss": "Dismiss"
+  },
+  "heatmap": {
+    "title": "Signal Heatmap",
+    "tip": "Signals = a composite indicator of news volume + social discussion + whale activity. More signals means this token is worth watching.",
+    "legendUp": "Up",
+    "legendDown": "Down",
+    "legendSize": "Larger = higher market cap",
+    "legendNews": "News",
+    "legendSocial": "Social",
+    "legendWhale": "Whales",
+    "legendSizeTip": "Larger cells = higher market cap. The biggest tokens take up the most space.",
+    "legendNewsTip": "Number of news articles in the last 24 hours. Arrows show whether sentiment is bullish or bearish.",
+    "legendSocialTip": "Social media mentions and sentiment from Twitter, Reddit, and Telegram.",
+    "legendWhaleTip": "Large transactions (whale activity) detected on-chain in the last 24 hours.",
+    "noData": "No token data",
+    "articles24h": "{count} articles (24h)",
+    "sentiment": "Sentiment: {label}",
+    "whale": "Whale: {count} txs"
+  },
+  "feed": {
+    "noArticles": "No articles yet",
+    "avg": "avg",
+    "historicalTooltip": "Historical avg 24h price change based on {samples} similar event{plural}",
+    "newsTooltip": "{category} news: "
+  },
+  "time": {
+    "justNow": "just now",
+    "mAgo": "{n}m ago",
+    "hAgo": "{n}h ago",
+    "dAgo": "{n}d ago"
+  },
+  "stats": {
+    "btcPrice": "BTC Price",
+    "ethPrice": "ETH Price",
+    "price": "Price",
+    "priceTip": "The percentage price change in the last 24 hours.",
+    "sentiment": "Market Sentiment",
+    "sentimentTip": "Market Sentiment: Bullish = people are optimistic, Bearish = people are pessimistic.",
+    "marketCap": "Total Market Cap",
+    "marketCapTip": "The total value of all circulating coins. Higher means the market is bigger.",
+    "neutral": "Neutral",
+    "na": "N/A",
+    "24h": "24h"
+  },
+  "chart": {
+    "selectToken": "Select a token to view chart",
+    "chartTip": "Candlestick chart: each candle represents the open, high, low, close price for a time period. Green = up, Red = down.",
+    "line": "Line",
+    "candlestick": "Candlestick",
+    "clickToLoad": "Click a token row to load its price chart",
+    "loading": "Loading chart...",
+    "noData": "No historical data available",
+    "failed": "Failed to load chart data"
+  },
+  "table": {
+    "rank": "#",
+    "token": "Token",
+    "price": "Price (USD)",
+    "change24h": "24h Change",
+    "marketCap": "Market Cap",
+    "marketCapTip": "The total value of all circulating coins. Higher means the market is bigger.",
+    "volume": "Volume (24h)",
+    "volumeTip": "24h Volume: the total amount of trading in the past day. Higher means a more active market.",
+    "noData": "No price data yet — updates every 5 minutes"
+  },
+  "impact": {
+    "all": "All",
+    "noArticles": "No articles yet",
+    "noArticlesToken": "No articles for this token",
+    "avgAfter": "avg after {category} news",
+    "sampleCount": "(n={samples})",
+    "impactTip": "Based on historical data, the average price change within 24 hours after similar news was published. (n=sample size)",
+    "emptyTitle": "No articles yet",
+    "emptyAction": "Add tokens to your watchlist to see related news",
+    "emptyAddTokens": "Add more tokens to your watchlist",
+    "setAlert": "Set Alert",
+    "impactExplanation": "Based on {samples} historical events, {category} news has moved {symbol} an average of {change} within 24 hours.",
+    "similarNews": "similar"
+  },
+  "alerts": {
+    "status": "Alert Status",
+    "active": "Active",
+    "paused": "Paused",
+    "watchlist": "Token Watchlist",
+    "watchlistDesc": "Select tokens you want to receive alerts for.",
+    "searchTokens": "Search tokens...",
+    "channels": "Notification Channels",
+    "channelsDesc": "Choose how you want to receive alerts.",
+    "channelWeb": "Web",
+    "channelWebDesc": "Alerts shown in dashboard history",
+    "channelTelegram": "Telegram",
+    "channelTelegramDesc": "Get alerts via Telegram bot",
+    "channelEmail": "Email",
+    "channelEmailDesc": "Receive email notifications",
+    "channelPush": "Push Notifications",
+    "channelPushDesc": "Browser push alerts even when tab is closed",
+    "telegramChatId": "Telegram Chat ID",
+    "telegramPlaceholder": "e.g. 123456789",
+    "telegramHelp": "Send /start to @WavedgeBot to get your chat ID",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "you@example.com",
+    "pushSubscribed": "Subscribed to push notifications",
+    "pushNotSubscribed": "Not yet subscribed",
+    "enablePush": "Enable Push",
+    "resubscribe": "Resubscribe",
+    "sensitivity": "Sensitivity",
+    "sensitivityTip": "Higher sensitivity triggers alerts more easily. Medium is recommended for beginners.",
+    "sensitivityDesc": "Controls how easily alerts are triggered. Higher sensitivity = more alerts.",
+    "sensitivityLow": "Low",
+    "sensitivityMedium": "Medium",
+    "sensitivityHigh": "High",
+    "sensitivityLowDesc": "Major moves only",
+    "sensitivityMediumDesc": "Balanced alerts",
+    "sensitivityHighDesc": "Don't miss anything",
+    "recommended": "Recommended",
+    "signalRequirements": "Signal Requirements",
+    "signalRequirementsTip": "How many signals must fire simultaneously to trigger an alert. Beginners should choose 2-3 to reduce noise.",
+    "signalRequirementsDesc": "How many signals must fire simultaneously to trigger an alert.",
+    "signalAny": "Any single signal",
+    "signalTwo": "Two+ signals together",
+    "signalThree": "Three+ signals",
+    "signalFour": "Four+ signals",
+    "signalAll": "All five signals",
+    "modeSimple": "Simple",
+    "modeAdvanced": "Advanced",
+    "simpleSetup": "Set up your alert",
+    "simpleHint": "Pick a token and choose how big a price move should trigger an alert.",
+    "simpleTellMeWhen": "Tell me when",
+    "simplePickToken": "Pick a token",
+    "simpleMovesMoreThan": "moves more than",
+    "simpleWatching": "Watching:",
+    "simpleNoTokens": "No tokens selected yet. Pick one above to get started.",
+    "simpleNotifyHow": "How to notify you",
+    "simpleNotifyHint": "We'll send alerts to web by default. Add email for extra coverage.",
+    "simpleWebAlwaysOn": "always on",
+    "save": "Save Settings",
+    "pushEnabled": "Push notifications enabled",
+    "pushNotSupported": "Push notifications are not supported in this browser",
+    "pushNotConfigured": "Push notifications not configured on server",
+    "pushDenied": "Notification permission denied",
+    "pushFailed": "Failed to enable push notifications",
+    "saveSuccess": "Settings saved successfully",
+    "saveFailed": "Failed to save settings"
+  },
+  "alertHistory": {
+    "loading": "Loading alert history...",
+    "failed": "Failed to load alert history",
+    "noAlerts": "No alerts triggered in the last {hours} hours.",
+    "explanation": "Alerts fire when multiple signals (news, price, volume) breach thresholds simultaneously.",
+    "alert": "alert",
+    "alerts": "alerts",
+    "newsSignal": "News: {count} articles",
+    "priceSignal": "Price: {sign}{pct}%",
+    "volumeSignal": "Volume: +{pct}%"
+  },
+  "upgrade": {
+    "title": "Upgrade to Pro",
+    "description": "Unlock {feature} and more with Wavedge Pro.",
+    "cta": "Upgrade — $19/mo"
+  },
+  "missed": {
+    "alert": "You missed {count} alert today",
+    "alerts": "You missed {count} alerts today",
+    "proDesc": "Pro users got them all. Free plan: {limit} alerts/day.",
+    "upgrade": "Upgrade to Pro"
+  },
+  "bottomNav": {
+    "dashboard": "Dashboard",
+    "market": "Market",
+    "alerts": "Alerts",
+    "tokens": "Tokens",
+    "settings": "Settings"
+  },
+  "stale": {
+    "delayed": "Data may be delayed (last update: {age} ago)",
+    "dismiss": "Dismiss"
+  },
+  "watchlist": {
+    "topTokens": "Top Tokens",
+    "yourWatchlist": "Your Watchlist",
+    "token": "Token",
+    "price": "Price",
+    "change24h": "24h",
+    "signals": "Signals",
+    "signalsTip": "The number of news articles and events related to this token in the past 24 hours.",
+    "noTokens": "No tokens available",
+    "emptyTitle": "No tokens on your watchlist yet",
+    "emptyAction": "Add tokens in Settings",
+    "loadFailed": "Unable to load watchlist"
+  },
+  "affiliate": {
+    "tradeNow": "Trade now",
+    "tradeOn": "Trade {symbol} on {exchange}"
+  },
+  "ad": {
+    "upgradePro": "Upgrade to Pro — no ads, real-time alerts, full history",
+    "goPro": "Go Pro"
+  },
+  "apiKey": {
+    "loading": "Loading API keys...",
+    "loginRequired": "Please log in to manage API keys.",
+    "proOnly": "API Access — Pro Only",
+    "proDesc": "Generate API keys to access Wavedge data programmatically. Upgrade to Pro to unlock API access.",
+    "upgradePro": "Upgrade to Pro",
+    "loadFailed": "Failed to load API keys. Please try again.",
+    "usageToday": "API Usage Today",
+    "usageCount": "{usage} / {limit} requests",
+    "activeKeys": "Active keys: {active} / {max}",
+    "createNew": "Create New Key",
+    "keyNamePlaceholder": "Key name (e.g. My Trading Bot)",
+    "generate": "Generate Key",
+    "copyWarning": "Copy this key now — it won't be shown again.",
+    "copy": "Copy",
+    "activeKeysTitle": "Active Keys",
+    "noKeys": "No active API keys. Create one above.",
+    "headerName": "Name",
+    "headerKey": "Key",
+    "headerCreated": "Created",
+    "headerLastUsed": "Last Used",
+    "never": "Never",
+    "revoke": "Revoke",
+    "revokedKeys": "Revoked Keys ({count})",
+    "headerRevoked": "Revoked",
+    "quickStart": "Quick Start",
+    "quickStartDesc": "Use your API key as a Bearer token. Rate limit: 100 requests/day.",
+    "revokeConfirm": "Revoke this API key? Any applications using it will stop working.",
+    "generating": "Generating...",
+    "copied": "Copied!"
+  },
+  "signal": {
+    "hasArticles": "{symbol} has {count} news articles in the last 24 hours",
+    "mostlyAbout": "mostly about",
+    "socialSentimentIs": "Social sentiment is {label}",
+    "sentiment": {
+      "bullish": "bullish",
+      "bearish": "bearish",
+      "neutral": "neutral"
+    },
+    "whaleDetected": "{count} large whale transfers detected",
+    "noActiveSignals": "No active signals for {symbol} right now",
+    "veryHigh": "Very High",
+    "high": "High",
+    "normal": "Normal",
+    "noNews": "No news",
+    "mentions": "mentions",
+    "noSocialData": "No social data",
+    "newsCount": "News ({count})",
+    "newsTip": "News articles mentioning this token in the last 24 hours. Normal: <3 articles/hr, High: 3-5, Very High: >5.",
+    "thresholdNormal": "Normal (<3/hr)",
+    "thresholdHigh": "High (3-5/hr)",
+    "thresholdVeryHigh": "Very High (>5/hr)",
+    "news": "News",
+    "noRecentNews": "No recent news articles for {symbol}.",
+    "socialSentiment": "Social Sentiment",
+    "socialTip": "Aggregated sentiment from social media (Twitter, Reddit, Telegram). Score ranges from -1 (very bearish) to +1 (very bullish).",
+    "noSocialAvailable": "No social data available.",
+    "whaleActivity": "Whale Activity",
+    "whaleTip": "Large on-chain transfers (typically >$100K) detected in the last 24 hours. High whale activity can signal upcoming price movement.",
+    "noWhaleDetected": "No whale activity detected.",
+    "historicalImpact": "Historical Impact",
+    "impactTip": "Shows how similar news events have historically affected this token's price within 24 hours.",
+    "noImpactData": "No historical impact data available.",
+    "impactExplanation": "Based on {samples} historical events, {category} news has moved {symbol} an average of {change} within 24 hours.",
+    "category": "Category",
+    "avg24h": "Avg 24h",
+    "samples": "Samples"
+  },
+  "market": {
+    "sectorL1": "Layer 1",
+    "sectorL2": "Layer 2",
+    "sectorStable": "Stablecoin",
+    "sectorInfra": "Infrastructure",
+    "sectorOther": "Other",
+    "tokens": "tokens",
+    "noData": "No price data available yet.",
+    "loadFailed": "Failed to load market data.",
+    "lastUpdated": "Last updated: {time}",
+    "loadingMarket": "Loading market data...",
+    "loadingSectors": "Loading sectors...",
+    "loading": "Loading..."
+  },
+  "explainer": {
+    "whatDoesThisMean": "What does this mean?",
+    "heatmap": {
+      "title": "Signal Heatmap",
+      "body": "This color grid shows the top 50 tokens. Green means the price went up, red means it went down. Bigger tiles are bigger tokens (by market cap). Badges show news activity, social buzz, and large transactions."
+    },
+    "impact": {
+      "title": "Impact Feed",
+      "body": "Each news article is scored by how much similar news has historically moved the token's price. A higher impact score means this type of news has caused bigger price swings in the past."
+    },
+    "watchlist": {
+      "title": "Watchlist & Signals",
+      "body": "Your watchlist tracks tokens you care about. The \"Signals\" column counts how many news articles and events happened in the last 24 hours — more signals means more is happening with that token."
+    }
+  },
+  "glossary": {
+    "title": "Crypto Glossary",
+    "close": "Close",
+    "searchPlaceholder": "Search terms...",
+    "noResults": "No matching terms found.",
+    "token": {
+      "term": "Token / Coin",
+      "def": "A digital asset on a blockchain. Bitcoin (BTC) and Ethereum (ETH) are the two largest tokens by value."
+    },
+    "marketCap": {
+      "term": "Market Cap",
+      "def": "The total value of all coins in circulation. Calculated as: price × circulating supply. A higher market cap usually means a more established token."
+    },
+    "volume": {
+      "term": "Volume (24h)",
+      "def": "The total amount of trading activity in the last 24 hours. High volume means many people are buying and selling."
+    },
+    "priceChange": {
+      "term": "Price Change (24h)",
+      "def": "How much the price has gone up or down in the last 24 hours, shown as a percentage. +5% means the price rose 5%."
+    },
+    "bullish": {
+      "term": "Bullish",
+      "def": "When people expect prices to go up. A bullish market means optimism and rising prices."
+    },
+    "bearish": {
+      "term": "Bearish",
+      "def": "When people expect prices to go down. A bearish market means pessimism and falling prices."
+    },
+    "whale": {
+      "term": "Whale",
+      "def": "Someone who holds a very large amount of a token. When whales buy or sell, it can move the price significantly."
+    },
+    "signal": {
+      "term": "Signal",
+      "def": "An indicator that something notable is happening with a token — like a spike in news articles, social media buzz, or whale transactions."
+    },
+    "impactScore": {
+      "term": "Impact Score",
+      "def": "A number showing how much similar news has historically affected a token's price within 24 hours. Higher scores mean bigger historical price moves."
+    },
+    "sentiment": {
+      "term": "Sentiment",
+      "def": "The overall mood of the market or community about a token. Measured from social media and news as bullish (positive), bearish (negative), or neutral."
+    },
+    "heatmap": {
+      "term": "Heatmap",
+      "def": "A visual grid where color intensity shows price movement. Green = up, red = down. Tile size represents market cap."
+    },
+    "watchlist": {
+      "term": "Watchlist",
+      "def": "Your personal list of tokens to track. Wavedge monitors these tokens and sends you alerts when something important happens."
+    }
+  },
+  "primer": {
+    "title": "New to crypto?",
+    "close": "Close",
+    "tokensTitle": "What are tokens?",
+    "tokensBody": "Tokens (or coins) are digital money that runs on a blockchain. Bitcoin and Ethereum are the most well-known. Each token has a price that changes based on supply and demand.",
+    "marketCapTitle": "What is market cap?",
+    "marketCapBody": "Market cap = price × total coins in circulation. It tells you how big a token is overall. Bitcoin has the largest market cap, making it the \"biggest\" cryptocurrency.",
+    "priceChangesTitle": "Why do prices change?",
+    "priceChangesBody": "Crypto prices move when people buy (price goes up) or sell (price goes down). News, regulations, and big transactions (\"whale moves\") can all cause sudden price changes.",
+    "dontShowAgain": "Don't show this again",
+    "gotIt": "Got it!"
+  },
+  "digest": {
+    "title": "AI Market Summary",
+    "noDigest": "No market summary available yet. Check back soon."
+  }
+}

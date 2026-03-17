@@ -1,13 +1,15 @@
-export { auth as middleware } from "@/lib/auth";
+import createMiddleware from "next-intl/middleware";
+import { locales, defaultLocale } from "@/i18n/config";
+
+export default createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: "always",
+});
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/settings/:path*",
-    "/billing/:path*",
-    "/admin/:path*",
-    "/api/alerts/:path*",
-    "/api/digest/:path*",
-    "/api/admin/:path*",
+    // Match all pathnames except API routes, Next.js internals, and static files
+    "/((?!api|_next|.*\\..*).*)",
   ],
 };

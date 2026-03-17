@@ -59,7 +59,7 @@ export function validateEnv(): EnvConfig {
 
 export function getEnvConfig(): EnvConfig {
   if (!config) {
-    throw new Error("validateEnv() must be called before getEnvConfig()");
+    return validateEnv();
   }
   return config;
 }

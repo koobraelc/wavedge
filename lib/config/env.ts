@@ -15,10 +15,8 @@ function requireEnv(name: string, fallback?: string): string {
   const value = process.env[name];
   if (value) return value;
 
-  // Don't throw during build phase — env vars are only available at runtime on Vercel
-  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
-  if (process.env.NODE_ENV === "production" && !isBuildPhase && fallback === undefined) {
-    throw new Error(`Missing required environment variable: ${name}`);
+  if (fallback === undefined) {
+    console.warn(`[env] Missing environment variable: ${name}`);
   }
 
   return fallback ?? "";

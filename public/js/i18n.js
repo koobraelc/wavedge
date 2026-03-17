@@ -155,9 +155,25 @@
     "primer.priceChangesBody": "Prices move when people buy (up) or sell (down). News and big transactions can cause sudden changes.",
     "primer.dontShowAgain": "Don't show this again",
     "primer.gotIt": "Got it!",
+    "alerts.modeSimple": "Simple",
+    "alerts.modeAdvanced": "Advanced",
+    "alerts.simpleSetup": "Set up your alert",
+    "alerts.simpleHint": "Pick a token and choose how big a price move should trigger an alert.",
+    "alerts.simpleTellMeWhen": "Tell me when",
+    "alerts.simplePickToken": "Pick a token",
+    "alerts.simpleMovesMoreThan": "moves more than",
+    "alerts.simpleWatching": "Watching:",
+    "alerts.simpleNoTokens": "No tokens selected yet. Pick one above to get started.",
+    "alerts.simpleNotifyHow": "How to notify you",
+    "alerts.simpleNotifyHint": "We'll send alerts to web by default. Add email for extra coverage.",
+    "alerts.simpleWebAlwaysOn": "always on",
     "nav.help": "Help",
     "nav.glossary": "Glossary",
-    "nav.newToCrypto": "New to crypto?"
+    "nav.newToCrypto": "New to crypto?",
+    "nav.fontSize": "Font Size",
+    "nav.dashboardMode": "Dashboard Mode",
+    "digest.title": "AI Market Summary",
+    "digest.noDigest": "No market summary available yet. Check back soon."
   };
   let _ready = false;
 

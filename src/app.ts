@@ -76,6 +76,7 @@ function renderErrorPage(statusCode: number, title: string, message: string, sug
   <script src="/js/i18n.js"></script>
   <script>window.i18n.init();</script>
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
 </body>
@@ -574,6 +575,7 @@ app.get("/admin", (req, res) => {
   <bottom-nav></bottom-nav>
 
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/admin-app.js"></script>
@@ -657,6 +659,7 @@ app.get("/market", (req, res) => {
   <script src="/js/i18n.js"></script>
   <script>window.i18n.init();</script>
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
@@ -721,6 +724,7 @@ app.get("/settings/alerts", (req, res) => {
 
   <!-- Web Components -->
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/breadcrumb-nav.js"></script>
@@ -826,6 +830,7 @@ app.get("/settings/api-keys", (req, res) => {
   <bottom-nav></bottom-nav>
 
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/breadcrumb-nav.js"></script>
   <script src="/js/components/api-key-manager.js"></script>
@@ -973,6 +978,7 @@ app.get("/digest/latest", (req, res) => {
   <div id="copy-toast" class="copy-toast">Link copied!</div>
 
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/ad-slot.js"></script>
 </body>
@@ -1071,6 +1077,7 @@ app.get("/compare", (req, res) => {
   <script src="/js/i18n.js"></script>
   <script>window.i18n.init();</script>
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/bottom-nav.js"></script>
   <script src="/js/components/ad-slot.js"></script>
@@ -1250,6 +1257,7 @@ app.get("/tokens/:symbol", (req, res) => {
 
   <!-- Web Components -->
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
   <script src="/js/components/info-tip.js"></script>
   <script src="/js/components/nav-bar.js"></script>
   <script src="/js/components/breadcrumb-nav.js"></script>

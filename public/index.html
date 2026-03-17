@@ -18,10 +18,13 @@
   <main class="main-content" id="main-content">
     <welcome-banner></welcome-banner>
     <post-onboarding></post-onboarding>
+
+    <ai-digest class="beginner-only"></ai-digest>
+
     <stats-row></stats-row>
 
-    <signal-heatmap></signal-heatmap>
-    <signal-detail-panel></signal-detail-panel>
+    <signal-heatmap class="trader-only"></signal-heatmap>
+    <signal-detail-panel class="trader-only"></signal-detail-panel>
 
     <stale-data-banner></stale-data-banner>
     <missed-alerts-banner></missed-alerts-banner>
@@ -44,6 +47,8 @@
 
   <!-- Theme Switcher (must load before nav-bar) -->
   <script src="/js/theme-switcher.js"></script>
+  <script src="/js/font-size.js"></script>
+  <script src="/js/dashboard-mode.js"></script>
 
   <!-- Web Components -->
   <script src="/js/components/info-tip.js"></script>
@@ -62,6 +67,7 @@
   <script src="/js/components/watchlist-widget.js"></script>
   <script src="/js/components/welcome-banner.js"></script>
   <script src="/js/components/post-onboarding.js"></script>
+  <script src="/js/components/ai-digest.js"></script>
   <script src="/js/components/widget-explainer.js"></script>
   <script src="/js/components/crypto-glossary.js"></script>
   <script src="/js/components/crypto-primer.js"></script>

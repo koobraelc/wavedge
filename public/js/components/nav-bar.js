@@ -18,6 +18,20 @@ class NavBar extends HTMLElement {
       `<button class="settings-menu-btn lang-btn${loc === currentLocale ? ' active' : ''}" data-locale="${loc}">${labels[loc] || loc}</button>`
     ).join('');
 
+    // Font size switcher options
+    const fontSizes = window.__wavedgeFontSizes || {};
+    const currentFontSize = window.__wavedgeCurrentFontSize ? window.__wavedgeCurrentFontSize() : 'medium';
+    const fontSizeOptions = Object.entries(fontSizes).map(([key, fs]) =>
+      `<button class="settings-menu-btn font-size-btn${key === currentFontSize ? ' active' : ''}" data-size="${key}">${fs.label}</button>`
+    ).join('');
+
+    // Dashboard mode switcher
+    const dashboardModes = window.__wavedgeDashboardModes || {};
+    const currentDashboardMode = window.__wavedgeCurrentDashboardMode ? window.__wavedgeCurrentDashboardMode() : 'beginner';
+    const dashboardModeOptions = Object.entries(dashboardModes).map(([key, m]) =>
+      `<button class="settings-menu-btn dashboard-mode-btn${key === currentDashboardMode ? ' active' : ''}" data-mode="${key}">${m.label}</button>`
+    ).join('');
+
     const path = window.location.pathname;
 
     this.innerHTML = `
@@ -75,6 +89,14 @@ class NavBar extends HTMLElement {
               <div class="settings-menu-divider"></div>
               <div class="settings-menu-section">${t('nav.language')}</div>
               <div class="settings-lang-list">${langOptions}</div>
+              <div class="settings-menu-divider"></div>
+              <div class="settings-menu-section">${t('nav.fontSize')}</div>
+              <div class="settings-font-size-list">${fontSizeOptions}</div>
+              ${Object.keys(dashboardModes).length ? `
+              <div class="settings-menu-divider"></div>
+              <div class="settings-menu-section">${t('nav.dashboardMode')}</div>
+              <div class="settings-dashboard-mode-list">${dashboardModeOptions}</div>
+              ` : ''}
             </div>
           </div>
           ${isLoggedIn
@@ -262,6 +284,30 @@ class NavBar extends HTMLElement {
           if (window.i18n) {
             window.i18n.setLocale(locale);
           }
+        });
+      });
+
+      // Font size buttons
+      settingsMenu.querySelectorAll('.font-size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const size = btn.dataset.size;
+          if (window.__wavedgeApplyFontSize) {
+            window.__wavedgeApplyFontSize(size);
+          }
+          settingsMenu.querySelectorAll('.font-size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      // Dashboard mode buttons
+      settingsMenu.querySelectorAll('.dashboard-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.dataset.mode;
+          if (window.__wavedgeApplyDashboardMode) {
+            window.__wavedgeApplyDashboardMode(mode);
+          }
+          settingsMenu.querySelectorAll('.dashboard-mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
         });
       });
     }

@@ -3,6 +3,7 @@ class AlertSettings extends HTMLElement {
     this._prefs = null;
     this._tokens = [];
     this._saving = false;
+    this._mode = localStorage.getItem('wavedge_alert_mode') || 'simple';
     this.innerHTML = '<div class="loading-state" role="status" aria-busy="true"><span class="spinner"></span>Loading settings...</div>';
     this._load();
   }
@@ -64,6 +65,120 @@ class AlertSettings extends HTMLElement {
   }
 
   _render() {
+    if (this._mode === 'simple') {
+      this._renderSimple();
+    } else {
+      this._renderAdvanced();
+    }
+  }
+
+  _renderSimple() {
+    const p = this._prefs || {};
+    const watchlist = p.tokenSymbols || [];
+    const enabled = p.enabled !== undefined ? p.enabled : true;
+    // Map sensitivity to a threshold percentage for the simple slider
+    const thresholdMap = { low: 10, medium: 5, high: 2 };
+    const currentThreshold = thresholdMap[p.sensitivity] || 5;
+
+    // Progressive alert usage warning
+    const usageBanner = this._renderUsageBanner();
+
+    this.innerHTML = `
+      <form class="settings-form" id="alert-form">
+        ${usageBanner}
+        ${this._renderModeToggle()}
+
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-section-header">
+              <span class="section-icon">&#9889;</span>
+              <h3>Alert Status</h3>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="alerts-enabled" ${enabled ? 'checked' : ''}>
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">${enabled ? 'Active' : 'Paused'}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-card simple-alert-card">
+          <div class="settings-section-header">
+            <span class="section-icon">&#128276;</span>
+            <h3>Set up your alert</h3>
+          </div>
+          <p class="settings-hint">Pick a token and choose how big a price move should trigger an alert.</p>
+
+          <div class="simple-alert-builder">
+            <div class="simple-alert-sentence">
+              <span class="simple-label">Tell me when</span>
+              <div class="simple-token-select">
+                <button type="button" class="simple-token-btn" id="simple-token-btn">
+                  ${watchlist.length > 0 ? this._esc(watchlist[0]) : 'Pick a token'}
+                  <span class="simple-caret">&#9662;</span>
+                </button>
+                <div class="simple-token-dropdown" id="simple-token-dropdown" hidden>
+                  <input type="search" class="simple-token-search" id="simple-token-search" placeholder="Search tokens..." aria-label="Search tokens">
+                  <div class="simple-token-list" id="simple-token-list"></div>
+                </div>
+              </div>
+              <span class="simple-label">moves more than</span>
+              <div class="simple-threshold-group">
+                <div class="simple-threshold-options" id="simple-threshold-options">
+                  ${[2, 5, 10, 20].map(pct => `
+                    <button type="button" class="simple-threshold-btn ${currentThreshold === pct ? 'active' : ''}" data-threshold="${pct}">
+                      ${pct}%
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="simple-selected-tokens" id="simple-selected-tokens">
+            <p class="settings-hint" style="margin-bottom:8px">Watching:</p>
+            <div class="watchlist-selected" id="watchlist-selected">
+              ${watchlist.map(s => this._renderChip(s)).join('')}
+            </div>
+            ${watchlist.length === 0 ? '<p class="simple-empty-hint">No tokens selected yet. Pick one above to get started.</p>' : ''}
+          </div>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-card">
+          <div class="settings-section-header">
+            <span class="section-icon">&#128232;</span>
+            <h3>How to notify you</h3>
+          </div>
+          <p class="settings-hint">We'll send alerts to web by default. Add email for extra coverage.</p>
+          <div class="simple-channel-options">
+            <label class="simple-channel-option">
+              <input type="checkbox" name="channel" value="web" checked disabled>
+              <span class="simple-channel-label">Web <span class="simple-channel-hint">(always on)</span></span>
+            </label>
+            <label class="simple-channel-option">
+              <input type="checkbox" name="channel" value="email" ${(p.channels || []).includes('email') ? 'checked' : ''}>
+              <span class="simple-channel-label">Email</span>
+            </label>
+            <div class="channel-detail ${(p.channels || []).includes('email') ? '' : 'hidden'}" id="email-detail">
+              <input type="email" id="email-address" placeholder="you@example.com" value="${this._esc(p.emailAddress || '')}" aria-label="Email address for alerts">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button type="submit" class="btn-primary" id="save-btn">Save Settings</button>
+        </div>
+      </form>
+    `;
+
+    this._bindSimple();
+  }
+
+  _renderAdvanced() {
     const p = this._prefs || {};
     const watchlist = p.tokenSymbols || [];
     const channels = p.channels || ['web'];
@@ -74,31 +189,13 @@ class AlertSettings extends HTMLElement {
     const emailAddress = p.emailAddress || '';
 
     // Progressive alert usage warning
-    let usageBanner = '';
-    if (this._alertUsage) {
-      const used = this._alertUsage.dailyLimit - (this._alertUsage.missedToday > 0 ? 0 : 0);
-      const total = this._alertUsage.dailyLimit || 3;
-      const sent = total - Math.max(0, this._alertUsage.missedToday || 0);
-      const remaining = Math.max(0, total - sent);
-      const pct = Math.round((sent / total) * 100);
-      const urgency = remaining === 0 ? 'alert-usage-full' : remaining === 1 ? 'alert-usage-warning' : 'alert-usage-ok';
-
-      usageBanner = `
-        <div class="alert-usage-banner ${urgency}">
-          <div class="alert-usage-header">
-            <span class="alert-usage-label">${sent} of ${total} alerts used today</span>
-            ${remaining === 0 ? '<a href="/billing" class="alert-usage-upgrade">Upgrade for unlimited</a>' : ''}
-          </div>
-          <div class="alert-usage-bar">
-            <div class="alert-usage-fill" style="width: ${pct}%"></div>
-          </div>
-          ${remaining <= 1 && remaining > 0 ? '<span class="alert-usage-hint">Only 1 alert remaining today. <a href="/billing">Upgrade for unlimited.</a></span>' : ''}
-        </div>`;
-    }
+    const usageBanner = this._renderUsageBanner();
 
     this.innerHTML = `
       <form class="settings-form" id="alert-form">
         ${usageBanner}
+        ${this._renderModeToggle()}
+
         <div class="settings-card">
           <div class="settings-card-header">
             <div class="settings-section-header">
@@ -240,7 +337,37 @@ class AlertSettings extends HTMLElement {
       </form>
     `;
 
-    this._bind();
+    this._bindAdvanced();
+  }
+
+  _renderModeToggle() {
+    return `
+      <div class="alert-mode-toggle">
+        <button type="button" class="mode-toggle-btn ${this._mode === 'simple' ? 'active' : ''}" data-mode="simple">Simple</button>
+        <button type="button" class="mode-toggle-btn ${this._mode === 'advanced' ? 'active' : ''}" data-mode="advanced">Advanced</button>
+      </div>
+    `;
+  }
+
+  _renderUsageBanner() {
+    if (!this._alertUsage) return '';
+    const total = this._alertUsage.dailyLimit || 3;
+    const sent = total - Math.max(0, this._alertUsage.missedToday || 0);
+    const remaining = Math.max(0, total - sent);
+    const pct = Math.round((sent / total) * 100);
+    const urgency = remaining === 0 ? 'alert-usage-full' : remaining === 1 ? 'alert-usage-warning' : 'alert-usage-ok';
+
+    return `
+      <div class="alert-usage-banner ${urgency}">
+        <div class="alert-usage-header">
+          <span class="alert-usage-label">${sent} of ${total} alerts used today</span>
+          ${remaining === 0 ? '<a href="/billing" class="alert-usage-upgrade">Upgrade for unlimited</a>' : ''}
+        </div>
+        <div class="alert-usage-bar">
+          <div class="alert-usage-fill" style="width: ${pct}%"></div>
+        </div>
+        ${remaining <= 1 && remaining > 0 ? '<span class="alert-usage-hint">Only 1 alert remaining today. <a href="/billing">Upgrade for unlimited.</a></span>' : ''}
+      </div>`;
   }
 
   _renderChip(symbol) {
@@ -252,7 +379,145 @@ class AlertSettings extends HTMLElement {
     </span>`;
   }
 
-  _bind() {
+  _bindModeToggle() {
+    this.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const newMode = btn.dataset.mode;
+        if (newMode === this._mode) return;
+        this._mode = newMode;
+        localStorage.setItem('wavedge_alert_mode', newMode);
+        this._render();
+        this._applyTokenParam();
+      });
+    });
+  }
+
+  _bindSimple() {
+    this._bindModeToggle();
+
+    const form = this.querySelector('#alert-form');
+    const enabledToggle = this.querySelector('#alerts-enabled');
+    const tokenBtn = this.querySelector('#simple-token-btn');
+    const tokenDropdown = this.querySelector('#simple-token-dropdown');
+    const tokenSearch = this.querySelector('#simple-token-search');
+    const tokenList = this.querySelector('#simple-token-list');
+    const selectedContainer = this.querySelector('#watchlist-selected');
+
+    // Toggle label update
+    enabledToggle.addEventListener('change', () => {
+      this.querySelector('.toggle-label').textContent = enabledToggle.checked ? 'Active' : 'Paused';
+    });
+
+    // Simple token picker
+    tokenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tokenDropdown.hidden = !tokenDropdown.hidden;
+      if (!tokenDropdown.hidden) {
+        tokenSearch.value = '';
+        this._filterSimpleTokens('');
+        tokenSearch.focus();
+      }
+    });
+
+    let debounce;
+    tokenSearch.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => this._filterSimpleTokens(tokenSearch.value.trim()), 150);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!this.contains(e.target)) tokenDropdown.hidden = true;
+    });
+
+    // Threshold buttons
+    this.querySelectorAll('.simple-threshold-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.querySelectorAll('.simple-threshold-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Remove chips
+    selectedContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip-remove');
+      if (btn) {
+        const chip = btn.closest('.token-chip');
+        chip.classList.add('chip-removing');
+        setTimeout(() => chip.remove(), 200);
+        // Update empty hint
+        setTimeout(() => {
+          if (this._getSelectedSymbols().length === 0) {
+            const hint = this.querySelector('.simple-empty-hint');
+            if (!hint) {
+              const container = this.querySelector('#simple-selected-tokens');
+              const p = document.createElement('p');
+              p.className = 'simple-empty-hint';
+              p.textContent = 'No tokens selected yet. Pick one above to get started.';
+              container.appendChild(p);
+            }
+          }
+        }, 250);
+      }
+    });
+
+    // Channel toggles
+    this.querySelectorAll('input[name="channel"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const emailDetail = this.querySelector('#email-detail');
+        const emailCb = this.querySelector('input[value="email"]');
+        if (emailDetail && emailCb) emailDetail.classList.toggle('hidden', !emailCb.checked);
+      });
+    });
+
+    // Form submit
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this._saveSimple();
+    });
+  }
+
+  _filterSimpleTokens(query) {
+    const tokenList = this.querySelector('#simple-token-list');
+    const selected = this._getSelectedSymbols();
+    const q = query.toLowerCase();
+
+    let matches = this._tokens.filter(t =>
+      t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
+    ).slice(0, 12);
+
+    if (!matches.length) {
+      tokenList.innerHTML = '<div class="simple-token-empty">No tokens found</div>';
+      return;
+    }
+
+    tokenList.innerHTML = matches.map(t => `
+      <button type="button" class="simple-token-item ${selected.includes(t.symbol) ? 'selected' : ''}" data-symbol="${this._esc(t.symbol)}">
+        <span class="simple-token-icon">${t.symbol.charAt(0)}</span>
+        <span class="simple-token-name">${this._esc(t.symbol)}</span>
+        <span class="simple-token-full">${this._esc(t.name)}</span>
+        ${selected.includes(t.symbol) ? '<span class="simple-token-check">&#10003;</span>' : ''}
+      </button>
+    `).join('');
+
+    tokenList.querySelectorAll('.simple-token-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const sym = item.dataset.symbol;
+        this._addToken(sym);
+        // Update button text
+        this.querySelector('#simple-token-btn').innerHTML = this._esc(sym) + ' <span class="simple-caret">&#9662;</span>';
+        this.querySelector('#simple-token-dropdown').hidden = true;
+        // Remove empty hint
+        const hint = this.querySelector('.simple-empty-hint');
+        if (hint) hint.remove();
+        // Re-render dropdown selections
+      });
+    });
+  }
+
+  _bindAdvanced() {
+    this._bindModeToggle();
+
     const form = this.querySelector('#alert-form');
     const searchInput = this.querySelector('#token-search');
     const dropdown = this.querySelector('#watchlist-dropdown');
@@ -460,6 +725,79 @@ class AlertSettings extends HTMLElement {
       outputArray[i] = rawData.charCodeAt(i);
     }
     return outputArray;
+  }
+
+  async _saveSimple() {
+    if (this._saving) return;
+    this._saving = true;
+
+    const btn = this.querySelector('#save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    const tokenSymbols = this._getSelectedSymbols();
+    const channels = ['web'];
+    const emailCb = this.querySelector('input[value="email"]');
+    if (emailCb && emailCb.checked) channels.push('email');
+    const emailAddress = this.querySelector('#email-address')?.value.trim() || null;
+
+    // Map threshold to sensitivity
+    const threshold = Number(this.querySelector('.simple-threshold-btn.active')?.dataset.threshold || 5);
+    const sensitivityMap = { 2: 'high', 5: 'medium', 10: 'low', 20: 'low' };
+    const sensitivity = sensitivityMap[threshold] || 'medium';
+
+    const enabled = this.querySelector('#alerts-enabled').checked;
+
+    // Client-side email validation
+    if (emailAddress && channels.includes('email')) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(emailAddress)) {
+        AlertSettings._showToast('Please enter a valid email address', 'error');
+        const emailInput = this.querySelector('#email-address');
+        emailInput.focus();
+        emailInput.classList.add('input-error');
+        setTimeout(() => emailInput.classList.remove('input-error'), 3000);
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+        this._saving = false;
+        return;
+      }
+    }
+
+    const body = {
+      userId: 'default',
+      tokenSymbols,
+      channels,
+      sensitivity,
+      minSignals: 2,
+      enabled,
+      emailAddress
+    };
+
+    try {
+      const method = this._prefs ? 'PATCH' : 'POST';
+      const res = await fetch('/api/alerts/preferences', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to save');
+      }
+
+      const json = await res.json();
+      this._prefs = json.data;
+      AlertSettings._showToast('Settings saved successfully', 'success');
+      this.dispatchEvent(new CustomEvent('settings-saved', { bubbles: true }));
+    } catch (err) {
+      AlertSettings._showToast(err.message || 'Failed to save settings', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Settings';
+      this._saving = false;
+    }
   }
 
   async _save() {

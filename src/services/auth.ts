@@ -4,7 +4,12 @@ import { UserRepository, type User } from "../db/user-repository.js";
 import { ApiKeyRepository } from "../db/api-key-repository.js";
 import { getEnvConfig } from "../config/env.js";
 
-const JWT_SECRET = getEnvConfig().JWT_SECRET;
+// Lazy-init to avoid crashing at module load time on Vercel
+let _jwtSecret: string | null = null;
+function getJwtSecret(): string {
+  if (!_jwtSecret) _jwtSecret = getEnvConfig().JWT_SECRET;
+  return _jwtSecret;
+}
 const JWT_EXPIRES_IN = "7d";
 
 export interface AuthenticatedRequest extends Request {
@@ -12,12 +17,12 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ sub: userId }, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyToken(token: string): { sub: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string };
+    return jwt.verify(token, getJwtSecret()) as { sub: string };
   } catch {
     return null;
   }

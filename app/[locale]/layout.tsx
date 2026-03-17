@@ -7,6 +7,8 @@ import { FontSizeProvider } from "@/components/providers/font-size-provider";
 import { DashboardModeProvider } from "@/components/providers/dashboard-mode-provider";
 import { NavBar } from "@/components/nav-bar";
 import { BottomNav } from "@/components/bottom-nav";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "@/app/globals.css";
 
 const inter = Inter({
@@ -39,6 +41,8 @@ export default async function LocaleLayout({
                 <NavBar />
                 <main className="min-h-screen pb-16 md:pb-0">{children}</main>
                 <BottomNav />
+                <Analytics />
+                <SpeedInsights />
               </DashboardModeProvider>
             </FontSizeProvider>
           </ThemeProvider>

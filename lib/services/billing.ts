@@ -3,15 +3,10 @@ import crypto from "crypto";
 import { UserRepository } from "@/lib/db/user-repository";
 import { getEnvConfig } from "@/lib/config/env";
 
-const env = getEnvConfig();
-const STRIPE_SECRET_KEY = env.STRIPE_SECRET_KEY;
-const STRIPE_WEBHOOK_SECRET = env.STRIPE_WEBHOOK_SECRET;
-const STRIPE_PRICE_ID = env.STRIPE_PRO_PRICE_ID;
-const APP_URL = env.APP_URL;
-
 function getStripe(): Stripe | null {
-  if (!STRIPE_SECRET_KEY) return null;
-  return new Stripe(STRIPE_SECRET_KEY);
+  const key = getEnvConfig().STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key);
 }
 
 export class BillingService {
@@ -38,9 +33,9 @@ export class BillingService {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      success_url: `${APP_URL}/billing?status=success`,
-      cancel_url: `${APP_URL}/billing?status=cancelled`,
+      line_items: [{ price: getEnvConfig().STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      success_url: `${getEnvConfig().APP_URL}/billing?status=success`,
+      cancel_url: `${getEnvConfig().APP_URL}/billing?status=cancelled`,
       metadata: { wavedge_user_id: userId },
     });
 
@@ -58,7 +53,7 @@ export class BillingService {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripe_customer_id,
-      return_url: `${APP_URL}/billing`,
+      return_url: `${getEnvConfig().APP_URL}/billing`,
     });
 
     return session.url;
@@ -70,7 +65,7 @@ export class BillingService {
 
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(payload, signature, STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(payload, signature, getEnvConfig().STRIPE_WEBHOOK_SECRET);
     } catch (err) {
       throw new Error(`Webhook signature verification failed: ${(err as Error).message}`);
     }
